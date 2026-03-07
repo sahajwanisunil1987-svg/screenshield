@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { uploadToS3 } from "../lib/s3.js";
+import { uploadToCloudinary } from "../lib/cloudinary.js";
 
 export const uploadImage = async (req: Request, res: Response) => {
   const file = req.file;
@@ -8,13 +8,10 @@ export const uploadImage = async (req: Request, res: Response) => {
     return res.status(StatusCodes.BAD_REQUEST).json({ message: "File is required" });
   }
 
-  const originalName = file.originalname.replace(/\s+/g, "-");
-  const extension = originalName.includes(".") ? originalName.split(".").pop() ?? "jpg" : "jpg";
-  const baseName = originalName.replace(/\.[^.]+$/, "") || `image-${Date.now()}`;
-  const key = `sparekart/products/${Date.now()}-${baseName}.${extension}`;
-  const url = await uploadToS3({
-    key,
+  const url = await uploadToCloudinary({
+    folder: "sparekart/products",
     body: file.buffer,
+    fileName: file.originalname,
     contentType: file.mimetype
   });
 

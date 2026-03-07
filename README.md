@@ -80,11 +80,9 @@ Before creating the Blueprint on Render:
 3. Fill in the non-synced secrets:
    - `RAZORPAY_KEY_ID`
    - `RAZORPAY_KEY_SECRET`
-   - `AWS_REGION`
-   - `AWS_ACCESS_KEY_ID`
-   - `AWS_SECRET_ACCESS_KEY`
-   - `AWS_S3_BUCKET`
-   - `AWS_S3_PUBLIC_BASE_URL`
+   - `CLOUDINARY_CLOUD_NAME`
+   - `CLOUDINARY_API_KEY`
+   - `CLOUDINARY_API_SECRET`
    - `SMTP_HOST`
    - `SMTP_USER`
    - `SMTP_PASS`
@@ -101,7 +99,7 @@ node --env-file=.env --import tsx prisma/seed.ts
 
 - `NEXT_PUBLIC_API_BASE_URL` should point to the public backend base URL ending in `/api`.
 - The current Render setup uses free plans as a starting point. Upgrade before production traffic.
-- Email, AWS S3, and Razorpay are wired but require real credentials.
+- Email, Cloudinary, and Razorpay are wired but require real credentials.
 - If you want a single-platform deploy elsewhere, split frontend and backend envs the same way as the included Render blueprint.
 
 ## Core features
@@ -110,7 +108,7 @@ node --env-file=.env --import tsx prisma/seed.ts
 - JWT customer/admin authentication
 - Cart, wishlist, checkout, coupon validation
 - Razorpay order creation and verification scaffolding
-- AWS S3 upload integration
+- Cloudinary upload integration
 - GST-ready invoice generation
 - Admin modules for brands, models, categories, products, orders, coupons, inventory, and users
 
@@ -123,7 +121,7 @@ After seeding:
 
 ## Notes
 
-- Razorpay, SMTP, AWS S3, and WhatsApp webhook integrations are wired for real credentials through environment variables.
+- Razorpay, SMTP, Cloudinary, and WhatsApp webhook integrations are wired for real credentials through environment variables.
 - Invoice generation returns PDF metadata and a downloadable HTML invoice endpoint scaffold.
 - The project uses Prisma with PostgreSQL and includes seed data for brands, models, categories, products, coupons, and users.
 - The repo is prepared for Git, Docker, and Render Blueprint deployment.

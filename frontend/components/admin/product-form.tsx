@@ -248,7 +248,7 @@ export function ProductForm({ productId }: { productId?: string }) {
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm font-semibold text-white">Upload product images</p>
-            <p className="mt-1 text-xs text-white/60">Files AWS S3 par upload hongi aur URLs automatically add ho jayengi.</p>
+            <p className="mt-1 text-xs text-white/60">Files Cloudinary par upload hongi aur URLs automatically add ho jayengi.</p>
           </div>
           <label className="inline-flex cursor-pointer items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-accentSoft">
             {isUploading ? "Uploading..." : "Choose Images"}
