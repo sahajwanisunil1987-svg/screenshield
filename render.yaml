@@ -36,11 +36,15 @@ services:
         sync: false
       - key: RAZORPAY_KEY_SECRET
         sync: false
-      - key: CLOUDINARY_CLOUD_NAME
+      - key: AWS_REGION
+        value: "ap-south-1"
+      - key: AWS_ACCESS_KEY_ID
         sync: false
-      - key: CLOUDINARY_API_KEY
+      - key: AWS_SECRET_ACCESS_KEY
         sync: false
-      - key: CLOUDINARY_API_SECRET
+      - key: AWS_S3_BUCKET
+        sync: false
+      - key: AWS_S3_PUBLIC_BASE_URL
         sync: false
       - key: SMTP_HOST
         sync: false

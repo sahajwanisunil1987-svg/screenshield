@@ -40,7 +40,8 @@ export function ProductForm({ productId }: { productId?: string }) {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [models, setModels] = useState<MobileModel[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const { register, handleSubmit, watch, setValue } = useForm<FormValues>({
+  const [isUploading, setIsUploading] = useState(false);
+  const { register, handleSubmit, watch, setValue, getValues } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       warrantyMonths: 6,
@@ -54,6 +55,7 @@ export function ProductForm({ productId }: { productId?: string }) {
   });
 
   const brandId = watch("brandId");
+  const imageUrls = watch("imageUrls");
 
   useEffect(() => {
     Promise.all([api.get("/brands"), api.get("/models"), api.get("/categories")])
@@ -105,6 +107,48 @@ export function ProductForm({ productId }: { productId?: string }) {
   }, [productId, setValue]);
 
   const filteredModels = models.filter((model) => !brandId || model.brandId === brandId);
+
+  const uploadImages = async (files: FileList | null) => {
+    if (!files?.length) {
+      return;
+    }
+
+    if (!token) {
+      toast.error("Please login again before uploading");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const uploadedUrls: string[] = [];
+
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await api.post("/admin/upload", formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data"
+          }
+        });
+
+        uploadedUrls.push(response.data.url);
+      }
+
+      const existing = getValues("imageUrls")
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+      setValue("imageUrls", [...existing, ...uploadedUrls].join("\n"), { shouldValidate: true });
+      toast.success(`${uploadedUrls.length} image${uploadedUrls.length > 1 ? "s" : ""} uploaded`);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Unable to upload image"));
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
     <form
@@ -200,6 +244,35 @@ export function ProductForm({ productId }: { productId?: string }) {
         {...register("imageUrls")}
         className="min-h-36 rounded-2xl bg-white px-4 py-3 text-sm text-ink md:col-span-2"
       />
+      <div className="rounded-2xl border border-dashed border-white/20 bg-white/5 p-4 md:col-span-2">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-white">Upload product images</p>
+            <p className="mt-1 text-xs text-white/60">Files AWS S3 par upload hongi aur URLs automatically add ho jayengi.</p>
+          </div>
+          <label className="inline-flex cursor-pointer items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-accentSoft">
+            {isUploading ? "Uploading..." : "Choose Images"}
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(event) => {
+                void uploadImages(event.target.files);
+                event.currentTarget.value = "";
+              }}
+            />
+          </label>
+        </div>
+        {imageUrls ? (
+          <p className="mt-3 text-xs text-white/60">
+            {imageUrls
+              .split("\n")
+              .map((line) => line.trim())
+              .filter(Boolean).length} image URL(s) ready
+          </p>
+        ) : null}
+      </div>
       <label className="flex items-center gap-2 text-sm text-white md:col-span-1">
         <input type="checkbox" {...register("isFeatured")} />
         Featured product
