@@ -1,0 +1,47 @@
+import { z } from "zod";
+
+export const brandSchema = z.object({
+  name: z.string().min(2),
+  description: z.string().optional(),
+  isActive: z.boolean().default(true)
+});
+
+export const modelSchema = z.object({
+  name: z.string().min(2),
+  brandId: z.string().min(1),
+  isActive: z.boolean().default(true)
+});
+
+export const categorySchema = z.object({
+  name: z.string().min(2),
+  description: z.string().optional(),
+  isActive: z.boolean().default(true)
+});
+
+export const productSchema = z.object({
+  name: z.string().min(3),
+  sku: z.string().min(3),
+  shortDescription: z.string().min(10),
+  description: z.string().min(20),
+  specifications: z.record(z.string(), z.string()),
+  price: z.coerce.number().positive(),
+  comparePrice: z.coerce.number().positive().optional().nullable(),
+  warrantyMonths: z.coerce.number().min(0).default(6),
+  brandId: z.string().min(1),
+  modelId: z.string().min(1),
+  categoryId: z.string().min(1),
+  stock: z.coerce.number().min(0).default(0),
+  isFeatured: z.boolean().default(false),
+  isActive: z.boolean().default(true),
+  images: z.array(z.object({ url: z.string().url(), alt: z.string().optional() })).min(1)
+});
+
+export const productSearchSchema = z.object({
+  brand: z.string().optional(),
+  model: z.string().optional(),
+  category: z.string().optional(),
+  search: z.string().optional(),
+  featured: z.enum(["true", "false"]).optional(),
+  page: z.coerce.number().min(1).default(1).optional(),
+  limit: z.coerce.number().min(1).max(40).default(12).optional()
+});
