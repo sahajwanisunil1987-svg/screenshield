@@ -1,18 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, Search, ShoppingBag, Truck } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Heart, LogOut, Search, ShoppingBag, Truck } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 import { useWishlistStore } from "@/store/wishlist-store";
 import { useAuthStore } from "@/store/auth-store";
 
 export function Navbar() {
+  const router = useRouter();
   const items = useCartStore((state) => state.items);
   const wishlist = useWishlistStore((state) => state.items);
   const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-ink/90 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-ink/90 shadow-[0_18px_40px_rgba(8,17,31,0.18)] backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4 text-white sm:px-6 lg:px-8">
         <Link href="/" className="font-display text-2xl tracking-tight">
           SpareKart
@@ -29,6 +32,19 @@ export function Navbar() {
           <Link href={user ? "/my-orders" : "/login"} className="rounded-full px-4 py-2 hover:bg-white/10">
             {user ? user.name.split(" ")[0] : "Login"}
           </Link>
+          {user ? (
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                router.replace("/");
+              }}
+              className="rounded-full p-2 hover:bg-white/10"
+              aria-label="Logout"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
+          ) : null}
           <Link href="/wishlist" className="relative rounded-full p-2 hover:bg-white/10">
             <Heart className="h-5 w-5" />
             <span className="absolute -right-1 -top-1 rounded-full bg-ember px-1.5 text-[10px]">

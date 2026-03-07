@@ -24,7 +24,12 @@ const schema = z.object({
   modelId: z.string().min(1),
   categoryId: z.string().min(1),
   stock: z.coerce.number().min(0),
-  imageUrl: z.string().url()
+  lowStockLimit: z.coerce.number().min(0).max(999),
+  warehouseCode: z.string().optional(),
+  imageUrls: z.string().min(5),
+  specificationsText: z.string().min(3),
+  isFeatured: z.boolean().default(false),
+  isActive: z.boolean().default(true)
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -39,7 +44,12 @@ export function ProductForm({ productId }: { productId?: string }) {
     resolver: zodResolver(schema),
     defaultValues: {
       warrantyMonths: 6,
-      stock: 0
+      stock: 0,
+      lowStockLimit: 5,
+      isFeatured: false,
+      isActive: true,
+      specificationsText: "quality: Premium\nwarranty: 6 Months",
+      imageUrls: ""
     }
   });
 
@@ -59,9 +69,9 @@ export function ProductForm({ productId }: { productId?: string }) {
 
   useEffect(() => {
     if (!productId) return;
-    api.get("/products?limit=100")
+    api.get(`/admin/products/${productId}`, authHeaders(token))
       .then((response) => {
-        const product = response.data.items.find((item: any) => item.id === productId);
+        const product = response.data;
         if (!product) return;
         setValue("name", product.name);
         setValue("sku", product.sku);
@@ -74,7 +84,20 @@ export function ProductForm({ productId }: { productId?: string }) {
         setValue("modelId", product.model.id);
         setValue("categoryId", product.category.id);
         setValue("stock", product.inventory?.stock ?? product.stock);
-        setValue("imageUrl", product.images[0]?.url ?? "");
+        setValue("lowStockLimit", product.inventory?.lowStockLimit ?? 5);
+        setValue("warehouseCode", product.inventory?.warehouseCode ?? "");
+        setValue("isFeatured", Boolean(product.isFeatured));
+        setValue("isActive", Boolean(product.isActive));
+        setValue(
+          "specificationsText",
+          Object.entries(product.specifications ?? {})
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n")
+        );
+        setValue(
+          "imageUrls",
+          product.images.map((image: { url: string }) => image.url).join("\n")
+        );
       })
       .catch((error) => {
         toast.error(getApiErrorMessage(error, "Unable to load product"));
@@ -86,15 +109,31 @@ export function ProductForm({ productId }: { productId?: string }) {
   return (
     <form
       onSubmit={handleSubmit(async (values) => {
+        const specifications = Object.fromEntries(
+          values.specificationsText
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .map((line) => {
+              const [key, ...rest] = line.split(":");
+              return [key.trim(), rest.join(":").trim() || "N/A"];
+            })
+        );
+        const images = values.imageUrls
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((url, index) => ({
+            url,
+            alt: `${values.name} image ${index + 1}`
+          }));
+
         const payload = {
           name: values.name,
           sku: values.sku,
           shortDescription: values.shortDescription,
           description: values.description,
-          specifications: {
-            quality: "Premium",
-            warranty: `${values.warrantyMonths} Months`
-          },
+          specifications,
           price: values.price,
           comparePrice: values.comparePrice,
           warrantyMonths: values.warrantyMonths,
@@ -102,9 +141,11 @@ export function ProductForm({ productId }: { productId?: string }) {
           modelId: values.modelId,
           categoryId: values.categoryId,
           stock: values.stock,
-          isFeatured: true,
-          isActive: true,
-          images: [{ url: values.imageUrl, alt: values.name }]
+          lowStockLimit: values.lowStockLimit,
+          warehouseCode: values.warehouseCode,
+          isFeatured: values.isFeatured,
+          isActive: values.isActive,
+          images
         };
 
         try {
@@ -129,6 +170,8 @@ export function ProductForm({ productId }: { productId?: string }) {
       <Input placeholder="Compare price" type="number" {...register("comparePrice")} />
       <Input placeholder="Warranty months" type="number" {...register("warrantyMonths")} />
       <Input placeholder="Stock" type="number" {...register("stock")} />
+      <Input placeholder="Low stock alert" type="number" {...register("lowStockLimit")} />
+      <Input placeholder="Warehouse code" {...register("warehouseCode")} />
       <select {...register("brandId")} className="rounded-2xl bg-white px-4 py-3 text-sm text-ink">
         <option value="">Select brand</option>
         {brands.map((brand) => (
@@ -147,7 +190,24 @@ export function ProductForm({ productId }: { productId?: string }) {
           <option key={category.id} value={category.id}>{category.name}</option>
         ))}
       </select>
-      <Input placeholder="Primary image URL" {...register("imageUrl")} />
+      <textarea
+        placeholder="Specifications as key: value, one per line"
+        {...register("specificationsText")}
+        className="min-h-36 rounded-2xl bg-white px-4 py-3 text-sm text-ink md:col-span-2"
+      />
+      <textarea
+        placeholder="Image URLs, one per line"
+        {...register("imageUrls")}
+        className="min-h-36 rounded-2xl bg-white px-4 py-3 text-sm text-ink md:col-span-2"
+      />
+      <label className="flex items-center gap-2 text-sm text-white md:col-span-1">
+        <input type="checkbox" {...register("isFeatured")} />
+        Featured product
+      </label>
+      <label className="flex items-center gap-2 text-sm text-white md:col-span-1">
+        <input type="checkbox" {...register("isActive")} />
+        Active product
+      </label>
       <div className="md:col-span-2">
         <Button>Save product</Button>
       </div>

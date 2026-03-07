@@ -22,7 +22,7 @@ type FormValues = z.infer<typeof schema>;
 export default function LoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema)
   });
 
@@ -57,6 +57,16 @@ export default function LoginPage() {
           <div className="mt-6 rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate">
             <p className="font-semibold text-ink">Demo customer</p>
             <p>user@sparekart.in / User@1234</p>
+            <button
+              type="button"
+              onClick={() => {
+                setValue("email", "user@sparekart.in");
+                setValue("password", "User@1234");
+              }}
+              className="mt-3 rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-ink"
+            >
+              Use Demo Credentials
+            </button>
           </div>
         </div>
       </div>

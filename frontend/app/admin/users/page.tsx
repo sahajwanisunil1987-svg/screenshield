@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { AdminGuard } from "@/components/admin/admin-guard";
 import { AdminShell } from "@/components/admin/admin-shell";
-import { api, authHeaders } from "@/lib/api";
+import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
 
 export default function AdminUsersPage() {
@@ -12,7 +13,12 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     if (!token) return;
-    api.get("/admin/users", authHeaders(token)).then((response) => setUsers(response.data));
+    api
+      .get("/admin/users", authHeaders(token))
+      .then((response) => setUsers(response.data))
+      .catch((error) => {
+        toast.error(getApiErrorMessage(error, "Unable to load users"));
+      });
   }, [token]);
 
   return (

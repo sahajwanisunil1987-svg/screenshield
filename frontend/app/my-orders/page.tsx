@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { PageShell } from "@/components/layout/page-shell";
 import { EmptyState } from "@/components/ui/empty-state";
-import { api, authHeaders } from "@/lib/api";
+import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useAuthStore } from "@/store/auth-store";
@@ -16,7 +17,12 @@ export default function MyOrdersPage() {
 
   useEffect(() => {
     if (!token) return;
-    api.get("/orders/my-orders", authHeaders(token)).then((response) => setOrders(response.data));
+    api
+      .get("/orders/my-orders", authHeaders(token))
+      .then((response) => setOrders(response.data))
+      .catch((error) => {
+        toast.error(getApiErrorMessage(error, "Unable to load your orders"));
+      });
   }, [token]);
 
   return (

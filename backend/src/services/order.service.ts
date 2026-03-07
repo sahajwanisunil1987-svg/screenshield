@@ -233,7 +233,8 @@ export const adminOrders = () =>
         select: { name: true, email: true, phone: true }
       },
       items: true,
-      payment: true
+      payment: true,
+      invoice: true
     },
     orderBy: { createdAt: "desc" }
   });
@@ -247,6 +248,10 @@ export const updateOrderStatus = (id: string, payload: { status: OrderStatus; pa
     },
     include: {
       items: true,
-      payment: true
+      payment: true,
+      invoice: true,
+      user: {
+        select: { name: true, email: true, phone: true }
+      }
     }
   });

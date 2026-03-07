@@ -41,6 +41,25 @@ export const authHeaders = (token?: string | null) =>
 
 export const getApiErrorMessage = (error: unknown, fallback = "Something went wrong") => {
   if (axios.isAxiosError(error)) {
+    const fieldErrors = error.response?.data?.errors?.fieldErrors as
+      | Record<string, string[] | undefined>
+      | undefined;
+    const formErrors = error.response?.data?.errors?.formErrors as string[] | undefined;
+
+    if (fieldErrors) {
+      for (const messages of Object.values(fieldErrors)) {
+        const firstMessage = messages?.find((message) => typeof message === "string" && message.trim());
+        if (firstMessage) {
+          return firstMessage;
+        }
+      }
+    }
+
+    const firstFormError = formErrors?.find((message) => typeof message === "string" && message.trim());
+    if (firstFormError) {
+      return firstFormError;
+    }
+
     const message = error.response?.data?.message;
     if (typeof message === "string" && message.trim()) {
       return message;

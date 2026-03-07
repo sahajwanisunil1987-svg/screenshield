@@ -99,6 +99,30 @@ export const getProductBySlug = (slug: string) =>
     }
   });
 
+export const getAdminProducts = async () =>
+  prisma.product.findMany({
+    include: {
+      images: { orderBy: { sortOrder: "asc" } },
+      brand: true,
+      model: true,
+      category: true,
+      inventory: true
+    },
+    orderBy: [{ updatedAt: "desc" }]
+  });
+
+export const getAdminProductById = (id: string) =>
+  prisma.product.findUnique({
+    where: { id },
+    include: {
+      images: { orderBy: { sortOrder: "asc" } },
+      brand: true,
+      model: true,
+      category: true,
+      inventory: true
+    }
+  });
+
 export const createBrand = (payload: { name: string; description?: string; isActive: boolean }) =>
   prisma.brand.create({
     data: {
@@ -169,6 +193,8 @@ export const createProduct = async (payload: {
   modelId: string;
   categoryId: string;
   stock: number;
+  lowStockLimit?: number;
+  warehouseCode?: string;
   isFeatured: boolean;
   isActive: boolean;
   images: { url: string; alt?: string }[];
@@ -187,7 +213,8 @@ export const createProduct = async (payload: {
       inventory: {
         create: {
           stock: payload.stock,
-          lowStockLimit: 5
+          lowStockLimit: payload.lowStockLimit ?? 5,
+          warehouseCode: payload.warehouseCode
         }
       }
     },
@@ -215,11 +242,14 @@ export const updateProduct = async (id: string, payload: Parameters<typeof creat
       inventory: {
         upsert: {
           update: {
-            stock: payload.stock
+            stock: payload.stock,
+            lowStockLimit: payload.lowStockLimit ?? 5,
+            warehouseCode: payload.warehouseCode
           },
           create: {
             stock: payload.stock,
-            lowStockLimit: 5
+            lowStockLimit: payload.lowStockLimit ?? 5,
+            warehouseCode: payload.warehouseCode
           }
         }
       }

@@ -16,10 +16,8 @@ type ResourceManagerProps = {
 };
 
 export function ResourceManager({ title, getUrl, createUrl, deleteBaseUrl, fields }: ResourceManagerProps) {
-  const { token, hasHydrated } = useAuthStore((state) => ({
-    token: state.token,
-    hasHydrated: state.hasHydrated
-  }));
+  const token = useAuthStore((state) => state.token);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const [items, setItems] = useState<any[]>([]);
   const [form, setForm] = useState<Record<string, string>>({});
 

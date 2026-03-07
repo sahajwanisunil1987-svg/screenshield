@@ -14,7 +14,7 @@ export function ProductCard({ product }: { product: Product }) {
   const toggle = useWishlistStore((state) => state.toggle);
 
   return (
-    <div className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-card">
+    <div className="group overflow-hidden rounded-[28px] border border-slate-200/80 bg-panel shadow-card transition duration-300 hover:-translate-y-1">
       <Link href={`/products/${product.slug}`} className="relative block aspect-[4/3] overflow-hidden bg-slate-100">
         <Image
           src={product.images[0]?.url ?? "https://placehold.co/600x400"}
@@ -22,6 +22,7 @@ export function ProductCard({ product }: { product: Product }) {
           fill
           className="object-cover transition duration-500 group-hover:scale-105"
         />
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-ink/25 to-transparent opacity-0 transition group-hover:opacity-100" />
       </Link>
       <div className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-4">
@@ -32,7 +33,7 @@ export function ProductCard({ product }: { product: Product }) {
             </Link>
             <p className="mt-1 text-sm text-slate">{product.model.name}</p>
           </div>
-          <button onClick={() => toggle(product)} className="rounded-full border border-slate-200 p-2">
+          <button onClick={() => toggle(product)} className="rounded-full border border-slate-200 bg-white/90 p-2 transition hover:border-accent/30 hover:bg-accentSoft">
             <Heart className="h-4 w-4 text-slate" />
           </button>
         </div>
@@ -54,7 +55,7 @@ export function ProductCard({ product }: { product: Product }) {
           </Button>
           <Link
             href={`/products/${product.slug}`}
-            className="inline-flex items-center rounded-full border border-slate-200 px-4 py-3 text-sm font-semibold text-ink"
+            className="inline-flex items-center rounded-full border border-slate-200 px-4 py-3 text-sm font-semibold text-ink transition hover:border-accent/30 hover:bg-accentSoft"
           >
             View
           </Link>

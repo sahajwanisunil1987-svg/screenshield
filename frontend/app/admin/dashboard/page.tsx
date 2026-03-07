@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { AdminGuard } from "@/components/admin/admin-guard";
 import { AdminShell } from "@/components/admin/admin-shell";
-import { api, authHeaders } from "@/lib/api";
+import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
 
 export default function AdminDashboardPage() {
@@ -12,7 +13,12 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     if (!token) return;
-    api.get("/admin/dashboard", authHeaders(token)).then((response) => setData(response.data));
+    api
+      .get("/admin/dashboard", authHeaders(token))
+      .then((response) => setData(response.data))
+      .catch((error) => {
+        toast.error(getApiErrorMessage(error, "Unable to load dashboard"));
+      });
   }, [token]);
 
   return (

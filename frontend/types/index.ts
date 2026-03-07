@@ -48,7 +48,10 @@ export type Product = {
   inventory?: {
     stock: number;
     lowStockLimit: number;
+    warehouseCode?: string | null;
   } | null;
+  isFeatured?: boolean;
+  isActive?: boolean;
 };
 
 export type ProductListResponse = {

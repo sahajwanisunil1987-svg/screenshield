@@ -18,7 +18,7 @@ const schema = z.object({
 export default function AdminLoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
-  const { register, handleSubmit } = useForm<z.infer<typeof schema>>({
+  const { register, handleSubmit, setValue } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema)
   });
 
@@ -45,6 +45,16 @@ export default function AdminLoginPage() {
         <div className="mt-6 rounded-2xl bg-white/10 p-4 text-sm text-white/75">
           <p className="font-semibold text-white">Demo admin</p>
           <p>admin@sparekart.in / Admin@123</p>
+          <button
+            type="button"
+            onClick={() => {
+              setValue("email", "admin@sparekart.in");
+              setValue("password", "Admin@123");
+            }}
+            className="mt-3 rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-white"
+          >
+            Use Demo Credentials
+          </button>
         </div>
       </form>
     </div>

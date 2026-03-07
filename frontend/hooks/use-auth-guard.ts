@@ -6,7 +6,8 @@ import { useAuthStore } from "@/store/auth-store";
 
 export function useAuthGuard(role?: "ADMIN" | "CUSTOMER") {
   const router = useRouter();
-  const { user, hasHydrated } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
 
   useEffect(() => {
     if (!hasHydrated) {

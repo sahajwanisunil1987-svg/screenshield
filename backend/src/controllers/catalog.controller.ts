@@ -63,6 +63,14 @@ export const getProducts = async (req: Request, res: Response) => {
   res.json(await catalogService.listProducts(req.query));
 };
 
+export const getAdminProducts = async (_req: Request, res: Response) => {
+  res.json(await catalogService.getAdminProducts());
+};
+
+export const getAdminProductById = async (req: Request, res: Response) => {
+  res.json(await catalogService.getAdminProductById(getSingleParam(req.params.id)!));
+};
+
 export const searchProducts = async (req: Request, res: Response) => {
   res.json(await catalogService.listProducts(req.query));
 };

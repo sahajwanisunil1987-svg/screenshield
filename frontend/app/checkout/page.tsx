@@ -31,7 +31,8 @@ type FormValues = z.infer<typeof schema>;
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, clear } = useCartStore();
-  const { token, user } = useAuthStore();
+  const token = useAuthStore((state) => state.token);
+  const user = useAuthStore((state) => state.user);
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -49,6 +50,11 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!items.length) {
+      toast.error("Your cart is empty");
+      return;
+    }
+
     try {
       const response = await api.post(
         "/orders/create",
@@ -62,7 +68,8 @@ export default function CheckoutPage() {
             postalCode: values.postalCode,
             country: "India",
             phone: values.phone,
-            gstNumber: values.gstNumber
+            gstNumber: values.gstNumber,
+            email: values.email
           },
           paymentMethod: values.paymentMethod
         },

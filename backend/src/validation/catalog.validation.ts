@@ -31,6 +31,8 @@ export const productSchema = z.object({
   modelId: z.string().min(1),
   categoryId: z.string().min(1),
   stock: z.coerce.number().min(0).default(0),
+  lowStockLimit: z.coerce.number().min(0).max(999).default(5).optional(),
+  warehouseCode: z.string().max(50).optional(),
   isFeatured: z.boolean().default(false),
   isActive: z.boolean().default(true),
   images: z.array(z.object({ url: z.string().url(), alt: z.string().optional() })).min(1)

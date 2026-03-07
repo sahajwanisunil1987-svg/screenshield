@@ -20,6 +20,14 @@ router.get("/categories", catalogController.getCategories);
 router.get("/products", validate({ query: productSearchSchema }), catalogController.getProducts);
 router.get("/products/search", validate({ query: productSearchSchema }), catalogController.searchProducts);
 router.get("/products/:slug", catalogController.getProductBySlug);
+router.get("/admin/products", authenticate, requireAdmin, catalogController.getAdminProducts);
+router.get(
+  "/admin/products/:id",
+  authenticate,
+  requireAdmin,
+  validate({ params: idParamSchema }),
+  catalogController.getAdminProductById
+);
 
 router.post("/admin/brands", authenticate, requireAdmin, validate({ body: brandSchema }), catalogController.createBrand);
 router.put(
