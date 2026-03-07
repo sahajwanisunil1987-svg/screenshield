@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { Brand, Category, MobileModel } from "@/types";
 import { Button } from "../ui/button";
+import { SearchCombobox } from "../ui/search-combobox";
+import { Input } from "../ui/input";
 
 type HeroSearchProps = {
   brands: Brand[];
@@ -17,6 +19,7 @@ export function HeroSearch({ brands, models, categories }: HeroSearchProps) {
   const [brandSlug, setBrandSlug] = useState("");
   const [modelSlug, setModelSlug] = useState("");
   const [categorySlug, setCategorySlug] = useState("");
+  const [keyword, setKeyword] = useState("");
 
   const filteredModels = useMemo(() => {
     if (!brandSlug) return models;
@@ -33,48 +36,59 @@ export function HeroSearch({ brands, models, categories }: HeroSearchProps) {
     if (brandSlug) params.set("brand", brandSlug);
     if (modelSlug) params.set("model", modelSlug);
     if (categorySlug) params.set("category", categorySlug);
+    if (keyword.trim()) params.set("search", keyword.trim());
     router.push(`/products?${params.toString()}`);
   };
 
   return (
     <div className="rounded-[36px] border border-white/10 bg-white/10 p-5 backdrop-blur md:p-7">
-      <div className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
-        <select
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_1.2fr_auto]">
+        <SearchCombobox
+          label="Brand"
+          placeholder="Search brand"
+          options={brands.map((brand) => ({
+            label: brand.name,
+            value: brand.slug,
+            hint: brand.description ?? "Trusted mobile brand"
+          }))}
           value={brandSlug}
-          onChange={(event) => setBrandSlug(event.target.value)}
-          className="rounded-2xl border border-white/10 bg-white/95 px-4 py-4 text-sm text-ink outline-none"
-        >
-          <option value="">Select brand</option>
-          {brands.map((brand) => (
-            <option key={brand.id} value={brand.slug}>
-              {brand.name}
-            </option>
-          ))}
-        </select>
-        <select
+          onChange={setBrandSlug}
+        />
+        <SearchCombobox
+          label="Model"
+          placeholder={brandSlug ? "Search model" : "Choose brand first"}
+          options={filteredModels.map((model) => ({
+            label: model.name,
+            value: model.slug,
+            hint: model.brand?.name ?? "Compatible model"
+          }))}
           value={modelSlug}
-          onChange={(event) => setModelSlug(event.target.value)}
-          className="rounded-2xl border border-white/10 bg-white/95 px-4 py-4 text-sm text-ink outline-none"
-        >
-          <option value="">Select model</option>
-          {filteredModels.map((model) => (
-            <option key={model.id} value={model.slug}>
-              {model.name}
-            </option>
-          ))}
-        </select>
-        <select
+          onChange={setModelSlug}
+          disabled={!brandSlug && !filteredModels.length}
+        />
+        <SearchCombobox
+          label="Part Type"
+          placeholder="Search spare category"
+          options={categories.map((category) => ({
+            label: category.name,
+            value: category.slug,
+            hint: category.description ?? "Part category"
+          }))}
           value={categorySlug}
-          onChange={(event) => setCategorySlug(event.target.value)}
-          className="rounded-2xl border border-white/10 bg-white/95 px-4 py-4 text-sm text-ink outline-none"
-        >
-          <option value="">Select part type</option>
-          {categories.map((category) => (
-            <option key={category.id} value={category.slug}>
-              {category.name}
-            </option>
-          ))}
-        </select>
+          onChange={setCategorySlug}
+        />
+        <div>
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-white/60">Keyword</label>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate" />
+            <Input
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+              placeholder="Battery, display, charging port..."
+              className="border-white/10 bg-white/95 pl-11"
+            />
+          </div>
+        </div>
         <Button onClick={onSearch} className="gap-2">
           <Search className="h-4 w-4" />
           Find Parts
