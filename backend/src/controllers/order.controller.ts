@@ -68,3 +68,24 @@ export const createCoupon = async (req: Request, res: Response) => {
 
   res.status(StatusCodes.CREATED).json(coupon);
 };
+
+export const updateCoupon = async (req: Request, res: Response) => {
+  const coupon = await prisma.coupon.update({
+    where: { id: getSingleParam(req.params.id)! },
+    data: {
+      ...req.body,
+      code: req.body.code.toUpperCase(),
+      expiresAt: req.body.expiresAt ? new Date(req.body.expiresAt) : null
+    }
+  });
+
+  res.json(coupon);
+};
+
+export const deleteCoupon = async (req: Request, res: Response) => {
+  await prisma.coupon.delete({
+    where: { id: getSingleParam(req.params.id)! }
+  });
+
+  res.status(StatusCodes.NO_CONTENT).send();
+};

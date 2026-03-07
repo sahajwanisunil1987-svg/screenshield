@@ -22,7 +22,23 @@ export const me = async (req: Request, res: Response) => {
       email: true,
       phone: true,
       role: true,
-      createdAt: true
+      createdAt: true,
+      addresses: {
+        where: { isDefault: true },
+        take: 1,
+        select: {
+          fullName: true,
+          line1: true,
+          line2: true,
+          landmark: true,
+          city: true,
+          state: true,
+          postalCode: true,
+          country: true,
+          phone: true,
+          gstNumber: true
+        }
+      }
     }
   });
 

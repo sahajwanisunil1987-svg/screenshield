@@ -4,82 +4,43 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AdminGuard } from "@/components/admin/admin-guard";
 import { AdminShell } from "@/components/admin/admin-shell";
-import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
-import { useAuthStore } from "@/store/auth-store";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { ResourceManager } from "@/components/admin/resource-manager";
+import { api, getApiErrorMessage } from "@/lib/api";
+import { Brand } from "@/types";
 
 export default function AdminModelsPage() {
-  const token = useAuthStore((state) => state.token);
-  const [models, setModels] = useState<any[]>([]);
-  const [brands, setBrands] = useState<any[]>([]);
-  const [form, setForm] = useState({ name: "", brandId: "" });
-
-  const load = async () => {
-    try {
-      const [modelsResponse, brandsResponse] = await Promise.all([api.get("/models"), api.get("/brands")]);
-      setModels(modelsResponse.data);
-      setBrands(brandsResponse.data);
-    } catch (error) {
-      toast.error(getApiErrorMessage(error, "Unable to load models"));
-    }
-  };
+  const [brands, setBrands] = useState<Brand[]>([]);
 
   useEffect(() => {
-    load();
+    api
+      .get("/brands")
+      .then((response) => setBrands(response.data))
+      .catch((error) => {
+        toast.error(getApiErrorMessage(error, "Unable to load brands"));
+      });
   }, []);
 
   return (
     <AdminGuard>
       <AdminShell title="Models">
-        <div className="space-y-6 rounded-[28px] border border-white/10 bg-white/5 p-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            <Input placeholder="Model name" value={form.name} onChange={(event) => setForm((state) => ({ ...state, name: event.target.value }))} />
-            <select
-              value={form.brandId}
-              onChange={(event) => setForm((state) => ({ ...state, brandId: event.target.value }))}
-              className="rounded-2xl bg-white px-4 py-3 text-sm text-ink"
-            >
-              <option value="">Select brand</option>
-              {brands.map((brand) => (
-                <option key={brand.id} value={brand.id}>{brand.name}</option>
-              ))}
-            </select>
-            <Button
-              onClick={async () => {
-                try {
-                  await api.post("/admin/models", { ...form, isActive: true }, authHeaders(token));
-                  setForm({ name: "", brandId: "" });
-                  toast.success("Model created");
-                  load();
-                } catch (error) {
-                  toast.error(getApiErrorMessage(error, "Unable to create model"));
-                }
-              }}
-            >
-              Add model
-            </Button>
-          </div>
-          {models.map((model) => (
-            <div key={model.id} className="flex justify-between border-b border-white/10 pb-3 text-sm">
-              <span>{model.name}</span>
-              <button
-                className="text-red-400"
-                onClick={async () => {
-                  try {
-                    await api.delete(`/admin/models/${model.id}`, authHeaders(token));
-                    toast.success("Model deleted");
-                    load();
-                  } catch (error) {
-                    toast.error(getApiErrorMessage(error, "Unable to delete model"));
-                  }
-                }}
-              >
-                Delete
-              </button>
-            </div>
-          ))}
-        </div>
+        <ResourceManager
+          title="Models"
+          getUrl="/models"
+          createUrl="/admin/models"
+          updateBaseUrl="/admin/models"
+          deleteBaseUrl="/admin/models"
+          fields={[
+            { key: "name", placeholder: "Model name" },
+            {
+              key: "brandId",
+              placeholder: "Select brand",
+              type: "select",
+              options: brands.map((brand) => ({ label: brand.name, value: brand.id }))
+            }
+          ]}
+          subtitlePath="brand.name"
+          subtitlePrefix="Mapped to "
+        />
       </AdminShell>
     </AdminGuard>
   );

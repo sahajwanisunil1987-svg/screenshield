@@ -2,15 +2,22 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+import { toast } from "sonner";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { api, getApiErrorMessage } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import { useCartStore } from "@/store/cart-store";
 
 export default function CartPage() {
-  const { items, updateQty, removeItem } = useCartStore();
+  const { items, updateQty, removeItem, couponCode, couponDiscount, applyCoupon, clearCoupon } = useCartStore();
+  const [couponInput, setCouponInput] = useState(couponCode);
+  const [isApplying, setIsApplying] = useState(false);
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const shipping = subtotal > 999 ? 0 : 79;
+  const total = Math.max(subtotal - couponDiscount, 0) + shipping;
 
   return (
     <PageShell>
@@ -56,14 +63,57 @@ export default function CartPage() {
               </div>
               <div className="flex justify-between">
                 <span>Shipping</span>
-                <span>{subtotal > 999 ? "Free" : formatCurrency(79)}</span>
+                <span>{shipping === 0 ? "Free" : formatCurrency(shipping)}</span>
               </div>
+              {couponDiscount > 0 ? (
+                <div className="flex justify-between text-emerald-600">
+                  <span>Coupon ({couponCode})</span>
+                  <span>-{formatCurrency(couponDiscount)}</span>
+                </div>
+              ) : null}
               <div className="flex justify-between font-semibold text-ink">
                 <span>Total</span>
-                <span>{formatCurrency(subtotal > 999 ? subtotal : subtotal + 79)}</span>
+                <span>{formatCurrency(total)}</span>
               </div>
             </div>
-            <input className="mt-6 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm" placeholder="Coupon code" />
+            <div className="mt-6 flex gap-3">
+              <input
+                value={couponInput}
+                onChange={(event) => setCouponInput(event.target.value.toUpperCase())}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm"
+                placeholder="Coupon code"
+              />
+              <Button
+                type="button"
+                disabled={!couponInput.trim() || !items.length || isApplying}
+                onClick={async () => {
+                  setIsApplying(true);
+                  try {
+                    const response = await api.post("/coupons/validate", {
+                      code: couponInput.trim(),
+                      subtotal
+                    });
+                    applyCoupon({
+                      code: couponInput.trim().toUpperCase(),
+                      discount: Number(response.data.discount)
+                    });
+                    toast.success("Coupon applied");
+                  } catch (error) {
+                    clearCoupon();
+                    toast.error(getApiErrorMessage(error, "Unable to apply coupon"));
+                  } finally {
+                    setIsApplying(false);
+                  }
+                }}
+              >
+                {isApplying ? "..." : "Apply"}
+              </Button>
+            </div>
+            {couponCode ? (
+              <button type="button" className="mt-3 text-sm text-slate underline" onClick={clearCoupon}>
+                Remove coupon
+              </button>
+            ) : null}
             <Link href="/checkout" className="mt-4 block">
               <Button className="w-full">Proceed to Checkout</Button>
             </Link>

@@ -77,6 +77,30 @@ export const inventory = async (_req: Request, res: Response) => {
   res.json(items);
 };
 
+export const updateInventory = async (req: Request, res: Response) => {
+  const id = getSingleParam(req.params.id)!;
+  const item = await prisma.inventory.update({
+    where: { id },
+    data: {
+      stock: req.body.stock,
+      lowStockLimit: req.body.lowStockLimit,
+      warehouseCode: req.body.warehouseCode,
+      lastRestockedAt: req.body.lastRestockedAt ? new Date(req.body.lastRestockedAt) : req.body.stock > 0 ? new Date() : undefined
+    },
+    include: {
+      product: {
+        include: {
+          brand: true,
+          model: true,
+          category: true
+        }
+      }
+    }
+  });
+
+  res.json(item);
+};
+
 export const users = async (_req: Request, res: Response) => {
   const items = await prisma.user.findMany({
     where: { role: "CUSTOMER" },

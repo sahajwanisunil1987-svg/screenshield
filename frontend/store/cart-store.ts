@@ -11,9 +11,13 @@ type CartItem = {
 
 type CartStore = {
   items: CartItem[];
+  couponCode: string;
+  couponDiscount: number;
   addItem: (product: Product) => void;
   updateQty: (productId: string, quantity: number) => void;
   removeItem: (productId: string) => void;
+  applyCoupon: (payload: { code: string; discount: number }) => void;
+  clearCoupon: () => void;
   clear: () => void;
 };
 
@@ -21,6 +25,8 @@ export const useCartStore = create<CartStore>()(
   persist(
     (set) => ({
       items: [],
+      couponCode: "",
+      couponDiscount: 0,
       addItem: (product) =>
         set((state) => {
           const existing = state.items.find((item) => item.product.id === product.id);
@@ -46,7 +52,9 @@ export const useCartStore = create<CartStore>()(
         set((state) => ({
           items: state.items.filter((item) => item.product.id !== productId)
         })),
-      clear: () => set({ items: [] })
+      applyCoupon: ({ code, discount }) => set({ couponCode: code, couponDiscount: discount }),
+      clearCoupon: () => set({ couponCode: "", couponDiscount: 0 }),
+      clear: () => set({ items: [], couponCode: "", couponDiscount: 0 })
     }),
     { name: "sparekart-cart" }
   )

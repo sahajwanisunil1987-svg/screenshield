@@ -10,11 +10,13 @@ export default function AdminCategoriesPage() {
           title="Categories"
           getUrl="/categories"
           createUrl="/admin/categories"
+          updateBaseUrl="/admin/categories"
           deleteBaseUrl="/admin/categories"
           fields={[
             { key: "name", placeholder: "Category name" },
             { key: "description", placeholder: "Description" }
           ]}
+          subtitlePath="description"
         />
       </AdminShell>
     </AdminGuard>

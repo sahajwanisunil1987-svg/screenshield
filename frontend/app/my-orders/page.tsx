@@ -32,7 +32,7 @@ export default function MyOrdersPage() {
         <div className="mt-10 space-y-4">
           {orders.length ? (
             orders.map((order) => (
-              <div key={order.id} className="rounded-[28px] bg-white p-6 shadow-card">
+              <div key={order.id} className="space-y-5 rounded-[28px] bg-white p-6 shadow-card">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="font-semibold text-ink">{order.orderNumber}</p>
@@ -42,6 +42,25 @@ export default function MyOrdersPage() {
                     <p className="font-semibold text-ink">{formatCurrency(order.totalAmount)}</p>
                     <p className="text-sm text-accent">{order.status}</p>
                   </div>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {order.items.map((item) => (
+                    <div key={item.id} className="rounded-2xl bg-[#f5f8fb] p-4">
+                      <p className="font-medium text-ink">{item.productName}</p>
+                      <p className="mt-1 text-sm text-slate">SKU {item.productSku}</p>
+                      <p className="mt-1 text-sm text-slate">Qty {item.quantity}</p>
+                      <p className="mt-2 text-sm font-semibold text-ink">{formatCurrency(item.totalPrice)}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate">
+                  <span>Payment: {order.paymentStatus}</span>
+                  <span>
+                    Track:{" "}
+                    <a href={`/track-order?orderNumber=${order.orderNumber}`} className="font-semibold text-accent underline">
+                      {order.orderNumber}
+                    </a>
+                  </span>
                 </div>
               </div>
             ))

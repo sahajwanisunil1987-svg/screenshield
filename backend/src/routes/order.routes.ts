@@ -7,6 +7,7 @@ import {
   couponSchema,
   couponValidationSchema,
   createOrderSchema,
+  inventoryUpdateSchema,
   updateOrderStatusSchema
 } from "../validation/order.validation.js";
 
@@ -26,6 +27,20 @@ router.post(
   requireAdmin,
   validate({ body: couponSchema }),
   orderController.createCoupon
+);
+router.put(
+  "/admin/coupons/:id",
+  authenticate,
+  requireAdmin,
+  validate({ params: idParamSchema, body: couponSchema }),
+  orderController.updateCoupon
+);
+router.delete(
+  "/admin/coupons/:id",
+  authenticate,
+  requireAdmin,
+  validate({ params: idParamSchema }),
+  orderController.deleteCoupon
 );
 router.patch(
   "/admin/orders/:id/status",

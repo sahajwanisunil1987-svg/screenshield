@@ -10,11 +10,13 @@ export default function AdminBrandsPage() {
           title="Brands"
           getUrl="/brands"
           createUrl="/admin/brands"
+          updateBaseUrl="/admin/brands"
           deleteBaseUrl="/admin/brands"
           fields={[
             { key: "name", placeholder: "Brand name" },
             { key: "description", placeholder: "Description" }
           ]}
+          subtitlePath="description"
         />
       </AdminShell>
     </AdminGuard>

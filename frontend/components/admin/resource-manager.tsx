@@ -7,19 +7,55 @@ import { useAuthStore } from "@/store/auth-store";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 
+type ResourceField = {
+  key: string;
+  placeholder: string;
+  type?: "text" | "select";
+  options?: Array<{ label: string; value: string }>;
+};
+
+type ResourceItem = {
+  id: string;
+  name?: string;
+  code?: string;
+  description?: string | null;
+  isActive?: boolean;
+  [key: string]: unknown;
+};
+
 type ResourceManagerProps = {
   title: string;
   getUrl: string;
   createUrl: string;
+  updateBaseUrl: string;
   deleteBaseUrl: string;
-  fields: Array<{ key: string; placeholder: string }>;
+  fields: ResourceField[];
+  subtitlePath?: string;
+  subtitlePrefix?: string;
 };
 
-export function ResourceManager({ title, getUrl, createUrl, deleteBaseUrl, fields }: ResourceManagerProps) {
+const createEmptyForm = (fields: ResourceField[]) =>
+  fields.reduce<Record<string, string>>((acc, field) => {
+    acc[field.key] = "";
+    return acc;
+  }, {});
+
+export function ResourceManager({
+  title,
+  getUrl,
+  createUrl,
+  updateBaseUrl,
+  deleteBaseUrl,
+  fields,
+  subtitlePath,
+  subtitlePrefix
+}: ResourceManagerProps) {
   const token = useAuthStore((state) => state.token);
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
-  const [items, setItems] = useState<any[]>([]);
-  const [form, setForm] = useState<Record<string, string>>({});
+  const [items, setItems] = useState<ResourceItem[]>([]);
+  const [form, setForm] = useState<Record<string, string>>(createEmptyForm(fields));
+  const [isActive, setIsActive] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const load = async () => {
     if (!token) {
@@ -34,6 +70,12 @@ export function ResourceManager({ title, getUrl, createUrl, deleteBaseUrl, field
     }
   };
 
+  const resetForm = () => {
+    setForm(createEmptyForm(fields));
+    setIsActive(true);
+    setEditingId(null);
+  };
+
   useEffect(() => {
     if (!hasHydrated || !token) {
       return;
@@ -42,51 +84,143 @@ export function ResourceManager({ title, getUrl, createUrl, deleteBaseUrl, field
     load();
   }, [getUrl, hasHydrated, token]);
 
+  const getSubtitle = (item: ResourceItem) => {
+    if (!subtitlePath) {
+      return undefined;
+    }
+
+    const value = subtitlePath.split(".").reduce<unknown>((current, key) => {
+      if (!current || typeof current !== "object") {
+        return undefined;
+      }
+
+      return (current as Record<string, unknown>)[key];
+    }, item);
+
+    if (typeof value !== "string" || !value.trim()) {
+      return undefined;
+    }
+
+    return subtitlePrefix ? `${subtitlePrefix}${value}` : value;
+  };
+
   return (
     <div className="space-y-6 rounded-[28px] border border-white/10 bg-white/5 p-6">
-      <h3 className="font-semibold">{title}</h3>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="font-semibold">{title}</h3>
+          <p className="mt-1 text-sm text-white/60">
+            {editingId ? `Editing ${title.slice(0, -1).toLowerCase()}` : `Create and manage ${title.toLowerCase()}`}
+          </p>
+        </div>
+        {editingId ? (
+          <Button variant="ghost" onClick={resetForm}>
+            Cancel edit
+          </Button>
+        ) : null}
+      </div>
+      <div className={`grid gap-4 ${fields.length > 2 ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
         {fields.map((field) => (
-          <Input
-            key={field.key}
-            placeholder={field.placeholder}
-            value={form[field.key] ?? ""}
-            onChange={(event) => setForm((state) => ({ ...state, [field.key]: event.target.value }))}
-          />
+          field.type === "select" ? (
+            <select
+              key={field.key}
+              value={form[field.key] ?? ""}
+              onChange={(event) => setForm((state) => ({ ...state, [field.key]: event.target.value }))}
+              className="rounded-2xl bg-white px-4 py-3 text-sm text-ink"
+            >
+              <option value="">{field.placeholder}</option>
+              {field.options?.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <Input
+              key={field.key}
+              placeholder={field.placeholder}
+              value={form[field.key] ?? ""}
+              onChange={(event) => setForm((state) => ({ ...state, [field.key]: event.target.value }))}
+            />
+          )
         ))}
+        <label className="flex items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 text-sm text-white">
+          <input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />
+          Active
+        </label>
       </div>
       <Button
         onClick={async () => {
           try {
-            await api.post(createUrl, { ...form, isActive: true }, authHeaders(token));
-            toast.success(`${title} created`);
-            setForm({});
+            if (editingId) {
+              await api.put(`${updateBaseUrl}/${editingId}`, { ...form, isActive }, authHeaders(token));
+              toast.success(`${title.slice(0, -1)} updated`);
+            } else {
+              await api.post(createUrl, { ...form, isActive }, authHeaders(token));
+              toast.success(`${title.slice(0, -1)} created`);
+            }
+
+            resetForm();
             load();
           } catch (error) {
-            toast.error(getApiErrorMessage(error, `Unable to create ${title.toLowerCase()}`));
+            toast.error(
+              getApiErrorMessage(error, `Unable to ${editingId ? "update" : "create"} ${title.toLowerCase()}`)
+            );
           }
         }}
       >
-        Add
+        {editingId ? "Save changes" : "Add"}
       </Button>
       <div className="space-y-3 text-sm">
         {items.map((item) => (
-          <div key={item.id} className="flex items-center justify-between border-b border-white/10 pb-3">
-            <span>{item.name ?? item.code}</span>
-            <button
-              className="text-red-400"
-              onClick={async () => {
-                try {
-                  await api.delete(`${deleteBaseUrl}/${item.id}`, authHeaders(token));
-                  toast.success("Deleted");
-                  load();
-                } catch (error) {
-                  toast.error(getApiErrorMessage(error, "Unable to delete item"));
-                }
-              }}
-            >
-              Delete
-            </button>
+          <div key={item.id} className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-3">
+                <span className="font-medium text-white">{item.name ?? item.code}</span>
+                <span
+                  className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${
+                    item.isActive ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-500/15 text-amber-300"
+                  }`}
+                >
+                  {item.isActive ? "Active" : "Inactive"}
+                </span>
+              </div>
+              {getSubtitle(item) ? <p className="text-white/60">{getSubtitle(item)}</p> : null}
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                className="text-cyan-300"
+                onClick={() => {
+                  const nextForm = fields.reduce<Record<string, string>>((acc, field) => {
+                    acc[field.key] = String(item[field.key] ?? "");
+                    return acc;
+                  }, {});
+
+                  setForm(nextForm);
+                  setIsActive(Boolean(item.isActive));
+                  setEditingId(item.id);
+                }}
+              >
+                Edit
+              </button>
+              <button
+                className="text-red-400"
+                onClick={async () => {
+                  try {
+                    await api.delete(`${deleteBaseUrl}/${item.id}`, authHeaders(token));
+                    toast.success("Deleted");
+                    if (editingId === item.id) {
+                      resetForm();
+                    }
+                    load();
+                  } catch (error) {
+                    toast.error(getApiErrorMessage(error, "Unable to delete item"));
+                  }
+                }}
+              >
+                Delete
+              </button>
+            </div>
           </div>
         ))}
       </div>

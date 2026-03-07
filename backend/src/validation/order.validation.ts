@@ -47,3 +47,10 @@ export const couponSchema = z.object({
   expiresAt: z.string().datetime().optional(),
   isActive: z.boolean().default(true)
 });
+
+export const inventoryUpdateSchema = z.object({
+  stock: z.coerce.number().int().min(0),
+  lowStockLimit: z.coerce.number().int().min(0).max(999),
+  warehouseCode: z.string().max(50).optional(),
+  lastRestockedAt: z.string().datetime().optional()
+});

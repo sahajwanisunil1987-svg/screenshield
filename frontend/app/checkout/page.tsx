@@ -1,6 +1,7 @@
 "use client";
 
 import Script from "next/script";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,11 +31,14 @@ type FormValues = z.infer<typeof schema>;
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, clear } = useCartStore();
+  const { items, clear, couponCode, couponDiscount, clearCoupon } = useCartStore();
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
+  const setAuth = useAuthStore((state) => state.setAuth);
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const shipping = subtotal > 999 ? 0 : 79;
+  const total = Math.max(subtotal - couponDiscount, 0) + shipping;
+  const { register, handleSubmit, watch, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       email: user?.email ?? "",
@@ -42,6 +46,38 @@ export default function CheckoutPage() {
     }
   });
   const paymentMethod = watch("paymentMethod");
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+
+    api
+      .get("/auth/me", authHeaders(token))
+      .then((response) => {
+        const profile = response.data;
+        if (!profile) return;
+
+        setAuth(token, profile);
+        const address = profile.addresses?.[0];
+
+        reset((current) => ({
+          ...current,
+          fullName: address?.fullName ?? profile.name ?? "",
+          line1: address?.line1 ?? "",
+          city: address?.city ?? "",
+          state: address?.state ?? "",
+          postalCode: address?.postalCode ?? "",
+          phone: address?.phone ?? profile.phone ?? "",
+          email: profile.email ?? "",
+          gstNumber: address?.gstNumber ?? "",
+          paymentMethod: current.paymentMethod ?? "COD"
+        }));
+      })
+      .catch(() => {
+        // Auth interceptor already handles hard auth failures.
+      });
+  }, [reset, setAuth, token]);
 
   const onSubmit = handleSubmit(async (values) => {
     if (!token) {
@@ -71,6 +107,7 @@ export default function CheckoutPage() {
             gstNumber: values.gstNumber,
             email: values.email
           },
+          couponCode: couponCode || undefined,
           paymentMethod: values.paymentMethod
         },
         authHeaders(token)
@@ -109,6 +146,7 @@ export default function CheckoutPage() {
               );
 
               clear();
+              clearCoupon();
               toast.success("Payment verified");
               router.push(`/order-success?orderNumber=${response.data.orderNumber}`);
             } catch (error) {
@@ -122,6 +160,7 @@ export default function CheckoutPage() {
       }
 
       clear();
+      clearCoupon();
       toast.success("Order placed successfully");
       router.push(`/order-success?orderNumber=${response.data.orderNumber}`);
     } catch (error) {
@@ -168,6 +207,9 @@ export default function CheckoutPage() {
           </form>
           <div className="rounded-[32px] bg-white p-8 shadow-card">
             <h2 className="text-xl font-semibold text-ink">Summary</h2>
+            <p className="mt-2 text-sm text-slate">
+              Your default saved address is auto-filled here and refreshed after each successful order.
+            </p>
             <div className="mt-6 space-y-4">
               {items.map((item) => (
                 <div key={item.product.id} className="flex items-center justify-between text-sm">
@@ -181,9 +223,19 @@ export default function CheckoutPage() {
                 <span>Subtotal</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
+              {couponDiscount > 0 ? (
+                <div className="mt-2 flex justify-between text-emerald-600">
+                  <span>Coupon ({couponCode})</span>
+                  <span>-{formatCurrency(couponDiscount)}</span>
+                </div>
+              ) : null}
+              <div className="mt-2 flex justify-between">
+                <span>Shipping</span>
+                <span>{shipping === 0 ? "Free" : formatCurrency(shipping)}</span>
+              </div>
               <div className="mt-2 flex justify-between font-semibold text-ink">
                 <span>Total</span>
-                <span>{formatCurrency(subtotal > 999 ? subtotal : subtotal + 79)}</span>
+                <span>{formatCurrency(total)}</span>
               </div>
             </div>
           </div>

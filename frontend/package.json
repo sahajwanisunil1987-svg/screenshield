@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit -p tsconfig.lint.json"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",

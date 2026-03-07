@@ -3,6 +3,7 @@ export type Brand = {
   name: string;
   slug: string;
   description?: string | null;
+  isActive?: boolean;
 };
 
 export type MobileModel = {
@@ -11,6 +12,7 @@ export type MobileModel = {
   slug: string;
   brandId: string;
   brand?: Brand;
+  isActive?: boolean;
 };
 
 export type Category = {
@@ -18,6 +20,7 @@ export type Category = {
   name: string;
   slug: string;
   description?: string | null;
+  isActive?: boolean;
 };
 
 export type ProductImage = {
@@ -69,10 +72,10 @@ export type Review = {
   rating: number;
   title?: string | null;
   comment: string;
+  createdAt: string;
   user: {
     name: string;
   };
-  createdAt: string;
 };
 
 export type Order = {
@@ -102,4 +105,16 @@ export type User = {
   email: string;
   role: "CUSTOMER" | "ADMIN";
   phone?: string | null;
+  addresses?: Array<{
+    fullName: string;
+    line1: string;
+    line2?: string | null;
+    landmark?: string | null;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    phone: string;
+    gstNumber?: string | null;
+  }>;
 };

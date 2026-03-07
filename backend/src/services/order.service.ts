@@ -121,7 +121,7 @@ export const createOrder = async (
           invoiceNumber: createInvoiceNumber(),
           gstin: payload.address.gstNumber,
           billingName: payload.address.fullName as string,
-          billingEmail: undefined,
+          billingEmail: payload.address.email as string | undefined,
           billingPhone: payload.address.phone as string
         }
       }
@@ -156,6 +156,59 @@ export const createOrder = async (
       data: { usedCount: { increment: 1 } }
     });
   }
+
+  const existingDefaultAddress = await prisma.address.findFirst({
+    where: { userId, isDefault: true },
+    select: { id: true }
+  });
+
+  await prisma.address.upsert({
+    where: existingDefaultAddress ? { id: existingDefaultAddress.id } : { id: "__new_default_address__" },
+    update: {
+      fullName: payload.address.fullName as string,
+      line1: payload.address.line1 as string,
+      line2: payload.address.line2 as string | undefined,
+      landmark: payload.address.landmark as string | undefined,
+      city: payload.address.city as string,
+      state: payload.address.state as string,
+      postalCode: (payload.address.postalCode ?? payload.address.pincode) as string,
+      country: (payload.address.country as string | undefined) ?? "India",
+      phone: payload.address.phone as string,
+      gstNumber: payload.address.gstNumber as string | undefined,
+      isDefault: true
+    },
+    create: {
+      userId,
+      fullName: payload.address.fullName as string,
+      line1: payload.address.line1 as string,
+      line2: payload.address.line2 as string | undefined,
+      landmark: payload.address.landmark as string | undefined,
+      city: payload.address.city as string,
+      state: payload.address.state as string,
+      postalCode: (payload.address.postalCode ?? payload.address.pincode) as string,
+      country: (payload.address.country as string | undefined) ?? "India",
+      phone: payload.address.phone as string,
+      gstNumber: payload.address.gstNumber as string | undefined,
+      isDefault: true
+    }
+  }).catch(async () => {
+    await prisma.address.create({
+      data: {
+        userId,
+        fullName: payload.address.fullName as string,
+        line1: payload.address.line1 as string,
+        line2: payload.address.line2 as string | undefined,
+        landmark: payload.address.landmark as string | undefined,
+        city: payload.address.city as string,
+        state: payload.address.state as string,
+        postalCode: (payload.address.postalCode ?? payload.address.pincode) as string,
+        country: (payload.address.country as string | undefined) ?? "India",
+        phone: payload.address.phone as string,
+        gstNumber: payload.address.gstNumber as string | undefined,
+        isDefault: true
+      }
+    });
+  });
 
   return order;
 };
