@@ -4,6 +4,7 @@ import { authenticate, requireAdmin } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
 import { idParamSchema } from "../validation/common.js";
 import {
+  adminCouponListSchema,
   adminOrderListSchema,
   couponSchema,
   couponValidationSchema,
@@ -27,7 +28,13 @@ router.get(
   validate({ query: adminOrderListSchema }),
   orderController.adminOrders
 );
-router.get("/admin/coupons", authenticate, requireAdmin, orderController.adminCoupons);
+router.get(
+  "/admin/coupons",
+  authenticate,
+  requireAdmin,
+  validate({ query: adminCouponListSchema }),
+  orderController.adminCoupons
+);
 router.post(
   "/admin/coupons",
   authenticate,

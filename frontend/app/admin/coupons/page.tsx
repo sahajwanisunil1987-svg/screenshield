@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AdminGuard } from "@/components/admin/admin-guard";
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -8,6 +8,7 @@ import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Coupon, PaginatedResponse } from "@/types";
 
 const emptyForm = {
   code: "",
@@ -23,14 +24,30 @@ const emptyForm = {
 
 export default function AdminCouponsPage() {
   const token = useAuthStore((state) => state.token);
-  const [coupons, setCoupons] = useState<any[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, pages: 1 });
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
+  const [typeFilter, setTypeFilter] = useState<"ALL" | "PERCENTAGE" | "FLAT">("ALL");
+  const [page, setPage] = useState(1);
 
   const load = async () => {
     try {
-      const response = await api.get("/admin/coupons", authHeaders(token));
-      setCoupons(response.data);
+      const config = authHeaders(token);
+      const response = await api.get<PaginatedResponse<Coupon>>("/admin/coupons", {
+        ...config,
+        params: {
+          search: query || undefined,
+          status: statusFilter,
+          type: typeFilter,
+          page,
+          limit: 12
+        }
+      });
+      setCoupons(response.data.items);
+      setPagination(response.data.pagination);
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Unable to load coupons"));
     }
@@ -44,7 +61,19 @@ export default function AdminCouponsPage() {
   useEffect(() => {
     if (!token) return;
     load();
-  }, [token]);
+  }, [page, query, statusFilter, token, typeFilter]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, statusFilter, typeFilter]);
+
+  const pageNumbers = useMemo(
+    () =>
+      Array.from({ length: pagination.pages }, (_, index) => index + 1).filter((entry) =>
+        entry === 1 || entry === pagination.pages || Math.abs(entry - pagination.page) <= 1
+      ),
+    [pagination.page, pagination.pages]
+  );
 
   return (
     <AdminGuard>
@@ -61,6 +90,30 @@ export default function AdminCouponsPage() {
               </Button>
             ) : null}
           </div>
+          <div className="grid gap-3 lg:grid-cols-[1.5fr_repeat(2,minmax(0,220px))]">
+            <Input placeholder="Search code or description" value={query} onChange={(event) => setQuery(event.target.value)} />
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value as "ALL" | "ACTIVE" | "INACTIVE")}
+              className="rounded-2xl bg-white px-4 py-3 text-sm text-ink"
+            >
+              <option value="ALL">All statuses</option>
+              <option value="ACTIVE">Active only</option>
+              <option value="INACTIVE">Inactive only</option>
+            </select>
+            <select
+              value={typeFilter}
+              onChange={(event) => setTypeFilter(event.target.value as "ALL" | "PERCENTAGE" | "FLAT")}
+              className="rounded-2xl bg-white px-4 py-3 text-sm text-ink"
+            >
+              <option value="ALL">All types</option>
+              <option value="PERCENTAGE">Percentage</option>
+              <option value="FLAT">Flat</option>
+            </select>
+          </div>
+          <p className="text-sm text-white/60">
+            {pagination.total} coupons found · page {pagination.page} of {pagination.pages}
+          </p>
           <div className="grid gap-4 md:grid-cols-4">
             <Input placeholder="Code" value={form.code} onChange={(event) => setForm((state) => ({ ...state, code: event.target.value.toUpperCase() }))} />
             <Input placeholder="Description" value={form.description} onChange={(event) => setForm((state) => ({ ...state, description: event.target.value }))} />
@@ -106,6 +159,7 @@ export default function AdminCouponsPage() {
           <Button
             onClick={async () => {
               try {
+                const config = authHeaders(token);
                 const payload = {
                   code: form.code,
                   description: form.description || undefined,
@@ -119,10 +173,10 @@ export default function AdminCouponsPage() {
                 };
 
                 if (editingId) {
-                  await api.put(`/admin/coupons/${editingId}`, payload, authHeaders(token));
+                  await api.put(`/admin/coupons/${editingId}`, payload, config);
                   toast.success("Coupon updated");
                 } else {
-                  await api.post("/admin/coupons", payload, authHeaders(token));
+                  await api.post("/admin/coupons", payload, config);
                   toast.success("Coupon created");
                 }
 
@@ -135,6 +189,11 @@ export default function AdminCouponsPage() {
           >
             {editingId ? "Save changes" : "Add coupon"}
           </Button>
+          {!coupons.length ? (
+            <div className="rounded-[24px] border border-dashed border-white/10 bg-black/10 px-6 py-10 text-center text-sm text-white/55">
+              No coupons match the current search and filters.
+            </div>
+          ) : null}
           {coupons.map((coupon) => (
             <div key={coupon.id} className="space-y-3 border-b border-white/10 pb-4 text-sm">
               <div className="flex flex-wrap items-start justify-between gap-4">
@@ -196,6 +255,45 @@ export default function AdminCouponsPage() {
               </div>
             </div>
           ))}
+          {pagination.pages > 1 ? (
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.max(current - 1, 1))}
+                disabled={pagination.page === 1}
+                className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:text-white/30 hover:bg-white/10"
+              >
+                Previous
+              </button>
+              {pageNumbers.map((entry, index) => {
+                const previousPage = pageNumbers[index - 1];
+                const showGap = previousPage && entry - previousPage > 1;
+
+                return (
+                  <div key={entry} className="flex items-center gap-3">
+                    {showGap ? <span className="text-white/40">…</span> : null}
+                    <button
+                      type="button"
+                      onClick={() => setPage(entry)}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                        entry === pagination.page ? "bg-accent text-white" : "border border-white/10 text-white hover:bg-white/10"
+                      }`}
+                    >
+                      {entry}
+                    </button>
+                  </div>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.min(current + 1, pagination.pages))}
+                disabled={pagination.page === pagination.pages}
+                className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:text-white/30 hover:bg-white/10"
+              >
+                Next
+              </button>
+            </div>
+          ) : null}
         </div>
       </AdminShell>
     </AdminGuard>

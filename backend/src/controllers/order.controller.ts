@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { prisma } from "../lib/prisma.js";
@@ -49,12 +50,46 @@ export const updateStatus = async (req: Request, res: Response) => {
   res.json(await orderService.updateOrderStatus(getSingleParam(req.params.id)!, req.body));
 };
 
-export const adminCoupons = async (_req: Request, res: Response) => {
-  const coupons = await prisma.coupon.findMany({
-    orderBy: { createdAt: "desc" }
-  });
+export const adminCoupons = async (req: Request, res: Response) => {
+  const page = Number(req.query.page ?? 1);
+  const limit = Number(req.query.limit ?? 12);
+  const search = String(req.query.search ?? "").trim();
+  const status = String(req.query.status ?? "ALL");
+  const type = String(req.query.type ?? "ALL");
 
-  res.json(coupons);
+  const where: Prisma.CouponWhereInput = {
+    ...(search
+      ? {
+          OR: [
+            { code: { contains: search, mode: "insensitive" } },
+            { description: { contains: search, mode: "insensitive" } }
+          ]
+        }
+      : {}),
+    ...(status === "ACTIVE" ? { isActive: true } : {}),
+    ...(status === "INACTIVE" ? { isActive: false } : {}),
+    ...(type !== "ALL" ? { type: type as "PERCENTAGE" | "FLAT" } : {})
+  };
+
+  const [items, total] = await Promise.all([
+    prisma.coupon.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit
+    }),
+    prisma.coupon.count({ where })
+  ]);
+
+  res.json({
+    items,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  });
 };
 
 export const createCoupon = async (req: Request, res: Response) => {

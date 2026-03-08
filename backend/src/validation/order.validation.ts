@@ -66,3 +66,11 @@ export const adminOrderListSchema = z.object({
   page: z.coerce.number().int().min(1).default(1).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(8).optional()
 });
+
+export const adminCouponListSchema = z.object({
+  search: z.string().optional(),
+  status: z.enum(["ALL", "ACTIVE", "INACTIVE"]).default("ALL").optional(),
+  type: z.enum(["ALL", "PERCENTAGE", "FLAT"]).default("ALL").optional(),
+  page: z.coerce.number().int().min(1).default(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(12).optional()
+});

@@ -165,6 +165,20 @@ export type InventoryItem = {
   product: Product;
 };
 
+export type Coupon = {
+  id: string;
+  code: string;
+  description?: string | null;
+  type: "PERCENTAGE" | "FLAT";
+  value: number;
+  minOrderValue?: number | null;
+  maxDiscount?: number | null;
+  usageLimit?: number | null;
+  usedCount: number;
+  expiresAt?: string | null;
+  isActive: boolean;
+};
+
 export type SearchSuggestion = {
   id: string;
   type: "product";
