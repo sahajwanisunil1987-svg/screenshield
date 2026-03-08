@@ -7,16 +7,23 @@
   --color-ink: #08111f;
   --color-accent: #0f766e;
   --color-accent-soft: #d7f4ee;
+  --color-ember-soft: #fff0e4;
   --color-slate: #5b6474;
   --color-panel: #fffdf8;
   --color-page: #f4f7fb;
   --shadow-card: 0 24px 60px rgba(8, 17, 31, 0.08);
+  --shadow-card-strong: 0 30px 90px rgba(8, 17, 31, 0.12);
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background:
     radial-gradient(circle at top left, rgba(15, 118, 110, 0.08), transparent 20%),
-    radial-gradient(circle at top right, rgba(249, 115, 22, 0.08), transparent 18%),
+    radial-gradient(circle at top right, rgba(249, 115, 22, 0.1), transparent 18%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0)),
     var(--color-page);
   color: var(--color-ink);
   font-family: Manrope, "Avenir Next", "Segoe UI", sans-serif;
@@ -37,6 +44,32 @@ h6 {
 
 ::selection {
   background: rgba(15, 118, 110, 0.18);
+}
+
+.bg-page-wash {
+  background:
+    radial-gradient(circle at 15% 0%, rgba(15, 118, 110, 0.09), transparent 22%),
+    radial-gradient(circle at 85% 5%, rgba(249, 115, 22, 0.11), transparent 18%),
+    radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.7), transparent 28%),
+    var(--color-page);
+}
+
+.bg-hero-grid {
+  background:
+    linear-gradient(135deg, rgba(5, 12, 23, 0.9), rgba(8, 17, 31, 0.75)),
+    radial-gradient(circle at top left, rgba(34, 211, 238, 0.24), transparent 24%),
+    radial-gradient(circle at top right, rgba(249, 115, 22, 0.22), transparent 18%),
+    #07111f;
+}
+
+.theme-surface {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 253, 248, 0.92));
+  box-shadow: var(--shadow-card);
+}
+
+.theme-surface-strong {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 248, 251, 0.96));
+  box-shadow: var(--shadow-card-strong);
 }
 
 .admin-theme[data-admin-theme="light"] {
