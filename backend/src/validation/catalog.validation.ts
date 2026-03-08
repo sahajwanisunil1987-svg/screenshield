@@ -47,3 +47,11 @@ export const productSearchSchema = z.object({
   page: z.coerce.number().min(1).default(1).optional(),
   limit: z.coerce.number().min(1).max(40).default(12).optional()
 });
+
+export const productSuggestionSchema = z.object({
+  q: z.string().min(2),
+  brand: z.string().optional(),
+  model: z.string().optional(),
+  category: z.string().optional(),
+  limit: z.coerce.number().min(1).max(10).default(6).optional()
+});

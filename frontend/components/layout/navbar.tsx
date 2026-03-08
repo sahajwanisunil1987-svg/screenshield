@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Heart, LogOut, Search, ShoppingBag, Truck } from "lucide-react";
+import { Heart, LogOut, ShoppingBag, Truck } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 import { useWishlistStore } from "@/store/wishlist-store";
 import { useAuthStore } from "@/store/auth-store";
-import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
+import { SearchSuggestion } from "@/types";
+import { SearchAutocomplete } from "@/components/ui/search-autocomplete";
 
 export function Navbar() {
   const router = useRouter();
@@ -40,13 +41,15 @@ export function Navbar() {
             onSearch();
           }}
         >
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/55" />
-            <Input
+          <div className="flex-1">
+            <SearchAutocomplete
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={setSearch}
+              onSubmit={() => onSearch()}
+              onSuggestionSelect={(suggestion: SearchSuggestion) => router.push(`/products/${suggestion.slug}`)}
               placeholder="Search by brand, model, part, or SKU"
-              className="border-white/10 bg-white/5 pl-11 text-white placeholder:text-white/45 focus:border-white/20 focus:ring-white/10"
+              inputClassName="border-white/10 bg-white/5 text-white placeholder:text-white/45 focus:border-white/20 focus:ring-white/10"
+              dropdownClassName="bg-white"
             />
           </div>
           <button

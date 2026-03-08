@@ -1,9 +1,17 @@
+import type { Metadata } from "next";
 import { PageShell } from "@/components/layout/page-shell";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { buildMetadata } from "@/lib/seo";
 import { fetchApi } from "@/lib/server-api";
 import { MobileModel } from "@/types";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = buildMetadata({
+  title: "Supported Mobile Models",
+  description:
+    "Find supported phone models and filter directly into compatible SpareKart parts for faster discovery."
+});
 
 export default async function ModelsPage() {
   const models = await fetchApi<MobileModel[]>("/models");

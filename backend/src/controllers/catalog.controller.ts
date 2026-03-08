@@ -75,6 +75,10 @@ export const searchProducts = async (req: Request, res: Response) => {
   res.json(await catalogService.listProducts(req.query));
 };
 
+export const getProductSuggestions = async (req: Request, res: Response) => {
+  res.json(await catalogService.getProductSuggestions(req.query));
+};
+
 export const getProductBySlug = async (req: Request, res: Response) => {
   const product = await catalogService.getProductBySlug(getSingleParam(req.params.slug)!);
   const relatedProducts = await prisma.product.findMany({

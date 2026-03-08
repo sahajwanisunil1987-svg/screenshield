@@ -1,9 +1,17 @@
+import type { Metadata } from "next";
 import { PageShell } from "@/components/layout/page-shell";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { buildMetadata } from "@/lib/seo";
 import { fetchApi } from "@/lib/server-api";
 import { Category } from "@/types";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = buildMetadata({
+  title: "Spare Part Categories",
+  description:
+    "Explore display, battery, charging port, camera, speaker, and other mobile spare part categories."
+});
 
 export default async function CategoriesPage() {
   const categories = await fetchApi<Category[]>("/categories");

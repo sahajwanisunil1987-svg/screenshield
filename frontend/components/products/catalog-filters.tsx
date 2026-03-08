@@ -2,11 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
-import { Brand, Category, MobileModel } from "@/types";
+import { Brand, Category, MobileModel, SearchSuggestion } from "@/types";
 import { SearchCombobox } from "../ui/search-combobox";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
+import { SearchAutocomplete } from "../ui/search-autocomplete";
 
 type CatalogFiltersProps = {
   brands: Brand[];
@@ -101,16 +100,18 @@ export function CatalogFilters({ brands, models, categories }: CatalogFiltersPro
           onChange={(value) => setParam("category", value)}
         />
         <div>
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate">Keyword</label>
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Display, battery, SKU..."
-              className="pl-11"
-            />
-          </div>
+          <SearchAutocomplete
+            label="Keyword"
+            value={search}
+            onChange={setSearch}
+            onSubmit={applySearch}
+            onSuggestionSelect={(suggestion: SearchSuggestion) => router.push(`/products/${suggestion.slug}`)}
+            placeholder="Display, battery, SKU..."
+            brand={brand}
+            model={model}
+            category={category}
+            labelClassName="text-slate"
+          />
         </div>
         <div className="flex items-end">
           <Button onClick={applySearch} className="w-full">Apply</Button>

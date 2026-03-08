@@ -1,12 +1,20 @@
+import type { Metadata } from "next";
 import { ShieldCheck, Truck, Wallet, Wrench } from "lucide-react";
 import { PageShell } from "@/components/layout/page-shell";
 import { HeroSearch } from "@/components/home/hero-search";
 import { ProductCard } from "@/components/products/product-card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { fetchApi } from "@/lib/server-api";
+import { buildMetadata } from "@/lib/seo";
 import { Brand, Category, MobileModel, ProductListResponse } from "@/types";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = buildMetadata({
+  title: "Mobile Spare Parts Store",
+  description:
+    "Find mobile spare parts by brand, model, and part type with smart search, featured products, warranty-backed parts, and fast India-wide dispatch."
+});
 
 const trustBadges = [
   { icon: ShieldCheck, title: "6 Months Warranty" },

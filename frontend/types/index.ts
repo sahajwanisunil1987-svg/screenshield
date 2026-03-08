@@ -118,3 +118,12 @@ export type User = {
     gstNumber?: string | null;
   }>;
 };
+
+export type SearchSuggestion = {
+  id: string;
+  type: "product";
+  label: string;
+  hint: string;
+  slug: string;
+  searchTerm: string;
+};

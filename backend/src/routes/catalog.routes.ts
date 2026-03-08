@@ -8,7 +8,8 @@ import {
   categorySchema,
   modelSchema,
   productSchema,
-  productSearchSchema
+  productSearchSchema,
+  productSuggestionSchema
 } from "../validation/catalog.validation.js";
 
 const router = Router();
@@ -19,6 +20,7 @@ router.get("/models/by-brand/:brandId", catalogController.getModelsByBrand);
 router.get("/categories", catalogController.getCategories);
 router.get("/products", validate({ query: productSearchSchema }), catalogController.getProducts);
 router.get("/products/search", validate({ query: productSearchSchema }), catalogController.searchProducts);
+router.get("/products/suggestions", validate({ query: productSuggestionSchema }), catalogController.getProductSuggestions);
 router.get("/products/:slug", catalogController.getProductBySlug);
 router.get("/admin/products", authenticate, requireAdmin, catalogController.getAdminProducts);
 router.get(

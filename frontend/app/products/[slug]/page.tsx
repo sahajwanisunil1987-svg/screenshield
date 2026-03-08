@@ -1,9 +1,11 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageShell } from "@/components/layout/page-shell";
 import { ProductCard } from "@/components/products/product-card";
 import { ProductGallery } from "@/components/products/product-gallery";
 import { ReviewPanel } from "@/components/products/review-panel";
 import { ProductActions } from "./product-actions";
+import { buildBreadcrumbStructuredData, buildMetadata, buildProductStructuredData } from "@/lib/seo";
 import { fetchApi } from "@/lib/server-api";
 import { formatCurrency } from "@/lib/utils";
 import { Product, Review } from "@/types";
@@ -15,6 +17,44 @@ type ProductPayload = {
   relatedProducts: Product[];
 };
 
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const payload = await fetchApi<ProductPayload>(`/products/${params.slug}`);
+  const product = payload.product;
+
+  if (!product) {
+    return buildMetadata({
+      title: "Product Not Found",
+      description: "The requested SpareKart product could not be found."
+    });
+  }
+
+  return {
+    ...buildMetadata({
+      title: `${product.name} for ${product.model.name}`,
+      description:
+        product.shortDescription ||
+        `Buy ${product.name} for ${product.model.name} from SpareKart with warranty-backed mobile spare parts and fast dispatch.`
+    }),
+    openGraph: {
+      title: `${product.name} for ${product.model.name} | SpareKart`,
+      description:
+        product.shortDescription ||
+        `Buy ${product.name} for ${product.model.name} from SpareKart with warranty-backed mobile spare parts and fast dispatch.`,
+      siteName: "SpareKart",
+      type: "website",
+      images: product.images[0]?.url ? [{ url: product.images[0].url, alt: product.name }] : undefined
+    },
+    twitter: {
+      card: product.images[0]?.url ? "summary_large_image" : "summary",
+      title: `${product.name} for ${product.model.name} | SpareKart`,
+      description:
+        product.shortDescription ||
+        `Buy ${product.name} for ${product.model.name} from SpareKart with warranty-backed mobile spare parts and fast dispatch.`,
+      images: product.images[0]?.url ? [product.images[0].url] : undefined
+    }
+  };
+}
+
 export default async function ProductDetailsPage({ params }: { params: { slug: string } }) {
   const payload = await fetchApi<ProductPayload>(`/products/${params.slug}`);
 
@@ -23,9 +63,19 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
   }
 
   const product = payload.product;
+  const productStructuredData = buildProductStructuredData(product);
+  const breadcrumbStructuredData = buildBreadcrumbStructuredData(product);
 
   return (
     <PageShell>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productStructuredData) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbStructuredData) }}
+      />
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <ProductGallery images={product.images} productName={product.name} />

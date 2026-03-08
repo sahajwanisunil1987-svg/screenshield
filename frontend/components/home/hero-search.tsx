@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
-import { Brand, Category, MobileModel } from "@/types";
+import { Brand, Category, MobileModel, SearchSuggestion } from "@/types";
 import { Button } from "../ui/button";
 import { SearchCombobox } from "../ui/search-combobox";
-import { Input } from "../ui/input";
+import { SearchAutocomplete } from "../ui/search-autocomplete";
 
 type HeroSearchProps = {
   brands: Brand[];
@@ -78,16 +78,19 @@ export function HeroSearch({ brands, models, categories }: HeroSearchProps) {
           onChange={setCategorySlug}
         />
         <div>
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-white/60">Keyword</label>
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate" />
-            <Input
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
-              placeholder="Battery, display, charging port..."
-              className="border-white/10 bg-white/95 pl-11"
-            />
-          </div>
+          <SearchAutocomplete
+            label="Keyword"
+            value={keyword}
+            onChange={setKeyword}
+            onSubmit={() => onSearch()}
+            onSuggestionSelect={(suggestion: SearchSuggestion) => router.push(`/products/${suggestion.slug}`)}
+            placeholder="Battery, display, charging port..."
+            brand={brandSlug}
+            model={modelSlug}
+            category={categorySlug}
+            labelClassName="text-white/60"
+            inputClassName="border-white/10 bg-white/95"
+          />
         </div>
         <Button onClick={onSearch} className="gap-2">
           <Search className="h-4 w-4" />

@@ -81,6 +81,50 @@ export const listProducts = async (query: {
   };
 };
 
+export const getProductSuggestions = async (query: {
+  q?: string;
+  brand?: string;
+  model?: string;
+  category?: string;
+  limit?: number;
+}) => {
+  const q = query.q?.trim();
+  if (!q) {
+    return [];
+  }
+
+  const limit = query.limit ?? 6;
+  const items = await prisma.product.findMany({
+    where: {
+      isActive: true,
+      ...(query.brand ? { brand: { slug: query.brand } } : {}),
+      ...(query.model ? { model: { slug: query.model } } : {}),
+      ...(query.category ? { category: { slug: query.category } } : {}),
+      OR: [
+        { name: { contains: q, mode: "insensitive" } },
+        { sku: { contains: q, mode: "insensitive" } },
+        { shortDescription: { contains: q, mode: "insensitive" } }
+      ]
+    },
+    include: {
+      brand: true,
+      model: true,
+      category: true
+    },
+    orderBy: [{ isFeatured: "desc" }, { reviewCount: "desc" }, { createdAt: "desc" }],
+    take: limit
+  });
+
+  return items.map((item) => ({
+    id: item.id,
+    type: "product" as const,
+    label: item.name,
+    hint: `${item.brand.name} · ${item.model.name} · ${item.category.name} · SKU ${item.sku}`,
+    slug: item.slug,
+    searchTerm: item.name
+  }));
+};
+
 export const getProductBySlug = (slug: string) =>
   prisma.product.findUnique({
     where: { slug },

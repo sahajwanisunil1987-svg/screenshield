@@ -1,9 +1,17 @@
+import type { Metadata } from "next";
 import { PageShell } from "@/components/layout/page-shell";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { buildMetadata } from "@/lib/seo";
 import { fetchApi } from "@/lib/server-api";
 import { Brand } from "@/types";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = buildMetadata({
+  title: "Mobile Brands",
+  description:
+    "Browse all supported mobile brands in the SpareKart catalog and jump directly into compatible spare parts."
+});
 
 export default async function BrandsPage() {
   const brands = await fetchApi<Brand[]>("/brands");

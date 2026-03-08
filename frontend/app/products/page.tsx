@@ -1,12 +1,28 @@
+import type { Metadata } from "next";
 import { PageShell } from "@/components/layout/page-shell";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ProductCard } from "@/components/products/product-card";
 import { CatalogFilters } from "@/components/products/catalog-filters";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { buildMetadata } from "@/lib/seo";
 import { fetchApi } from "@/lib/server-api";
 import { Brand, Category, MobileModel, ProductListResponse } from "@/types";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  searchParams
+}: {
+  searchParams: { brand?: string; model?: string; category?: string; search?: string };
+}): Promise<Metadata> {
+  const segments = [searchParams.brand, searchParams.model, searchParams.category, searchParams.search].filter(Boolean);
+  const title = segments.length ? `${segments.join(" / ")} Parts` : "Mobile Spare Parts Catalog";
+  const description = segments.length
+    ? `Browse SpareKart results for ${segments.join(", ")} with SSR-friendly filters, compatible spare parts, and SKU-aware product discovery.`
+    : "Browse the SpareKart mobile spare parts catalog with brand, model, category, and keyword filters.";
+
+  return buildMetadata({ title, description });
+}
 
 export default async function ProductsPage({
   searchParams
