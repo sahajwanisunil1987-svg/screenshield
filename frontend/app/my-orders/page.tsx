@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageShell } from "@/components/layout/page-shell";
@@ -29,6 +30,9 @@ export default function MyOrdersPage() {
     <PageShell>
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
         <h1 className="font-display text-4xl text-ink">My orders</h1>
+        <p className="mt-3 max-w-2xl text-sm text-slate">
+          Review placed orders, payment status, included items, and jump straight into tracking for any active shipment.
+        </p>
         <div className="mt-10 space-y-4">
           {orders.length ? (
             orders.map((order) => (
@@ -40,7 +44,14 @@ export default function MyOrdersPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-ink">{formatCurrency(order.totalAmount)}</p>
-                    <p className="text-sm text-accent">{order.status}</p>
+                    <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
+                      <span className="rounded-full bg-accentSoft px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-accent">
+                        {order.status}
+                      </span>
+                      <span className="rounded-full bg-[#f5f8fb] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate">
+                        {order.paymentStatus}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
@@ -54,13 +65,18 @@ export default function MyOrdersPage() {
                   ))}
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate">
-                  <span>Payment: {order.paymentStatus}</span>
-                  <span>
-                    Track:{" "}
-                    <a href={`/track-order?orderNumber=${order.orderNumber}`} className="font-semibold text-accent underline">
-                      {order.orderNumber}
-                    </a>
-                  </span>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span>Payment: {order.paymentStatus}</span>
+                    <span>Items: {order.items.length}</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <Link href={`/track-order?orderNumber=${order.orderNumber}`} className="font-semibold text-accent underline">
+                      Track order
+                    </Link>
+                    <Link href={`/order-success?orderNumber=${order.orderNumber}`} className="font-semibold text-slate underline">
+                      View confirmation
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))

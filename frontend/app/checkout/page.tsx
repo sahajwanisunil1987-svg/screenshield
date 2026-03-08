@@ -19,6 +19,8 @@ import { useCartStore } from "@/store/cart-store";
 const schema = z.object({
   fullName: z.string().min(2),
   line1: z.string().min(5),
+  line2: z.string().optional(),
+  landmark: z.string().optional(),
   city: z.string().min(2),
   state: z.string().min(2),
   postalCode: z.string().min(5),
@@ -65,6 +67,8 @@ export default function CheckoutPage() {
           ...current,
           fullName: address?.fullName ?? profile.name ?? "",
           line1: address?.line1 ?? "",
+          line2: address?.line2 ?? "",
+          landmark: address?.landmark ?? "",
           city: address?.city ?? "",
           state: address?.state ?? "",
           postalCode: address?.postalCode ?? "",
@@ -99,6 +103,8 @@ export default function CheckoutPage() {
           address: {
             fullName: values.fullName,
             line1: values.line1,
+            line2: values.line2,
+            landmark: values.landmark,
             city: values.city,
             state: values.state,
             postalCode: values.postalCode,
@@ -175,9 +181,17 @@ export default function CheckoutPage() {
         <h1 className="font-display text-4xl text-ink">Checkout</h1>
         <div className="mt-10 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
           <form onSubmit={onSubmit} className="space-y-4 rounded-[32px] bg-white p-8 shadow-card">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Delivery details</p>
+              <p className="mt-2 text-sm text-slate">Use a complete serviceable address so dispatch and GST invoice details stay correct.</p>
+            </div>
             <Input placeholder="Full name" {...register("fullName")} />
             {errors.fullName ? <p className="text-sm text-red-500">{errors.fullName.message}</p> : null}
             <Input placeholder="Address line" {...register("line1")} />
+            <div className="grid gap-4 md:grid-cols-2">
+              <Input placeholder="Apartment / Shop / Floor (optional)" {...register("line2")} />
+              <Input placeholder="Landmark (optional)" {...register("landmark")} />
+            </div>
             <div className="grid gap-4 md:grid-cols-2">
               <Input placeholder="City" {...register("city")} />
               <Input placeholder="State" {...register("state")} />
@@ -210,6 +224,20 @@ export default function CheckoutPage() {
             <p className="mt-2 text-sm text-slate">
               Your default saved address is auto-filled here and refreshed after each successful order.
             </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Delivery</p>
+                <p className="mt-2 font-semibold text-ink">{shipping === 0 ? "Free shipping unlocked" : "Standard dispatch"}</p>
+              </div>
+              <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Invoice</p>
+                <p className="mt-2 font-semibold text-ink">GST-ready order invoice</p>
+              </div>
+              <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Support</p>
+                <p className="mt-2 font-semibold text-ink">Warranty-backed assistance</p>
+              </div>
+            </div>
             <div className="mt-6 space-y-4">
               {items.map((item) => (
                 <div key={item.product.id} className="flex items-center justify-between text-sm">
