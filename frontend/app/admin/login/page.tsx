@@ -2,6 +2,7 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,9 +22,14 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
   const { theme, isDark, toggleTheme } = useAdminTheme();
+  const [mounted, setMounted] = useState(false);
   const { register, handleSubmit, setValue } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema)
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div
@@ -71,49 +77,59 @@ export default function AdminLoginPage() {
             ? "border-white/10 bg-white/5 text-white shadow-[0_28px_70px_rgba(2,6,23,0.42)]"
             : "border-white/70 bg-white/90 text-ink shadow-[0_28px_70px_rgba(8,17,31,0.12)] backdrop-blur"
         }`}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className={`text-xs font-semibold uppercase tracking-[0.24em] ${isDark ? "text-cyan-200/70" : "text-accent/70"}`}>
-              Secure access
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className={`text-xs font-semibold uppercase tracking-[0.24em] ${isDark ? "text-cyan-200/70" : "text-accent/70"}`}>
+                Secure access
             </p>
             <h1 className="mt-3 font-display text-4xl">Admin login</h1>
             <p className={`mt-3 text-sm ${isDark ? "text-white/60" : "text-slate"}`}>
               Sign in to manage inventory, pricing, orders, coupons, and customer activity.
             </p>
+            </div>
           </div>
-        </div>
         <div className="mt-8 space-y-4">
-          <Input
-            placeholder="Admin email"
-            autoComplete="email"
-            className={
-              isDark
-                ? "border-white/10 bg-white/10 text-white placeholder:text-white/35 focus:border-cyan-300 focus:ring-cyan-300/10"
-                : "border-slate-200 bg-slate-50 text-ink placeholder:text-slate focus:border-accent focus:ring-accent/10"
-            }
-            {...register("email")}
-          />
-          <Input
-            type="password"
-            placeholder="Password"
-            autoComplete="current-password"
-            className={
-              isDark
-                ? "border-white/10 bg-white/10 text-white placeholder:text-white/35 focus:border-cyan-300 focus:ring-cyan-300/10"
-                : "border-slate-200 bg-slate-50 text-ink placeholder:text-slate focus:border-accent focus:ring-accent/10"
-            }
-            {...register("password")}
-          />
-          <Button
-            className={`w-full ${
-              isDark
-                ? "bg-accent text-white shadow-[0_18px_40px_rgba(15,118,110,0.26)] hover:bg-teal-700"
-                : "bg-ink text-white shadow-[0_18px_40px_rgba(8,17,31,0.18)] hover:bg-slate-900"
-            }`}
-          >
-            Sign in
-          </Button>
+          {!mounted ? (
+            <>
+              <div className={`h-12 rounded-2xl ${isDark ? "bg-white/10" : "bg-slate-100"}`} />
+              <div className={`h-12 rounded-2xl ${isDark ? "bg-white/10" : "bg-slate-100"}`} />
+              <div className={`h-12 rounded-full ${isDark ? "bg-white/10" : "bg-slate-100"}`} />
+            </>
+          ) : (
+            <>
+              <Input
+                placeholder="Admin email"
+                autoComplete="email"
+                className={
+                  isDark
+                    ? "border-white/10 bg-white/10 text-white placeholder:text-white/35 focus:border-cyan-300 focus:ring-cyan-300/10"
+                    : "border-slate-200 bg-slate-50 text-ink placeholder:text-slate focus:border-accent focus:ring-accent/10"
+                }
+                {...register("email")}
+              />
+              <Input
+                type="password"
+                placeholder="Password"
+                autoComplete="current-password"
+                className={
+                  isDark
+                    ? "border-white/10 bg-white/10 text-white placeholder:text-white/35 focus:border-cyan-300 focus:ring-cyan-300/10"
+                    : "border-slate-200 bg-slate-50 text-ink placeholder:text-slate focus:border-accent focus:ring-accent/10"
+                }
+                {...register("password")}
+              />
+              <Button
+                className={`w-full ${
+                  isDark
+                    ? "bg-accent text-white shadow-[0_18px_40px_rgba(15,118,110,0.26)] hover:bg-teal-700"
+                    : "bg-ink text-white shadow-[0_18px_40px_rgba(8,17,31,0.18)] hover:bg-slate-900"
+                }`}
+              >
+                Sign in
+              </Button>
+            </>
+          )}
         </div>
         <div
           className={`mt-6 rounded-2xl p-4 text-sm ${

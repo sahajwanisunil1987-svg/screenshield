@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,9 +23,14 @@ type FormValues = z.infer<typeof schema>;
 export default function LoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const [mounted, setMounted] = useState(false);
   const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema)
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const onSubmit = handleSubmit(async (values) => {
     try {
@@ -42,6 +48,13 @@ export default function LoginPage() {
       <div className="mx-auto max-w-md px-4 py-20 sm:px-6 lg:px-8">
         <div className="rounded-[32px] bg-white p-8 shadow-card">
           <h1 className="font-display text-4xl text-ink">Login</h1>
+          {!mounted ? (
+            <div className="mt-8 space-y-4">
+              <div className="h-12 rounded-2xl bg-slate-100" />
+              <div className="h-12 rounded-2xl bg-slate-100" />
+              <div className="h-12 rounded-full bg-slate-100" />
+            </div>
+          ) : (
           <form onSubmit={onSubmit} className="mt-8 space-y-4">
             <Input placeholder="Email" autoComplete="email" {...register("email")} />
             {errors.email ? <p className="text-sm text-red-500">{errors.email.message}</p> : null}
@@ -51,6 +64,7 @@ export default function LoginPage() {
               {isSubmitting ? "Signing in..." : "Login"}
             </Button>
           </form>
+          )}
           <p className="mt-6 text-sm text-slate">
             New customer? <Link href="/register" className="font-semibold text-accent">Create an account</Link>
           </p>

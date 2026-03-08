@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,9 +25,14 @@ type FormValues = z.infer<typeof schema>;
 export default function RegisterPage() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const [mounted, setMounted] = useState(false);
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema)
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const onSubmit = handleSubmit(async (values) => {
     try {
@@ -44,6 +50,15 @@ export default function RegisterPage() {
       <div className="mx-auto max-w-md px-4 py-20 sm:px-6 lg:px-8">
         <div className="rounded-[32px] bg-white p-8 shadow-card">
           <h1 className="font-display text-4xl text-ink">Register</h1>
+          {!mounted ? (
+            <div className="mt-8 space-y-4">
+              <div className="h-12 rounded-2xl bg-slate-100" />
+              <div className="h-12 rounded-2xl bg-slate-100" />
+              <div className="h-12 rounded-2xl bg-slate-100" />
+              <div className="h-12 rounded-2xl bg-slate-100" />
+              <div className="h-12 rounded-full bg-slate-100" />
+            </div>
+          ) : (
           <form onSubmit={onSubmit} className="mt-8 space-y-4">
             <Input placeholder="Full name" autoComplete="name" {...register("name")} />
             <Input placeholder="Email" autoComplete="email" {...register("email")} />
@@ -56,6 +71,7 @@ export default function RegisterPage() {
               {isSubmitting ? "Creating..." : "Create account"}
             </Button>
           </form>
+          )}
           <p className="mt-6 text-sm text-slate">
             Already registered? <Link href="/login" className="font-semibold text-accent">Login</Link>
           </p>
