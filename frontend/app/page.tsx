@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ShieldCheck, Truck, Wallet, Wrench } from "lucide-react";
+import { Headphones, ShieldCheck, Truck, Wallet, Wrench } from "lucide-react";
 import { PageShell } from "@/components/layout/page-shell";
 import { HeroSearch } from "@/components/home/hero-search";
 import { ProductCard } from "@/components/products/product-card";
@@ -18,10 +18,10 @@ export const metadata: Metadata = buildMetadata({
 });
 
 const trustBadges = [
-  { icon: ShieldCheck, title: "6 Months Warranty" },
-  { icon: Wallet, title: "Secure Payments" },
-  { icon: Truck, title: "Fast Delivery" },
-  { icon: Wrench, title: "Genuine Parts" }
+  { icon: ShieldCheck, title: "6 Months Warranty", detail: "Covered parts for confident replacement orders." },
+  { icon: Wallet, title: "Secure Payments", detail: "Trusted checkout flow for online orders and COD support." },
+  { icon: Truck, title: "Fast Delivery", detail: "Dispatch-oriented workflow built for urgent repair demand." },
+  { icon: Wrench, title: "Genuine Parts", detail: "Catalog built around verified fitment and repair confidence." }
 ];
 
 const merchandisingFlows = [
@@ -39,6 +39,21 @@ const merchandisingFlows = [
     title: "Charging fixes",
     description: "Ports, flex assemblies, and connector parts for common charging faults.",
     href: "/products?search=charging%20port"
+  }
+];
+
+const supportPoints = [
+  {
+    title: "Repair-shop support",
+    detail: "Start with the model and issue type to narrow down the right replacement faster."
+  },
+  {
+    title: "Returns clarity",
+    detail: "Compatibility context and warranty cues reduce wrong-part ordering risk."
+  },
+  {
+    title: "Order confidence",
+    detail: "Track every order and payment state from one clear storefront flow."
   }
 ];
 
@@ -182,8 +197,40 @@ export default async function HomePage() {
             <div key={item.title} className="rounded-[24px] bg-[#f5f8fb] p-5">
               <item.icon className="h-8 w-8 text-accent" />
               <h3 className="mt-4 font-semibold text-ink">{item.title}</h3>
+              <p className="mt-2 text-sm text-slate">{item.detail}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 lg:pb-16">
+        <div className="grid gap-6 rounded-[36px] border border-slate-200/80 bg-[linear-gradient(135deg,#fffdf8,#eef6fb)] p-8 shadow-card lg:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-accent">
+              <Headphones className="h-4 w-4" />
+              Support confidence
+            </p>
+            <h2 className="mt-4 font-display text-3xl text-ink sm:text-4xl">Built for repair shops, clear enough for retail buyers.</h2>
+            <p className="mt-4 max-w-xl text-sm leading-7 text-slate">
+              SpareKart is designed to reduce parts confusion with clearer discovery, stronger trust cues, and a guided path from search to order tracking.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href="/track-order" className="rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700">
+                Track an order
+              </Link>
+              <Link href="/products" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-accent/20 hover:bg-accentSoft">
+                Explore catalog
+              </Link>
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-1">
+            {supportPoints.map((point) => (
+              <div key={point.title} className="rounded-[24px] bg-white/90 p-5 shadow-sm">
+                <p className="text-sm font-semibold text-ink">{point.title}</p>
+                <p className="mt-2 text-sm text-slate">{point.detail}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     </PageShell>
