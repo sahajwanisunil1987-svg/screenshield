@@ -4,6 +4,12 @@ import { toSlug } from "../utils/helpers.js";
 
 const normalize = (value: string) => value.trim().toLowerCase();
 
+const tokenize = (value: string) =>
+  normalize(value)
+    .split(/[\s,/+-]+/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+
 const scoreProductSearchMatch = (
   product: {
     name: string;
@@ -12,18 +18,21 @@ const scoreProductSearchMatch = (
     brand: { name: string };
     model: { name: string };
     category: { name: string };
+    compatibilityModels?: Array<{ model: { name: string } }>;
     isFeatured?: boolean | null;
   },
   rawQuery: string
 ) => {
   const query = normalize(rawQuery);
+  const tokens = tokenize(rawQuery);
   const sku = normalize(product.sku);
   const name = normalize(product.name);
   const shortDescription = normalize(product.shortDescription);
   const brand = normalize(product.brand.name);
   const model = normalize(product.model.name);
   const category = normalize(product.category.name);
-  const composite = `${brand} ${model} ${category} ${name} ${sku} ${shortDescription}`;
+  const compatibilityNames = product.compatibilityModels?.map((entry) => normalize(entry.model.name)) ?? [model];
+  const composite = `${brand} ${model} ${compatibilityNames.join(" ")} ${category} ${name} ${sku} ${shortDescription}`;
 
   let score = 0;
 
@@ -38,10 +47,40 @@ const scoreProductSearchMatch = (
   if (brand === query || model === query || category === query) score += 260;
   if (brand.includes(query)) score += 120;
   if (model.includes(query)) score += 120;
+  if (compatibilityNames.some((entry) => entry === query)) score += 220;
+  if (compatibilityNames.some((entry) => entry.includes(query))) score += 110;
   if (category.includes(query)) score += 90;
   if (shortDescription.includes(query)) score += 40;
   if (composite.includes(query)) score += 20;
   if (product.isFeatured) score += 10;
+
+  if (tokens.length > 1) {
+    const tokenMatches = tokens.reduce((count, token) => {
+      if (
+        sku.includes(token) ||
+        name.includes(token) ||
+        brand.includes(token) ||
+        model.includes(token) ||
+        category.includes(token) ||
+        compatibilityNames.some((entry) => entry.includes(token))
+      ) {
+        return count + 1;
+      }
+
+      return count;
+    }, 0);
+
+    score += tokenMatches * 90;
+
+    const hasBrandToken = tokens.some((token) => brand.includes(token));
+    const hasModelToken = tokens.some((token) => model.includes(token) || compatibilityNames.some((entry) => entry.includes(token)));
+    const hasCategoryToken = tokens.some((token) => category.includes(token) || name.includes(token));
+
+    if (hasBrandToken && hasModelToken) score += 280;
+    if (hasBrandToken && hasCategoryToken) score += 220;
+    if (hasModelToken && hasCategoryToken) score += 220;
+    if (hasBrandToken && hasModelToken && hasCategoryToken) score += 420;
+  }
 
   return score;
 };
@@ -101,6 +140,11 @@ export const listProducts = async (query: {
     brand: true,
     model: true,
     category: true,
+    compatibilityModels: {
+      include: {
+        model: true
+      }
+    },
     inventory: true
   };
 
@@ -170,7 +214,12 @@ export const getProductSuggestions = async (query: {
     include: {
       brand: true,
       model: true,
-      category: true
+      category: true,
+      compatibilityModels: {
+        include: {
+          model: true
+        }
+      }
     },
     orderBy: [{ isFeatured: "desc" }, { reviewCount: "desc" }, { createdAt: "desc" }],
     take: Math.min(limit * 3, 18)
