@@ -1,7 +1,6 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -9,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAdminTheme } from "@/hooks/use-admin-theme";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
 
@@ -20,28 +20,14 @@ const schema = z.object({
 export default function AdminLoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const { theme, isDark, toggleTheme } = useAdminTheme();
   const { register, handleSubmit, setValue } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema)
   });
 
-  useEffect(() => {
-    const savedTheme = window.localStorage.getItem("sparekart-admin-login-theme");
-    if (savedTheme === "light" || savedTheme === "dark") {
-      setTheme(savedTheme);
-    }
-  }, []);
-
-  const isDark = theme === "dark";
-
-  const toggleTheme = () => {
-    const nextTheme = isDark ? "light" : "dark";
-    setTheme(nextTheme);
-    window.localStorage.setItem("sparekart-admin-login-theme", nextTheme);
-  };
-
   return (
     <div
+      data-admin-theme={theme}
       className={`flex min-h-screen items-center justify-center px-4 transition-colors duration-300 ${
         isDark
           ? "bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_26%),radial-gradient(circle_at_top_right,rgba(249,115,22,0.12),transparent_18%),linear-gradient(180deg,#020617,#08111f)]"
