@@ -5,6 +5,10 @@ const paginationFields = {
   limit: z.coerce.number().int().min(1).max(50).default(12).optional()
 };
 
+export const adminDashboardSchema = z.object({
+  range: z.enum(["7d", "30d", "90d"]).default("30d").optional()
+});
+
 export const adminUserListSchema = z.object({
   search: z.string().optional(),
   activity: z.enum(["ALL", "WITH_ORDERS", "WITHOUT_ORDERS"]).default("ALL").optional(),

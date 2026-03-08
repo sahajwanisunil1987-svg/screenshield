@@ -13,53 +13,58 @@ export default function AdminDashboardPage() {
   const token = useAuthStore((state) => state.token);
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [range, setRange] = useState<"7d" | "30d" | "90d">("30d");
 
   useEffect(() => {
     if (!token) return;
     setIsLoading(true);
     api
-      .get("/admin/dashboard", authHeaders(token))
+      .get("/admin/dashboard", {
+        ...authHeaders(token),
+        params: { range }
+      })
       .then((response) => setData(response.data))
       .catch((error) => {
         toast.error(getApiErrorMessage(error, "Unable to load dashboard"));
       })
       .finally(() => setIsLoading(false));
-  }, [token]);
+  }, [range, token]);
 
   const stats = useMemo(
     () => [
       {
         label: "Total Orders",
         value: data?.stats?.totalOrders ?? 0,
-        detail: "All-time processed orders",
+        detail: `Orders in the last ${range.replace("d", "")} days`,
         accent: "text-cyan-200"
       },
       {
         label: "Revenue",
         value: formatCurrency(data?.stats?.totalRevenue ?? 0),
-        detail: "Gross order value booked",
+        detail: "Gross order value in range",
         accent: "text-emerald-200"
       },
       {
-        label: "Products",
-        value: data?.stats?.totalProducts ?? 0,
-        detail: "Live catalog entries",
+        label: "New Customers",
+        value: data?.stats?.newCustomers ?? 0,
+        detail: "Customers registered in range",
         accent: "text-fuchsia-200"
       },
       {
-        label: "Low Stock",
-        value: data?.stats?.lowStockCount ?? 0,
-        detail: "Parts that need attention",
+        label: "AOV",
+        value: formatCurrency(data?.stats?.averageOrderValue ?? 0),
+        detail: "Average order value in range",
         accent: "text-amber-200"
       }
     ],
-    [data]
+    [data, range]
   );
 
-  const topSellerMax = Math.max(...(data?.topProducts?.map((product: any) => Number(product._sum.quantity ?? 0)) ?? [1]));
+  const topSellerMax = Math.max(...(data?.topProducts?.map((product: any) => Number(product.quantity ?? 0)) ?? [1]));
   const lowStockCriticalCount = data?.lowStock?.filter((item: any) => item.stock <= Math.max(1, Math.floor(item.lowStockLimit / 2))).length ?? 0;
   const fulfilledCount =
     data?.recentOrders?.filter((order: any) => ["DELIVERED", "SHIPPED"].includes(order.status)).length ?? 0;
+  const trendMax = Math.max(...(data?.trend?.map((point: any) => Number(point.revenue ?? 0)) ?? [1]));
 
   return (
     <AdminGuard>
@@ -76,23 +81,22 @@ export default function AdminDashboardPage() {
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!token) return;
-                  setIsLoading(true);
-                  api
-                    .get("/admin/dashboard", authHeaders(token))
-                    .then((response) => setData(response.data))
-                    .catch((error) => {
-                      toast.error(getApiErrorMessage(error, "Unable to refresh dashboard"));
-                    })
-                    .finally(() => setIsLoading(false));
-                }}
-                className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/80 transition hover:bg-white/10"
-              >
-                Refresh dashboard
-              </button>
+              <div className="flex flex-wrap gap-2">
+                {(["7d", "30d", "90d"] as const).map((entry) => (
+                  <button
+                    key={entry}
+                    type="button"
+                    onClick={() => setRange(entry)}
+                    className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
+                      range === entry
+                        ? "bg-white text-ink"
+                        : "border border-white/15 text-white/80 hover:bg-white/10"
+                    }`}
+                  >
+                    {entry}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -138,6 +142,33 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="font-semibold">Revenue trend</h3>
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">{range} view</span>
+            </div>
+            <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(24px,1fr))] items-end gap-3">
+              {isLoading
+                ? Array.from({ length: 8 }).map((_, index) => (
+                    <div key={index} className="h-28 animate-pulse rounded-t-[18px] bg-white/5" />
+                  ))
+                : data?.trend?.map((point: any) => {
+                    const height = Math.max(14, Math.round((Number(point.revenue ?? 0) / trendMax) * 160));
+                    return (
+                      <div key={point.date} className="space-y-2 text-center">
+                        <div className="flex h-44 items-end justify-center">
+                          <div
+                            className="w-full rounded-t-[18px] bg-gradient-to-t from-cyan-400 to-emerald-300"
+                            style={{ height: `${height}px` }}
+                            title={`${point.label}: ${formatCurrency(Number(point.revenue ?? 0))} · ${point.orders} orders`}
+                          />
+                        </div>
+                        <p className="text-[11px] text-white/45">{point.label}</p>
+                      </div>
+                    );
+                  })}
+            </div>
+          </div>
           <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-semibold">Recent orders</h3>
@@ -191,7 +222,7 @@ export default function AdminDashboardPage() {
                 ))
               ) : data?.topProducts?.length ? (
                 data.topProducts.map((product: any, index: number) => {
-                  const quantity = Number(product._sum.quantity ?? 0);
+                  const quantity = Number(product.quantity ?? 0);
                   const width = Math.max(12, Math.round((quantity / topSellerMax) * 100));
 
                   return (
@@ -221,6 +252,39 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="font-semibold">Sales mix</h3>
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">Brand / category / model</span>
+            </div>
+            <div className="mt-4 grid gap-4 md:grid-cols-3">
+              {[
+                { title: "Top brands", items: data?.topBrands ?? [] },
+                { title: "Top categories", items: data?.topCategories ?? [] },
+                { title: "Top models", items: data?.topModels ?? [] }
+              ].map((section) => (
+                <div key={section.title} className="rounded-[22px] border border-white/10 bg-black/10 p-4">
+                  <p className="text-sm font-semibold text-white">{section.title}</p>
+                  <div className="mt-3 space-y-3 text-sm text-white/75">
+                    {isLoading ? (
+                      Array.from({ length: 3 }).map((_, index) => (
+                        <div key={index} className="h-8 animate-pulse rounded-full bg-white/5" />
+                      ))
+                    ) : section.items.length ? (
+                      section.items.map((item: any) => (
+                        <div key={item.name} className="flex items-center justify-between gap-3">
+                          <span>{item.name}</span>
+                          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">{item.quantity}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-white/45">No sales data in this range.</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
           <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-semibold">Low stock alerts</h3>

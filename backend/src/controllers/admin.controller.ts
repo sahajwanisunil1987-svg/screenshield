@@ -4,9 +4,25 @@ import { prisma } from "../lib/prisma.js";
 import { generateInvoicePdfBuffer } from "../services/invoice.service.js";
 import { getSingleParam } from "../utils/helpers.js";
 
-export const dashboard = async (_req: Request, res: Response) => {
-  const [totalOrders, totalProducts, lowStock, recentOrders, revenueAgg, topProducts, users] = await Promise.all([
-    prisma.order.count(),
+const rangeDaysMap = {
+  "7d": 7,
+  "30d": 30,
+  "90d": 90
+} as const;
+
+export const dashboard = async (req: Request, res: Response) => {
+  const range = String(req.query.range ?? "30d") as keyof typeof rangeDaysMap;
+  const days = rangeDaysMap[range] ?? 30;
+  const rangeStart = new Date();
+  rangeStart.setHours(0, 0, 0, 0);
+  rangeStart.setDate(rangeStart.getDate() - (days - 1));
+
+  const [totalOrders, totalProducts, lowStock, recentOrders, revenueAgg, topProducts, users, rangedOrders, rangedCustomers] = await Promise.all([
+    prisma.order.count({
+      where: {
+        createdAt: { gte: rangeStart }
+      }
+    }),
     prisma.product.count(),
     prisma.inventory.findMany({
       where: {
@@ -24,39 +40,134 @@ export const dashboard = async (_req: Request, res: Response) => {
       orderBy: { createdAt: "desc" }
     }),
     prisma.order.aggregate({
+      where: {
+        createdAt: { gte: rangeStart }
+      },
       _sum: {
         totalAmount: true
       }
     }),
-    prisma.orderItem.groupBy({
-      by: ["productId", "productName"],
-      _sum: {
-        quantity: true
-      },
-      orderBy: {
-        _sum: {
-          quantity: "desc"
+    prisma.orderItem.findMany({
+      where: {
+        order: {
+          createdAt: { gte: rangeStart }
         }
       },
-      take: 5
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            brand: { select: { name: true } },
+            category: { select: { name: true } },
+            model: { select: { name: true } }
+          }
+        }
+      }
     }),
     prisma.user.findMany({
       where: { role: "CUSTOMER" },
       select: { id: true, name: true, email: true, createdAt: true },
       take: 20
+    }),
+    prisma.order.findMany({
+      where: {
+        createdAt: { gte: rangeStart }
+      },
+      select: {
+        id: true,
+        totalAmount: true,
+        createdAt: true,
+        status: true,
+        paymentStatus: true,
+        userId: true
+      }
+    }),
+    prisma.user.count({
+      where: {
+        role: "CUSTOMER",
+        createdAt: { gte: rangeStart }
+      }
     })
   ]);
 
+  const trend = Array.from({ length: days }, (_, index) => {
+    const date = new Date(rangeStart);
+    date.setDate(rangeStart.getDate() + index);
+    const key = date.toISOString().slice(0, 10);
+    return {
+      date: key,
+      label: date.toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" }),
+      orders: 0,
+      revenue: 0
+    };
+  });
+
+  for (const order of rangedOrders) {
+    const key = new Date(order.createdAt).toISOString().slice(0, 10);
+    const bucket = trend.find((entry) => entry.date === key);
+    if (!bucket) continue;
+    bucket.orders += 1;
+    bucket.revenue += Number(order.totalAmount ?? 0);
+  }
+
+  const salesByProduct = new Map<string, { productId: string; productName: string; quantity: number }>();
+  const salesByBrand = new Map<string, number>();
+  const salesByCategory = new Map<string, number>();
+  const salesByModel = new Map<string, number>();
+
+  for (const item of topProducts) {
+    const quantity = item.quantity;
+    const productName = item.product.name;
+    const existing = salesByProduct.get(item.productId);
+    if (existing) {
+      existing.quantity += quantity;
+    } else {
+      salesByProduct.set(item.productId, {
+        productId: item.productId,
+        productName,
+        quantity
+      });
+    }
+
+    salesByBrand.set(item.product.brand.name, (salesByBrand.get(item.product.brand.name) ?? 0) + quantity);
+    salesByCategory.set(item.product.category.name, (salesByCategory.get(item.product.category.name) ?? 0) + quantity);
+    salesByModel.set(item.product.model.name, (salesByModel.get(item.product.model.name) ?? 0) + quantity);
+  }
+
+  const topBrand = Array.from(salesByBrand.entries())
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 5)
+    .map(([name, quantity]) => ({ name, quantity }));
+  const topCategory = Array.from(salesByCategory.entries())
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 5)
+    .map(([name, quantity]) => ({ name, quantity }));
+  const topModel = Array.from(salesByModel.entries())
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 5)
+    .map(([name, quantity]) => ({ name, quantity }));
+
   res.json({
+    range,
+    rangeStart,
     stats: {
       totalOrders,
       totalProducts,
       totalRevenue: Number(revenueAgg._sum.totalAmount ?? 0),
-      lowStockCount: lowStock.length
+      lowStockCount: lowStock.length,
+      newCustomers: rangedCustomers,
+      averageOrderValue: totalOrders ? Number(revenueAgg._sum.totalAmount ?? 0) / totalOrders : 0
     },
     lowStock,
     recentOrders,
-    topProducts,
+    topProducts: Array.from(salesByProduct.values())
+      .sort((left, right) => right.quantity - left.quantity)
+      .slice(0, 5),
+    topBrands: topBrand,
+    topCategories: topCategory,
+    topModels: topModel,
+    trend,
     users
   });
 };
