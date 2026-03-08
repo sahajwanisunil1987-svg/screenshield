@@ -2,6 +2,50 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { toSlug } from "../utils/helpers.js";
 
+const normalize = (value: string) => value.trim().toLowerCase();
+
+const scoreProductSearchMatch = (
+  product: {
+    name: string;
+    sku: string;
+    shortDescription: string;
+    brand: { name: string };
+    model: { name: string };
+    category: { name: string };
+    isFeatured?: boolean | null;
+  },
+  rawQuery: string
+) => {
+  const query = normalize(rawQuery);
+  const sku = normalize(product.sku);
+  const name = normalize(product.name);
+  const shortDescription = normalize(product.shortDescription);
+  const brand = normalize(product.brand.name);
+  const model = normalize(product.model.name);
+  const category = normalize(product.category.name);
+  const composite = `${brand} ${model} ${category} ${name} ${sku} ${shortDescription}`;
+
+  let score = 0;
+
+  if (sku === query) score += 1000;
+  else if (sku.startsWith(query)) score += 650;
+  else if (sku.includes(query)) score += 420;
+
+  if (name === query) score += 800;
+  else if (name.startsWith(query)) score += 520;
+  else if (name.includes(query)) score += 300;
+
+  if (brand === query || model === query || category === query) score += 260;
+  if (brand.includes(query)) score += 120;
+  if (model.includes(query)) score += 120;
+  if (category.includes(query)) score += 90;
+  if (shortDescription.includes(query)) score += 40;
+  if (composite.includes(query)) score += 20;
+  if (product.isFeatured) score += 10;
+
+  return score;
+};
+
 export const getBrands = () =>
   prisma.brand.findMany({
     where: { isActive: true },
@@ -52,23 +96,40 @@ export const listProducts = async (query: {
         }
       : {})
   };
+  const include = {
+    images: { orderBy: { sortOrder: "asc" as const } },
+    brand: true,
+    model: true,
+    category: true,
+    inventory: true
+  };
 
-  const [items, total] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      include: {
-        images: { orderBy: { sortOrder: "asc" } },
-        brand: true,
-        model: true,
-        category: true,
-        inventory: true
-      },
-      orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
-      skip: (page - 1) * limit,
-      take: limit
-    }),
-    prisma.product.count({ where })
-  ]);
+  const total = await prisma.product.count({ where });
+
+  const items = query.search
+    ? await prisma.product
+        .findMany({
+          where,
+          include,
+          orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+          take: Math.min(Math.max(page * limit * 4, 40), 120)
+        })
+        .then((results) =>
+          results
+            .sort((left, right) => {
+              const leftScore = scoreProductSearchMatch(left, query.search!);
+              const rightScore = scoreProductSearchMatch(right, query.search!);
+              return rightScore - leftScore;
+            })
+            .slice((page - 1) * limit, page * limit)
+        )
+    : await prisma.product.findMany({
+        where,
+        include,
+        orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+        skip: (page - 1) * limit,
+        take: limit
+      });
 
   return {
     items,
@@ -112,17 +173,20 @@ export const getProductSuggestions = async (query: {
       category: true
     },
     orderBy: [{ isFeatured: "desc" }, { reviewCount: "desc" }, { createdAt: "desc" }],
-    take: limit
+    take: Math.min(limit * 3, 18)
   });
 
-  return items.map((item) => ({
-    id: item.id,
-    type: "product" as const,
-    label: item.name,
-    hint: `${item.brand.name} · ${item.model.name} · ${item.category.name} · SKU ${item.sku}`,
-    slug: item.slug,
-    searchTerm: item.name
-  }));
+  return items
+    .sort((left, right) => scoreProductSearchMatch(right, q) - scoreProductSearchMatch(left, q))
+    .slice(0, limit)
+    .map((item) => ({
+      id: item.id,
+      type: "product" as const,
+      label: item.name,
+      hint: `${item.brand.name} · ${item.model.name} · ${item.category.name} · SKU ${item.sku}`,
+      slug: item.slug,
+      searchTerm: item.name
+    }));
 };
 
 export const getProductBySlug = (slug: string) =>
