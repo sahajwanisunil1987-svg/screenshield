@@ -45,3 +45,54 @@ export const createReview = async (req: Request, res: Response) => {
 
   res.status(StatusCodes.CREATED).json(review);
 };
+
+export const adminReviews = async (req: Request, res: Response) => {
+  const page = Number(req.query.page ?? 1);
+  const limit = Number(req.query.limit ?? 12);
+  const search = String(req.query.search ?? "").trim();
+  const rating = String(req.query.rating ?? "ALL");
+
+  const where = {
+    ...(rating !== "ALL" ? { rating: Number(rating) } : {}),
+    ...(search
+      ? {
+          OR: [
+            { title: { contains: search, mode: "insensitive" as const } },
+            { comment: { contains: search, mode: "insensitive" as const } },
+            { product: { name: { contains: search, mode: "insensitive" as const } } },
+            { product: { sku: { contains: search, mode: "insensitive" as const } } },
+            { user: { name: { contains: search, mode: "insensitive" as const } } },
+            { user: { email: { contains: search, mode: "insensitive" as const } } }
+          ]
+        }
+      : {})
+  };
+
+  const [items, total] = await Promise.all([
+    prisma.review.findMany({
+      where,
+      include: {
+        user: {
+          select: { name: true, email: true }
+        },
+        product: {
+          select: { id: true, name: true, slug: true, sku: true }
+        }
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit
+    }),
+    prisma.review.count({ where })
+  ]);
+
+  res.json({
+    items,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  });
+};

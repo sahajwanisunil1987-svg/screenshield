@@ -91,6 +91,19 @@ export type Review = {
   };
 };
 
+export type AdminReview = Review & {
+  user: {
+    name: string;
+    email: string;
+  };
+  product: {
+    id: string;
+    name: string;
+    slug: string;
+    sku: string;
+  };
+};
+
 export type Order = {
   id: string;
   orderNumber: string;

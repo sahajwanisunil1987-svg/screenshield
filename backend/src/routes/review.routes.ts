@@ -1,9 +1,9 @@
 import { Router } from "express";
 import * as reviewController from "../controllers/review.controller.js";
-import { authenticate } from "../middleware/auth.middleware.js";
+import { authenticate, requireAdmin } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
 import { idParamSchema } from "../validation/common.js";
-import { reviewSchema } from "../validation/review.validation.js";
+import { adminReviewListSchema, reviewSchema } from "../validation/review.validation.js";
 
 const router = Router();
 
@@ -13,6 +13,13 @@ router.post(
   authenticate,
   validate({ params: idParamSchema, body: reviewSchema }),
   reviewController.createReview
+);
+router.get(
+  "/admin/reviews",
+  authenticate,
+  requireAdmin,
+  validate({ query: adminReviewListSchema }),
+  reviewController.adminReviews
 );
 
 export default router;
