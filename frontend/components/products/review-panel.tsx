@@ -90,14 +90,18 @@ export function ReviewPanel({
                   createdAt: response.data.createdAt ?? new Date().toISOString()
                 } as Review;
 
-                setReviews((current) => {
-                  const remaining = current.filter((item) => item.id !== nextReview.id);
-                  return [nextReview, ...remaining];
-                });
+                if (nextReview.status === "APPROVED") {
+                  setReviews((current) => {
+                    const remaining = current.filter((item) => item.id !== nextReview.id);
+                    return [nextReview, ...remaining];
+                  });
+                }
                 setTitle("");
                 setComment("");
                 setRating(5);
-                toast.success("Review saved");
+                toast.success(
+                  nextReview.status === "APPROVED" ? "Review saved" : "Review submitted for approval"
+                );
               } catch (error) {
                 toast.error(getApiErrorMessage(error, "Unable to save review"));
               } finally {

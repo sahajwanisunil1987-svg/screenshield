@@ -273,6 +273,9 @@ export const getProductBySlug = (slug: string) =>
       },
       inventory: true,
       reviews: {
+        where: {
+          status: "APPROVED"
+        },
         include: {
           user: { select: { name: true } }
         },

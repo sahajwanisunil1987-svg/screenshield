@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Star } from "lucide-react";
+import { EyeOff, ShieldCheck, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminGuard } from "@/components/admin/admin-guard";
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -20,7 +20,9 @@ export default function AdminReviewsPage() {
   const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, pages: 1 });
   const [query, setQuery] = useState("");
   const [ratingFilter, setRatingFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [page, setPage] = useState(1);
+  const [busyReviewId, setBusyReviewId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -32,6 +34,7 @@ export default function AdminReviewsPage() {
         params: {
           search: query || undefined,
           rating: ratingFilter,
+          status: statusFilter,
           page,
           limit: 12
         }
@@ -43,11 +46,11 @@ export default function AdminReviewsPage() {
       .catch((error) => {
         toast.error(getApiErrorMessage(error, "Unable to load reviews"));
       });
-  }, [page, query, ratingFilter, token]);
+  }, [page, query, ratingFilter, statusFilter, token]);
 
   useEffect(() => {
     setPage(1);
-  }, [query, ratingFilter]);
+  }, [query, ratingFilter, statusFilter]);
 
   const pageNumbers = useMemo(
     () =>
@@ -63,9 +66,9 @@ export default function AdminReviewsPage() {
         <div className="space-y-6 rounded-[28px] border border-white/10 bg-white/5 p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="font-semibold text-white">Review visibility</h3>
+              <h3 className="font-semibold text-white">Review moderation</h3>
               <p className="mt-1 text-sm text-white/60">
-                Inspect buyer feedback by product, rating, and customer detail.
+                Inspect buyer feedback, approve public reviews, or hide/remove problematic entries.
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-black/10 px-4 py-3 text-sm text-white/70">
@@ -73,7 +76,7 @@ export default function AdminReviewsPage() {
             </div>
           </div>
 
-          <div className="grid gap-3 lg:grid-cols-[1.5fr_minmax(0,220px)]">
+          <div className="grid gap-3 lg:grid-cols-[1.4fr_minmax(0,220px)_minmax(0,220px)]">
             <Input
               placeholder="Search by product, SKU, customer, or review text"
               value={query}
@@ -92,6 +95,16 @@ export default function AdminReviewsPage() {
                 </option>
               ))}
             </select>
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              className="rounded-2xl bg-white px-4 py-3 text-sm text-ink"
+            >
+              <option value="ALL">All statuses</option>
+              <option value="PENDING">Pending</option>
+              <option value="APPROVED">Approved</option>
+              <option value="HIDDEN">Hidden</option>
+            </select>
           </div>
 
           <div className="space-y-4">
@@ -103,6 +116,17 @@ export default function AdminReviewsPage() {
                       <p className="font-semibold text-white">{review.product.name}</p>
                       <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/75">
                         SKU {review.product.sku}
+                      </span>
+                      <span
+                        className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                          review.status === "APPROVED"
+                            ? "bg-emerald-500/15 text-emerald-200"
+                            : review.status === "HIDDEN"
+                              ? "bg-rose-500/15 text-rose-200"
+                              : "bg-amber-500/15 text-amber-200"
+                        }`}
+                      >
+                        {review.status}
                       </span>
                     </div>
                     <p className="text-white/60">
@@ -125,11 +149,88 @@ export default function AdminReviewsPage() {
                 <div className="mt-4 rounded-[22px] bg-white/5 p-4">
                   <p className="leading-7">{review.comment}</p>
                 </div>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    disabled={busyReviewId === review.id || review.status === "APPROVED"}
+                    onClick={async () => {
+                      if (!token) return;
+                      setBusyReviewId(review.id);
+                      try {
+                        const response = await api.patch<AdminReview>(
+                          `/admin/reviews/${review.id}/status`,
+                          { status: "APPROVED" },
+                          authHeaders(token)
+                        );
+                        setReviews((current) => current.map((item) => (item.id === review.id ? response.data : item)));
+                        toast.success("Review approved");
+                      } catch (error) {
+                        toast.error(getApiErrorMessage(error, "Unable to approve review"));
+                      } finally {
+                        setBusyReviewId(null);
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-200 transition hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busyReviewId === review.id || review.status === "HIDDEN"}
+                    onClick={async () => {
+                      if (!token) return;
+                      setBusyReviewId(review.id);
+                      try {
+                        const response = await api.patch<AdminReview>(
+                          `/admin/reviews/${review.id}/status`,
+                          { status: "HIDDEN" },
+                          authHeaders(token)
+                        );
+                        setReviews((current) => current.map((item) => (item.id === review.id ? response.data : item)));
+                        toast.success("Review hidden");
+                      } catch (error) {
+                        toast.error(getApiErrorMessage(error, "Unable to hide review"));
+                      } finally {
+                        setBusyReviewId(null);
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-amber-200 transition hover:bg-amber-500/15 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <EyeOff className="h-4 w-4" />
+                    Hide
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busyReviewId === review.id}
+                    onClick={async () => {
+                      if (!token) return;
+                      setBusyReviewId(review.id);
+                      try {
+                        await api.delete(`/admin/reviews/${review.id}`, authHeaders(token));
+                        setReviews((current) => current.filter((item) => item.id !== review.id));
+                        setPagination((current) => ({
+                          ...current,
+                          total: Math.max(current.total - 1, 0)
+                        }));
+                        toast.success("Review deleted");
+                      } catch (error) {
+                        toast.error(getApiErrorMessage(error, "Unable to delete review"));
+                      } finally {
+                        setBusyReviewId(null);
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full border border-rose-400/20 bg-rose-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-rose-200 transition hover:bg-rose-500/15 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
             {!reviews.length ? (
               <div className="rounded-[24px] border border-dashed border-white/10 bg-black/10 px-6 py-10 text-center text-sm text-white/55">
-                No reviews match the current search and rating filter.
+                No reviews match the current search, rating, and moderation filters.
               </div>
             ) : null}
           </div>

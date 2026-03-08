@@ -85,6 +85,7 @@ export type Review = {
   rating: number;
   title?: string | null;
   comment: string;
+  status?: "PENDING" | "APPROVED" | "HIDDEN";
   createdAt: string;
   user: {
     name: string;
@@ -96,6 +97,7 @@ export type AdminReview = Review & {
     name: string;
     email: string;
   };
+  status: "PENDING" | "APPROVED" | "HIDDEN";
   product: {
     id: string;
     name: string;

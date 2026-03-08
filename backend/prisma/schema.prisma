@@ -35,6 +35,12 @@ enum CouponType {
   FLAT
 }
 
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  HIDDEN
+}
+
 model Brand {
   id          String        @id @default(cuid())
   name        String        @unique
@@ -195,13 +201,14 @@ model Review {
   rating    Int
   title     String?
   comment   String
+  status    ReviewStatus @default(PENDING)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([userId, productId])
-  @@index([productId, rating])
+  @@index([productId, status, rating])
 }
 
 model Coupon {
