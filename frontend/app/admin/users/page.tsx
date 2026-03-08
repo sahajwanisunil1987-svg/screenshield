@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AdminGuard } from "@/components/admin/admin-guard";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 import { PaginatedResponse, User } from "@/types";
 
@@ -93,7 +94,7 @@ export default function AdminUsersPage() {
                 {user.orders?.map((order) => (
                   <div key={order.id} className="rounded-2xl bg-white/5 p-4">
                     <p className="font-medium text-white">{order.orderNumber}</p>
-                    <p className="mt-1 text-white/60">{new Date(order.createdAt).toLocaleDateString("en-IN")}</p>
+                    <p className="mt-1 text-white/60">{formatDate(order.createdAt)}</p>
                     <p className="mt-1 text-white/60">{order.status} · {order.paymentStatus}</p>
                   </div>
                 ))}

@@ -7,6 +7,7 @@ import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api, getApiErrorMessage } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
 
 const timeline = ["PENDING", "CONFIRMED", "PACKED", "SHIPPED", "DELIVERED"];
 
@@ -89,13 +90,13 @@ export default function TrackOrderPage() {
                 <div className="rounded-2xl bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Placed on</p>
                   <p className="mt-2 font-semibold text-ink">
-                    {new Date(result.createdAt).toLocaleDateString("en-IN", { dateStyle: "medium" })}
+                    {formatDate(result.createdAt)}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Last updated</p>
                   <p className="mt-2 font-semibold text-ink">
-                    {new Date(result.updatedAt).toLocaleDateString("en-IN", { dateStyle: "medium" })}
+                    {formatDate(result.updatedAt)}
                   </p>
                 </div>
               </div>

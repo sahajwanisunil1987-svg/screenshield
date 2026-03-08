@@ -6,7 +6,7 @@ import { AdminGuard } from "@/components/admin/admin-guard";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { AdminOrder, PaginatedResponse } from "@/types";
 
 const orderStatuses = ["PENDING", "CONFIRMED", "PACKED", "SHIPPED", "DELIVERED", "CANCELLED"];
@@ -127,7 +127,7 @@ export default function AdminOrdersPage() {
                     {order.items.length} items · {formatCurrency(Number(order.totalAmount))}
                   </p>
                   <p className="text-white/50">
-                    Ordered on {new Date(order.createdAt).toLocaleDateString("en-IN", { dateStyle: "medium" })}
+                    Ordered on {formatDate(order.createdAt)}
                   </p>
                 </div>
                 <div className="flex flex-col items-start gap-3 lg:items-end">

@@ -8,6 +8,7 @@ import { AdminGuard } from "@/components/admin/admin-guard";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { Input } from "@/components/ui/input";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 import { AdminReview, PaginatedResponse } from "@/types";
 
@@ -114,7 +115,7 @@ export default function AdminReviewsPage() {
                     </div>
                   </div>
                   <div className="text-right text-xs text-white/45">
-                    <p>{new Date(review.createdAt).toLocaleDateString("en-IN", { dateStyle: "medium" })}</p>
+                    <p>{formatDate(review.createdAt)}</p>
                     <Link href={`/products/${review.product.slug}`} className="mt-2 inline-block font-semibold text-cyan-200 underline">
                       Open product
                     </Link>

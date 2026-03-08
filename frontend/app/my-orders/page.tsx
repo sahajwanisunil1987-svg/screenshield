@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { PageShell } from "@/components/layout/page-shell";
 import { EmptyState } from "@/components/ui/empty-state";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useAuthStore } from "@/store/auth-store";
 import { Order } from "@/types";
@@ -40,7 +40,7 @@ export default function MyOrdersPage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="font-semibold text-ink">{order.orderNumber}</p>
-                    <p className="text-sm text-slate">{new Date(order.createdAt).toLocaleDateString("en-IN")}</p>
+                    <p className="text-sm text-slate">{formatDate(order.createdAt)}</p>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-ink">{formatCurrency(order.totalAmount)}</p>

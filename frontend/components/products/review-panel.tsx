@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { MessageSquareQuote, Star, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 import { Review } from "@/types";
 import { Button } from "../ui/button";
@@ -166,7 +167,7 @@ export function ReviewPanel({
                 </div>
                 <div className="text-right text-sm text-slate">
                   {review.title ? <p className="mt-1 text-sm font-medium text-ink/80">{review.title}</p> : null}
-                  <p className="mt-1 text-slate">{new Date(review.createdAt).toLocaleDateString("en-IN")}</p>
+                  <p className="mt-1 text-slate">{formatDate(review.createdAt)}</p>
                 </div>
               </div>
               <div className="mt-4 rounded-[22px] bg-[#f8fbfc] p-4">

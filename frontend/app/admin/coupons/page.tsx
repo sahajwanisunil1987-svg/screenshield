@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { AdminGuard } from "@/components/admin/admin-guard";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -286,7 +287,7 @@ export default function AdminCouponsPage() {
                   </p>
                   <p className="mt-1 text-white/40">
                     Used {coupon.usedCount}/{coupon.usageLimit ?? "unlimited"}
-                    {coupon.expiresAt ? ` · Expires ${new Date(coupon.expiresAt).toLocaleString("en-IN")}` : ""}
+                    {coupon.expiresAt ? ` · Expires ${formatDateTime(coupon.expiresAt)}` : ""}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -345,7 +346,7 @@ export default function AdminCouponsPage() {
                 <div className="rounded-2xl bg-white/5 p-4 text-white/70">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">Expiry</p>
                   <p className="mt-2 font-semibold text-white">
-                    {coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString("en-IN", { dateStyle: "medium" }) : "No expiry"}
+                    {coupon.expiresAt ? formatDate(coupon.expiresAt) : "No expiry"}
                   </p>
                 </div>
               </div>

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { AdminGuard } from "@/components/admin/admin-guard";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 
 export default function AdminDashboardPage() {
@@ -158,7 +158,7 @@ export default function AdminDashboardPage() {
                         <p className="font-medium text-white">{order.orderNumber}</p>
                         <p className="mt-1 text-white/50">{order.user?.name}</p>
                         <p className="mt-1 text-xs text-white/40">
-                          {new Date(order.createdAt).toLocaleDateString("en-IN", { dateStyle: "medium" })}
+                          {formatDate(order.createdAt)}
                         </p>
                       </div>
                       <div className="text-right">
@@ -272,7 +272,7 @@ export default function AdminDashboardPage() {
                       <p className="text-white/50">{user.email}</p>
                     </div>
                     <span className="text-xs text-white/45">
-                      {new Date(user.createdAt).toLocaleDateString("en-IN", { dateStyle: "medium" })}
+                      {formatDate(user.createdAt)}
                     </span>
                   </div>
                 ))
