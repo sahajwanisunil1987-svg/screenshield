@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AdminGuard } from "@/components/admin/admin-guard";
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -11,6 +11,8 @@ import { useAuthStore } from "@/store/auth-store";
 export default function AdminInventoryPage() {
   const token = useAuthStore((state) => state.token);
   const [items, setItems] = useState<any[]>([]);
+  const [query, setQuery] = useState("");
+  const [stockFilter, setStockFilter] = useState<"ALL" | "LOW" | "HEALTHY">("ALL");
 
   useEffect(() => {
     if (!token) return;
@@ -22,11 +24,58 @@ export default function AdminInventoryPage() {
       });
   }, [token]);
 
+  const filteredItems = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return items.filter((item) => {
+      const matchesQuery =
+        !normalizedQuery ||
+        item.product.name.toLowerCase().includes(normalizedQuery) ||
+        item.product.sku.toLowerCase().includes(normalizedQuery) ||
+        item.product.brand.name.toLowerCase().includes(normalizedQuery) ||
+        item.product.model.name.toLowerCase().includes(normalizedQuery) ||
+        item.product.category.name.toLowerCase().includes(normalizedQuery) ||
+        (item.warehouseCode ?? "").toLowerCase().includes(normalizedQuery);
+
+      const isLowStock = item.stock <= item.lowStockLimit;
+      const matchesStock =
+        stockFilter === "ALL" ||
+        (stockFilter === "LOW" ? isLowStock : !isLowStock);
+
+      return matchesQuery && matchesStock;
+    });
+  }, [items, query, stockFilter]);
+
   return (
     <AdminGuard>
       <AdminShell title="Inventory">
+        <div className="mb-4 flex flex-col gap-4 rounded-[28px] border border-white/10 bg-white/5 p-5">
+          <div>
+            <p className="text-sm font-semibold text-white">Inventory controls</p>
+            <p className="text-sm text-white/60">
+              {filteredItems.length} of {items.length} inventory records visible
+            </p>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-[1.5fr_minmax(0,220px)]">
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search by part, SKU, brand, model, category, or warehouse"
+              className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40"
+            />
+            <select
+              value={stockFilter}
+              onChange={(event) => setStockFilter(event.target.value as "ALL" | "LOW" | "HEALTHY")}
+              className="rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink"
+            >
+              <option value="ALL">All stock states</option>
+              <option value="LOW">Low stock only</option>
+              <option value="HEALTHY">Healthy stock only</option>
+            </select>
+          </div>
+        </div>
         <div className="space-y-4 rounded-[28px] border border-white/10 bg-white/5 p-6">
-          {items.map((item) => (
+          {filteredItems.map((item) => (
             <div key={item.id} className="grid gap-4 rounded-[28px] border border-white/10 bg-white/5 p-5 text-sm lg:grid-cols-[1.2fr_1fr_auto]">
               <div className="space-y-2">
                 <p className="font-semibold text-white">{item.product.name}</p>
@@ -102,6 +151,11 @@ export default function AdminInventoryPage() {
               </div>
             </div>
           ))}
+          {!filteredItems.length ? (
+            <div className="rounded-[24px] border border-dashed border-white/10 bg-black/10 px-6 py-10 text-center text-sm text-white/55">
+              No inventory records match the current search and filters.
+            </div>
+          ) : null}
         </div>
       </AdminShell>
     </AdminGuard>

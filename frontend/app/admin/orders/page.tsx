@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AdminGuard } from "@/components/admin/admin-guard";
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -14,6 +14,9 @@ const paymentStatuses = ["PENDING", "PAID", "FAILED", "REFUNDED", "COD"];
 export default function AdminOrdersPage() {
   const token = useAuthStore((state) => state.token);
   const [orders, setOrders] = useState<any[]>([]);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [paymentFilter, setPaymentFilter] = useState("ALL");
 
   const load = () => {
     if (!token) return;
@@ -29,11 +32,74 @@ export default function AdminOrdersPage() {
     load();
   }, [token]);
 
+  const filteredOrders = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return orders.filter((order) => {
+      const matchesQuery =
+        !normalizedQuery ||
+        order.orderNumber.toLowerCase().includes(normalizedQuery) ||
+        order.user.name.toLowerCase().includes(normalizedQuery) ||
+        order.user.email.toLowerCase().includes(normalizedQuery) ||
+        (order.user.phone ?? "").toLowerCase().includes(normalizedQuery);
+
+      const matchesStatus = statusFilter === "ALL" || order.status === statusFilter;
+      const matchesPayment = paymentFilter === "ALL" || order.paymentStatus === paymentFilter;
+
+      return matchesQuery && matchesStatus && matchesPayment;
+    });
+  }, [orders, paymentFilter, query, statusFilter]);
+
   return (
     <AdminGuard>
       <AdminShell title="Orders">
+        <div className="mb-4 flex flex-col gap-4 rounded-[28px] border border-white/10 bg-white/5 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-white">Order controls</p>
+              <p className="text-sm text-white/60">
+                {filteredOrders.length} of {orders.length} orders visible
+              </p>
+            </div>
+            <button type="button" onClick={load} className="text-sm text-white/60 underline">
+              Refresh list
+            </button>
+          </div>
+          <div className="grid gap-3 xl:grid-cols-[1.5fr_repeat(2,minmax(0,220px))]">
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search by order number, customer, email, or phone"
+              className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40"
+            />
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              className="rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink"
+            >
+              <option value="ALL">All order statuses</option>
+              {orderStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+            <select
+              value={paymentFilter}
+              onChange={(event) => setPaymentFilter(event.target.value)}
+              className="rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink"
+            >
+              <option value="ALL">All payment states</option>
+              {paymentStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
         <div className="space-y-4 rounded-[28px] border border-white/10 bg-white/5 p-6">
-          {orders.map((order) => (
+          {filteredOrders.map((order) => (
             <div key={order.id} className="space-y-5 rounded-[28px] border border-white/10 bg-white/5 p-5 text-sm">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-2">
@@ -167,6 +233,11 @@ export default function AdminOrdersPage() {
               </div>
             </div>
           ))}
+          {!filteredOrders.length ? (
+            <div className="rounded-[24px] border border-dashed border-white/10 bg-black/10 px-6 py-10 text-center text-sm text-white/55">
+              No orders match the current search and filters.
+            </div>
+          ) : null}
         </div>
       </AdminShell>
     </AdminGuard>
