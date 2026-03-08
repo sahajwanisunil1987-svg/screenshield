@@ -16,9 +16,13 @@ export function Navbar() {
   const [search, setSearch] = useState("");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const items = useCartStore((state) => state.items);
+  const cartHydrated = useCartStore((state) => state.hasHydrated);
   const wishlist = useWishlistStore((state) => state.items);
+  const wishlistHydrated = useWishlistStore((state) => state.hasHydrated);
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  const cartCount = cartHydrated ? items.length : 0;
+  const wishlistCount = wishlistHydrated ? wishlist.length : 0;
 
   const onSearch = () => {
     const params = new URLSearchParams();
@@ -94,13 +98,13 @@ export function Navbar() {
             <Link href="/wishlist" className="relative rounded-full p-2 hover:bg-white/10">
               <Heart className="h-5 w-5" />
               <span className="absolute -right-1 -top-1 rounded-full bg-ember px-1.5 text-[10px]">
-                {wishlist.length}
+                {wishlistCount}
               </span>
             </Link>
             <Link href="/cart" className="relative rounded-full p-2 hover:bg-white/10">
               <ShoppingBag className="h-5 w-5" />
               <span className="absolute -right-1 -top-1 rounded-full bg-accent px-1.5 text-[10px]">
-                {items.length}
+                {cartCount}
               </span>
             </Link>
           </nav>

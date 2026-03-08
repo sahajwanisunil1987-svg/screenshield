@@ -9,10 +9,12 @@ import { Product } from "@/types";
 type WishlistStore = {
   guestItems: Product[];
   items: Product[];
+  hasHydrated: boolean;
   syncFromServer: () => Promise<void>;
   setGuestMode: () => void;
   toggle: (product: Product) => Promise<boolean>;
   has: (productId: string) => boolean;
+  setHydrated: (value: boolean) => void;
 };
 
 export const useWishlistStore = create<WishlistStore>()(
@@ -20,6 +22,7 @@ export const useWishlistStore = create<WishlistStore>()(
     (set, get) => ({
       guestItems: [],
       items: [],
+      hasHydrated: false,
       syncFromServer: async () => {
         const token = useAuthStore.getState().token;
 
@@ -69,14 +72,18 @@ export const useWishlistStore = create<WishlistStore>()(
 
         return !exists;
       },
-      has: (productId) => get().items.some((item) => item.id === productId)
+      has: (productId) => get().items.some((item) => item.id === productId),
+      setHydrated: (value) => set({ hasHydrated: value })
     }),
     {
       name: "sparekart-wishlist",
       partialize: (state) => ({
         guestItems: state.guestItems,
         items: state.items
-      })
+      }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHydrated(true);
+      }
     }
   )
 );

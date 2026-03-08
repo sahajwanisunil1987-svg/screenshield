@@ -13,7 +13,7 @@ import { formatCurrency } from "@/lib/utils";
 import { useCartStore } from "@/store/cart-store";
 
 export default function CartPage() {
-  const { items, updateQty, removeItem, couponCode, couponDiscount, applyCoupon, clearCoupon } = useCartStore();
+  const { items, updateQty, removeItem, couponCode, couponDiscount, applyCoupon, clearCoupon, hasHydrated } = useCartStore();
   const [couponInput, setCouponInput] = useState(couponCode);
   const [isApplying, setIsApplying] = useState(false);
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
@@ -25,7 +25,22 @@ export default function CartPage() {
         <h1 className="font-display text-4xl text-ink">Your cart</h1>
         <div className="mt-10 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-4">
-            {items.length ? (
+            {!hasHydrated ? (
+              Array.from({ length: 2 }).map((_, index) => (
+                <div key={index} className="grid gap-4 rounded-[28px] bg-white p-5 shadow-card md:grid-cols-[110px_1fr_auto]">
+                  <div className="h-28 rounded-2xl bg-slate-100" />
+                  <div className="space-y-3">
+                    <div className="h-5 w-2/3 rounded-full bg-slate-100" />
+                    <div className="h-4 w-1/3 rounded-full bg-slate-100" />
+                    <div className="h-4 w-1/4 rounded-full bg-slate-100" />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="h-10 w-20 rounded-xl bg-slate-100" />
+                    <div className="h-4 w-16 rounded-full bg-slate-100" />
+                  </div>
+                </div>
+              ))
+            ) : items.length ? (
               items.map((item) => (
                 <div key={item.product.id} className="grid gap-4 rounded-[28px] bg-white p-5 shadow-card md:grid-cols-[110px_1fr_auto]">
                   <div className="relative h-28 overflow-hidden rounded-2xl bg-slate-100">
@@ -59,25 +74,25 @@ export default function CartPage() {
             <div className="mt-6 space-y-3 text-sm text-slate">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span>{formatCurrency(subtotal)}</span>
+                <span>{hasHydrated ? formatCurrency(subtotal) : "..."}</span>
               </div>
               <div className="flex justify-between">
                 <span>Shipping</span>
-                <span>{shipping === 0 ? "Free" : formatCurrency(shipping)}</span>
+                <span>{hasHydrated ? (shipping === 0 ? "Free" : formatCurrency(shipping)) : "..."}</span>
               </div>
               <div className="flex justify-between">
                 <span>GST (18%)</span>
-                <span>{formatCurrency(tax)}</span>
+                <span>{hasHydrated ? formatCurrency(tax) : "..."}</span>
               </div>
               {couponDiscount > 0 ? (
                 <div className="flex justify-between text-emerald-600">
                   <span>Coupon ({couponCode})</span>
-                  <span>-{formatCurrency(couponDiscount)}</span>
+                  <span>{hasHydrated ? `-${formatCurrency(couponDiscount)}` : "..."}</span>
                 </div>
               ) : null}
               <div className="flex justify-between font-semibold text-ink">
                 <span>Total</span>
-                <span>{formatCurrency(total)}</span>
+                <span>{hasHydrated ? formatCurrency(total) : "..."}</span>
               </div>
             </div>
             <div className="mt-6 flex gap-3">
@@ -89,7 +104,7 @@ export default function CartPage() {
               />
               <Button
                 type="button"
-                disabled={!couponInput.trim() || !items.length || isApplying}
+                disabled={!hasHydrated || !couponInput.trim() || !items.length || isApplying}
                 onClick={async () => {
                   setIsApplying(true);
                   try {
@@ -119,7 +134,7 @@ export default function CartPage() {
               </button>
             ) : null}
             <Link href="/checkout" className="mt-4 block">
-              <Button className="w-full">Proceed to Checkout</Button>
+              <Button className="w-full" disabled={!hasHydrated || !items.length}>Proceed to Checkout</Button>
             </Link>
           </div>
         </div>

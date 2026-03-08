@@ -14,6 +14,7 @@ export function ProductCard({ product }: { product: Product }) {
   const addItem = useCartStore((state) => state.addItem);
   const toggle = useWishlistStore((state) => state.toggle);
   const has = useWishlistStore((state) => state.has);
+  const wishlistHydrated = useWishlistStore((state) => state.hasHydrated);
   const discount =
     product.comparePrice && product.comparePrice > product.price ? product.comparePrice - product.price : 0;
   const stock = product.inventory?.stock ?? product.stock;
@@ -68,7 +69,9 @@ export function ProductCard({ product }: { product: Product }) {
             }}
             className="rounded-full border border-slate-200 bg-white/90 p-2 transition hover:border-accent/30 hover:bg-accentSoft"
           >
-            <Heart className={`h-4 w-4 ${has(product.id) ? "fill-rose-500 text-rose-500" : "text-slate"}`} />
+            <Heart
+              className={`h-4 w-4 ${wishlistHydrated && has(product.id) ? "fill-rose-500 text-rose-500" : "text-slate"}`}
+            />
           </button>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate">

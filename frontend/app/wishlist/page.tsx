@@ -12,6 +12,7 @@ import { useWishlistStore } from "@/store/wishlist-store";
 export default function WishlistPage() {
   const token = useAuthStore((state) => state.token);
   const items = useWishlistStore((state) => state.items);
+  const hasHydrated = useWishlistStore((state) => state.hasHydrated);
   const syncFromServer = useWishlistStore((state) => state.syncFromServer);
 
   useEffect(() => {
@@ -29,7 +30,21 @@ export default function WishlistPage() {
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <h1 className="font-display text-4xl text-ink">Wishlist</h1>
         <div className="mt-10">
-          {items.length ? (
+          {!hasHydrated ? (
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-panel shadow-card">
+                  <div className="aspect-[4/3] bg-slate-100" />
+                  <div className="space-y-4 p-5">
+                    <div className="h-3 w-20 rounded-full bg-slate-100" />
+                    <div className="h-6 w-3/4 rounded-full bg-slate-100" />
+                    <div className="h-4 w-1/2 rounded-full bg-slate-100" />
+                    <div className="h-10 rounded-full bg-slate-100" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : items.length ? (
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {items.map((item) => (
                 <ProductCard key={item.id} product={item} />

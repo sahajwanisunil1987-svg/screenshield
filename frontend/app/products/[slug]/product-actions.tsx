@@ -13,6 +13,7 @@ export function ProductActions({ product }: { product: Product }) {
   const addItem = useCartStore((state) => state.addItem);
   const toggle = useWishlistStore((state) => state.toggle);
   const has = useWishlistStore((state) => state.has);
+  const wishlistHydrated = useWishlistStore((state) => state.hasHydrated);
 
   return (
     <div className="space-y-4 rounded-[28px] border border-slate-200 bg-[#f7fafb] p-4">
@@ -50,8 +51,10 @@ export function ProductActions({ product }: { product: Product }) {
         }}
         className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-accent/30 hover:bg-accentSoft"
       >
-        <Heart className={`h-4 w-4 ${has(product.id) ? "fill-rose-500 text-rose-500" : "text-slate"}`} />
-        {has(product.id) ? "Remove from Wishlist" : "Add to Wishlist"}
+        <Heart
+          className={`h-4 w-4 ${wishlistHydrated && has(product.id) ? "fill-rose-500 text-rose-500" : "text-slate"}`}
+        />
+        {wishlistHydrated && has(product.id) ? "Remove from Wishlist" : "Add to Wishlist"}
       </button>
       <div className="grid gap-3 text-xs text-slate sm:grid-cols-3">
         <div className="rounded-2xl bg-white px-4 py-3">Secure payment flow</div>

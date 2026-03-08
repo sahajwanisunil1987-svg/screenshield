@@ -13,12 +13,14 @@ type CartStore = {
   items: CartItem[];
   couponCode: string;
   couponDiscount: number;
+  hasHydrated: boolean;
   addItem: (product: Product) => void;
   updateQty: (productId: string, quantity: number) => void;
   removeItem: (productId: string) => void;
   applyCoupon: (payload: { code: string; discount: number }) => void;
   clearCoupon: () => void;
   clear: () => void;
+  setHydrated: (value: boolean) => void;
 };
 
 export const useCartStore = create<CartStore>()(
@@ -27,6 +29,7 @@ export const useCartStore = create<CartStore>()(
       items: [],
       couponCode: "",
       couponDiscount: 0,
+      hasHydrated: false,
       addItem: (product) =>
         set((state) => {
           const existing = state.items.find((item) => item.product.id === product.id);
@@ -54,8 +57,19 @@ export const useCartStore = create<CartStore>()(
         })),
       applyCoupon: ({ code, discount }) => set({ couponCode: code, couponDiscount: discount }),
       clearCoupon: () => set({ couponCode: "", couponDiscount: 0 }),
-      clear: () => set({ items: [], couponCode: "", couponDiscount: 0 })
+      clear: () => set({ items: [], couponCode: "", couponDiscount: 0 }),
+      setHydrated: (value) => set({ hasHydrated: value })
     }),
-    { name: "sparekart-cart" }
+    {
+      name: "sparekart-cart",
+      partialize: (state) => ({
+        items: state.items,
+        couponCode: state.couponCode,
+        couponDiscount: state.couponDiscount
+      }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHydrated(true);
+      }
+    }
   )
 );
