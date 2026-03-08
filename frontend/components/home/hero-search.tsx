@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+import { ArrowRight, Search, Sparkles } from "lucide-react";
 import { Brand, Category, MobileModel, SearchSuggestion } from "@/types";
 import { Button } from "../ui/button";
 import { SearchCombobox } from "../ui/search-combobox";
@@ -21,11 +21,22 @@ export function HeroSearch({ brands, models, categories }: HeroSearchProps) {
   const [categorySlug, setCategorySlug] = useState("");
   const [keyword, setKeyword] = useState("");
 
+  const quickSearches = [
+    { label: "Vivo Y21 Display", brand: "vivo", keyword: "display", model: "vivo-y21" },
+    { label: "iPhone 13 Battery", brand: "apple", keyword: "battery", model: "iphone-13" },
+    { label: "Samsung Charging Port", brand: "samsung", keyword: "charging port" },
+    { label: "Back Panel", keyword: "back panel" }
+  ];
+
   const filteredModels = useMemo(() => {
     if (!brandSlug) return models;
     const brand = brands.find((item) => item.slug === brandSlug);
     return models.filter((item) => item.brandId === brand?.id);
   }, [brandSlug, brands, models]);
+
+  const selectedBrand = brands.find((item) => item.slug === brandSlug);
+  const selectedModel = filteredModels.find((item) => item.slug === modelSlug);
+  const selectedCategory = categories.find((item) => item.slug === categorySlug);
 
   useEffect(() => {
     setModelSlug("");
@@ -42,6 +53,34 @@ export function HeroSearch({ brands, models, categories }: HeroSearchProps) {
 
   return (
     <div className="rounded-[36px] border border-white/10 bg-white/10 p-5 backdrop-blur md:p-7">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-teal-200/90">
+            <Sparkles className="h-4 w-4" />
+            Smart spare search
+          </p>
+          <p className="mt-3 max-w-2xl text-sm text-white/70">
+            Start with brand, narrow to model, then add part type or keyword for faster workshop-grade discovery.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {quickSearches.map((preset) => (
+            <button
+              key={preset.label}
+              type="button"
+              onClick={() => {
+                setBrandSlug(preset.brand ?? "");
+                setKeyword(preset.keyword ?? "");
+                setModelSlug(preset.model ?? "");
+                setCategorySlug("");
+              }}
+              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_1.2fr_auto]">
         <SearchCombobox
           label="Brand"
@@ -96,6 +135,15 @@ export function HeroSearch({ brands, models, categories }: HeroSearchProps) {
           <Search className="h-4 w-4" />
           Find Parts
         </Button>
+      </div>
+      <div className="mt-5 flex flex-wrap items-center gap-3 rounded-[28px] border border-white/10 bg-black/10 px-4 py-4 text-sm text-white/75">
+        <span className="font-semibold text-white">Selected flow</span>
+        <ArrowRight className="h-4 w-4 text-white/35" />
+        <span>{selectedBrand?.name ?? "Choose brand"}</span>
+        <ArrowRight className="h-4 w-4 text-white/35" />
+        <span>{selectedModel?.name ?? "Choose model"}</span>
+        <ArrowRight className="h-4 w-4 text-white/35" />
+        <span>{selectedCategory?.name ?? (keyword.trim() || "Choose part type / keyword")}</span>
       </div>
     </div>
   );
