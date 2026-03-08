@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { verifyToken } from "../utils/jwt.js";
+import { verifyAccessToken } from "../utils/jwt.js";
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   const bearer = req.headers.authorization;
@@ -10,7 +10,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
     return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Authentication required" });
   }
 
-  const payload = verifyToken(token);
+  const payload = verifyAccessToken(token);
   req.user = {
     userId: payload.userId,
     role: payload.role,

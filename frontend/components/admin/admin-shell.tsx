@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ReactNode } from "react";
 import { LogOut } from "lucide-react";
 import { useAuthStore } from "@/store/auth-store";
+import { api } from "@/lib/api";
 
 const links = [
   { href: "/admin/dashboard", label: "Dashboard" },
@@ -20,7 +21,7 @@ const links = [
 
 export function AdminShell({ title, children }: { title: string; children: ReactNode }) {
   const router = useRouter();
-  const logout = useAuthStore((state) => state.logout);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(15,118,110,0.16),transparent_24%),linear-gradient(180deg,#07111f,#0b1729)] text-white">
@@ -41,8 +42,9 @@ export function AdminShell({ title, children }: { title: string; children: React
           </nav>
           <button
             type="button"
-            onClick={() => {
-              logout();
+            onClick={async () => {
+              await api.post("/auth/logout").catch(() => null);
+              clearAuth();
               router.replace("/admin/login");
             }}
             className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/85 transition hover:bg-white/10 hover:text-white"

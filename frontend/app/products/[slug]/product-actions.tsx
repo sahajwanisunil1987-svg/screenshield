@@ -11,6 +11,7 @@ export function ProductActions({ product }: { product: Product }) {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
   const toggle = useWishlistStore((state) => state.toggle);
+  const has = useWishlistStore((state) => state.has);
 
   return (
     <div className="flex flex-wrap gap-3">
@@ -32,13 +33,17 @@ export function ProductActions({ product }: { product: Product }) {
         Buy Now
       </Button>
       <button
-        onClick={() => {
-          toggle(product);
-          toast.success("Wishlist updated");
+        onClick={async () => {
+          try {
+            const saved = await toggle(product);
+            toast.success(saved ? "Added to wishlist" : "Removed from wishlist");
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Unable to update wishlist");
+          }
         }}
         className="rounded-full border border-slate-200 px-5 py-3 text-sm font-semibold text-ink"
       >
-        Add to Wishlist
+        {has(product.id) ? "Remove from Wishlist" : "Add to Wishlist"}
       </button>
     </div>
   );

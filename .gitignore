@@ -8,4 +8,5 @@ backend/.env
 coverage
 uploads
 *.log
+*.tsbuildinfo
 .DS_Store

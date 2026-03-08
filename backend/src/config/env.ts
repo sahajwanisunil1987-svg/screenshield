@@ -9,6 +9,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   DIRECT_URL: z.string().min(1),
   JWT_SECRET: z.string().min(8),
+  JWT_REFRESH_SECRET: z.string().min(8).optional(),
   FRONTEND_URL: z.string().default("http://localhost:3000"),
   RAZORPAY_KEY_ID: z.string().default("rzp_test_xxxxx"),
   RAZORPAY_KEY_SECRET: z.string().default("xxxxxx"),

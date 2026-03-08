@@ -11,6 +11,7 @@ import { PageShell } from "@/components/layout/page-shell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
+import { calculateOrderPricing } from "@/lib/order-pricing";
 import { formatCurrency } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 import { useCartStore } from "@/store/cart-store";
@@ -36,8 +37,7 @@ export default function CheckoutPage() {
   const user = useAuthStore((state) => state.user);
   const setAuth = useAuthStore((state) => state.setAuth);
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  const shipping = subtotal > 999 ? 0 : 79;
-  const total = Math.max(subtotal - couponDiscount, 0) + shipping;
+  const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount);
   const { register, handleSubmit, watch, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -232,6 +232,10 @@ export default function CheckoutPage() {
               <div className="mt-2 flex justify-between">
                 <span>Shipping</span>
                 <span>{shipping === 0 ? "Free" : formatCurrency(shipping)}</span>
+              </div>
+              <div className="mt-2 flex justify-between">
+                <span>GST (18%)</span>
+                <span>{formatCurrency(tax)}</span>
               </div>
               <div className="mt-2 flex justify-between font-semibold text-ink">
                 <span>Total</span>

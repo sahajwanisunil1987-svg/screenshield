@@ -3,21 +3,68 @@ import { useAuthStore } from "@/store/auth-store";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json"
   }
 });
 
+let refreshPromise: Promise<string | null> | null = null;
+
+const refreshAccessToken = async () => {
+  if (!refreshPromise) {
+    refreshPromise = api
+      .post("/auth/refresh")
+      .then((response) => {
+        useAuthStore.getState().setAuth(response.data.token, response.data.user);
+        return response.data.token as string;
+      })
+      .catch(() => {
+        useAuthStore.getState().clearAuth();
+        return null;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+
+  return refreshPromise;
+};
+
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
+      const originalRequest = error.config as (typeof error.config & { _retry?: boolean }) | undefined;
+      if (!originalRequest) {
+        return Promise.reject(error);
+      }
+
+      const requestUrl = originalRequest?.url ?? "";
       const authHeader =
-        (error.config?.headers as { Authorization?: string } | undefined)?.Authorization ??
-        (error.config?.headers as { authorization?: string } | undefined)?.authorization;
+        (originalRequest?.headers as { Authorization?: string } | undefined)?.Authorization ??
+        (originalRequest?.headers as { authorization?: string } | undefined)?.authorization;
+
+      if (
+        !originalRequest?._retry &&
+        authHeader?.startsWith("Bearer ") &&
+        !requestUrl.endsWith("/auth/refresh")
+      ) {
+        originalRequest._retry = true;
+        const nextToken = await refreshAccessToken();
+
+        if (nextToken) {
+          originalRequest.headers = {
+            ...(originalRequest.headers ?? {}),
+            Authorization: `Bearer ${nextToken}`
+          } as typeof originalRequest.headers;
+
+          return api.request(originalRequest);
+        }
+      }
 
       if (authHeader?.startsWith("Bearer ") && typeof window !== "undefined") {
-        useAuthStore.getState().logout();
+        useAuthStore.getState().clearAuth();
 
         const nextPath = window.location.pathname.startsWith("/admin") ? "/admin/login" : "/login";
         if (window.location.pathname !== nextPath) {
@@ -31,10 +78,10 @@ api.interceptors.response.use(
 );
 
 export const authHeaders = (token?: string | null) =>
-  token
+  (token ?? useAuthStore.getState().token)
     ? {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token ?? useAuthStore.getState().token}`
         }
       }
     : {};

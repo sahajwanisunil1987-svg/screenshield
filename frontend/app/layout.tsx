@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { AuthBootstrap } from "@/components/layout/auth-bootstrap";
 import { PwaRegister } from "@/components/pwa/pwa-register";
 
 export const metadata: Metadata = {
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body className="font-sans">
+        <AuthBootstrap />
         <PwaRegister />
         {children}
         <Toaster richColors position="top-right" />

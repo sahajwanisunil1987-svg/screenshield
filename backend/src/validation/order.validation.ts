@@ -19,6 +19,7 @@ export const createOrderSchema = z.object({
     postalCode: z.string().min(5),
     country: z.string().default("India"),
     phone: z.string().min(10),
+    email: z.string().email(),
     gstNumber: z.string().optional()
   }),
   couponCode: z.string().optional(),

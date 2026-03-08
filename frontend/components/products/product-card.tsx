@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Heart, ShoppingCart, Star } from "lucide-react";
+import { toast } from "sonner";
 import { Product } from "@/types";
 import { Button } from "../ui/button";
 import { formatCurrency } from "@/lib/utils";
@@ -12,6 +13,7 @@ import { useWishlistStore } from "@/store/wishlist-store";
 export function ProductCard({ product }: { product: Product }) {
   const addItem = useCartStore((state) => state.addItem);
   const toggle = useWishlistStore((state) => state.toggle);
+  const has = useWishlistStore((state) => state.has);
 
   return (
     <div className="group overflow-hidden rounded-[28px] border border-slate-200/80 bg-panel shadow-card transition duration-300 hover:-translate-y-1">
@@ -33,8 +35,18 @@ export function ProductCard({ product }: { product: Product }) {
             </Link>
             <p className="mt-1 text-sm text-slate">{product.model.name}</p>
           </div>
-          <button onClick={() => toggle(product)} className="rounded-full border border-slate-200 bg-white/90 p-2 transition hover:border-accent/30 hover:bg-accentSoft">
-            <Heart className="h-4 w-4 text-slate" />
+          <button
+            onClick={async () => {
+              try {
+                const saved = await toggle(product);
+                toast.success(saved ? "Added to wishlist" : "Removed from wishlist");
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Unable to update wishlist");
+              }
+            }}
+            className="rounded-full border border-slate-200 bg-white/90 p-2 transition hover:border-accent/30 hover:bg-accentSoft"
+          >
+            <Heart className={`h-4 w-4 ${has(product.id) ? "fill-rose-500 text-rose-500" : "text-slate"}`} />
           </button>
         </div>
         <div className="flex items-center gap-2 text-sm text-slate">
@@ -49,7 +61,13 @@ export function ProductCard({ product }: { product: Product }) {
           ) : null}
         </div>
         <div className="flex gap-3">
-          <Button className="flex-1" onClick={() => addItem(product)}>
+          <Button
+            className="flex-1"
+            onClick={() => {
+              addItem(product);
+              toast.success("Added to cart");
+            }}
+          >
             <ShoppingCart className="mr-2 h-4 w-4" />
             Add to Cart
           </Button>

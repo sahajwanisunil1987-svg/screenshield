@@ -1,7 +1,6 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import { User } from "@/types";
 
 type AuthStore = {
@@ -9,25 +8,15 @@ type AuthStore = {
   user: User | null;
   hasHydrated: boolean;
   setAuth: (token: string, user: User) => void;
-  logout: () => void;
-  setHasHydrated: (value: boolean) => void;
+  clearAuth: () => void;
+  setHydrated: (value: boolean) => void;
 };
 
-export const useAuthStore = create<AuthStore>()(
-  persist(
-    (set) => ({
-      token: null,
-      user: null,
-      hasHydrated: false,
-      setAuth: (token, user) => set({ token, user }),
-      logout: () => set({ token: null, user: null }),
-      setHasHydrated: (value) => set({ hasHydrated: value })
-    }),
-    {
-      name: "sparekart-auth",
-      onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true);
-      }
-    }
-  )
-);
+export const useAuthStore = create<AuthStore>()((set) => ({
+  token: null,
+  user: null,
+  hasHydrated: false,
+  setAuth: (token, user) => set({ token, user, hasHydrated: true }),
+  clearAuth: () => set({ token: null, user: null, hasHydrated: true }),
+  setHydrated: (value) => set({ hasHydrated: value })
+}));

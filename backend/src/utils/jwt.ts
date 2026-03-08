@@ -7,8 +7,16 @@ export type AuthTokenPayload = {
   email: string;
 };
 
-export const signToken = (payload: AuthTokenPayload) =>
-  jwt.sign(payload, env.JWT_SECRET, { expiresIn: "7d" });
+const refreshSecret = env.JWT_REFRESH_SECRET ?? env.JWT_SECRET;
 
-export const verifyToken = (token: string) =>
+export const signAccessToken = (payload: AuthTokenPayload) =>
+  jwt.sign(payload, env.JWT_SECRET, { expiresIn: "15m" });
+
+export const signRefreshToken = (payload: AuthTokenPayload) =>
+  jwt.sign(payload, refreshSecret, { expiresIn: "7d" });
+
+export const verifyAccessToken = (token: string) =>
   jwt.verify(token, env.JWT_SECRET) as AuthTokenPayload;
+
+export const verifyRefreshToken = (token: string) =>
+  jwt.verify(token, refreshSecret) as AuthTokenPayload;

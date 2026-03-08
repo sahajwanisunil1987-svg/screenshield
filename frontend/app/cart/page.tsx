@@ -8,6 +8,7 @@ import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { api, getApiErrorMessage } from "@/lib/api";
+import { calculateOrderPricing } from "@/lib/order-pricing";
 import { formatCurrency } from "@/lib/utils";
 import { useCartStore } from "@/store/cart-store";
 
@@ -16,8 +17,7 @@ export default function CartPage() {
   const [couponInput, setCouponInput] = useState(couponCode);
   const [isApplying, setIsApplying] = useState(false);
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  const shipping = subtotal > 999 ? 0 : 79;
-  const total = Math.max(subtotal - couponDiscount, 0) + shipping;
+  const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount);
 
   return (
     <PageShell>
@@ -64,6 +64,10 @@ export default function CartPage() {
               <div className="flex justify-between">
                 <span>Shipping</span>
                 <span>{shipping === 0 ? "Free" : formatCurrency(shipping)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>GST (18%)</span>
+                <span>{formatCurrency(tax)}</span>
               </div>
               {couponDiscount > 0 ? (
                 <div className="flex justify-between text-emerald-600">

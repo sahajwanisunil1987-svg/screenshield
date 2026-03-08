@@ -8,6 +8,8 @@ const router = Router();
 
 router.post("/auth/register", validate({ body: registerSchema }), authController.register);
 router.post("/auth/login", validate({ body: loginSchema }), authController.login);
+router.post("/auth/refresh", authController.refresh);
+router.post("/auth/logout", authController.logout);
 router.get("/auth/me", authenticate, authController.me);
 
 export default router;
