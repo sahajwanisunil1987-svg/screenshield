@@ -44,6 +44,7 @@ export const productSearchSchema = z.object({
   model: z.string().optional(),
   category: z.string().optional(),
   search: z.string().optional(),
+  sort: z.enum(["relevance", "newest", "price-low", "price-high", "rating"]).optional(),
   featured: z.enum(["true", "false"]).optional(),
   page: z.coerce.number().min(1).default(1).optional(),
   limit: z.coerce.number().min(1).max(40).default(12).optional()

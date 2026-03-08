@@ -112,12 +112,14 @@ export const listProducts = async (query: {
   model?: string;
   category?: string;
   search?: string;
+  sort?: "relevance" | "newest" | "price-low" | "price-high" | "rating";
   featured?: string;
   page?: number;
   limit?: number;
 }) => {
   const page = query.page ?? 1;
   const limit = query.limit ?? 12;
+  const sort = query.sort ?? (query.search ? "relevance" : "newest");
 
   const where: Prisma.ProductWhereInput = {
     isActive: true,
@@ -148,9 +150,18 @@ export const listProducts = async (query: {
     inventory: true
   };
 
+  const orderBy: Prisma.ProductOrderByWithRelationInput[] =
+    sort === "price-low"
+      ? [{ price: "asc" }, { isFeatured: "desc" }, { createdAt: "desc" }]
+      : sort === "price-high"
+        ? [{ price: "desc" }, { isFeatured: "desc" }, { createdAt: "desc" }]
+        : sort === "rating"
+          ? [{ averageRating: "desc" }, { reviewCount: "desc" }, { isFeatured: "desc" }, { createdAt: "desc" }]
+          : [{ isFeatured: "desc" }, { createdAt: "desc" }];
+
   const total = await prisma.product.count({ where });
 
-  const items = query.search
+  const items = query.search && sort === "relevance"
     ? await prisma.product
         .findMany({
           where,
@@ -170,7 +181,7 @@ export const listProducts = async (query: {
     : await prisma.product.findMany({
         where,
         include,
-        orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+        orderBy,
         skip: (page - 1) * limit,
         take: limit
       });

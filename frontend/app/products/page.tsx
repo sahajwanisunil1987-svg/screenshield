@@ -4,6 +4,7 @@ import { PageShell } from "@/components/layout/page-shell";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ProductCard } from "@/components/products/product-card";
 import { CatalogFilters } from "@/components/products/catalog-filters";
+import { CatalogSort } from "@/components/products/catalog-sort";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { buildMetadata } from "@/lib/seo";
 import { fetchApi } from "@/lib/server-api";
@@ -14,7 +15,7 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({
   searchParams
 }: {
-  searchParams: { brand?: string; model?: string; category?: string; search?: string; page?: string };
+  searchParams: { brand?: string; model?: string; category?: string; search?: string; page?: string; sort?: string };
 }): Promise<Metadata> {
   const segments = [searchParams.brand, searchParams.model, searchParams.category, searchParams.search].filter(Boolean);
   const titleBase = segments.length ? `${segments.join(" / ")} Parts` : "Mobile Spare Parts Catalog";
@@ -29,13 +30,14 @@ export async function generateMetadata({
 export default async function ProductsPage({
   searchParams
 }: {
-  searchParams: { brand?: string; model?: string; category?: string; search?: string; page?: string };
+  searchParams: { brand?: string; model?: string; category?: string; search?: string; page?: string; sort?: string };
 }) {
   const params = new URLSearchParams();
   if (searchParams.brand) params.set("brand", searchParams.brand);
   if (searchParams.model) params.set("model", searchParams.model);
   if (searchParams.category) params.set("category", searchParams.category);
   if (searchParams.search) params.set("search", searchParams.search);
+  if (searchParams.sort) params.set("sort", searchParams.sort);
   if (searchParams.page) params.set("page", searchParams.page);
 
   const [products, brands, models, categories] = await Promise.all([
@@ -137,9 +139,12 @@ export default async function ProductsPage({
               </span>
             )}
           </div>
-          <p className="text-sm text-slate">
-            Showing {startResult}-{endResult} of {products.pagination.total} result(s)
-          </p>
+          <div className="flex flex-wrap items-center gap-4">
+            <p className="text-sm text-slate">
+              Showing {startResult}-{endResult} of {products.pagination.total} result(s)
+            </p>
+            <CatalogSort value={searchParams.sort} />
+          </div>
         </div>
         <div className="mt-10">
           {products.items.length ? (
