@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { MessageSquareQuote, Star, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
@@ -39,23 +40,38 @@ export function ReviewPanel({
 
   return (
     <section className="mt-14 grid gap-8 lg:grid-cols-[0.88fr_1.12fr]">
-      <div className="rounded-[32px] bg-white p-8 shadow-card">
+      <div className="rounded-[36px] bg-[linear-gradient(180deg,#ffffff,#eef5f8)] p-8 shadow-card">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-accent">Ratings snapshot</p>
-        <div className="mt-4 flex items-end gap-4">
-          <span className="font-display text-6xl text-ink">{summary.average.toFixed(1)}</span>
-          <div className="pb-2 text-sm text-slate">
-            <p>{"★".repeat(Math.round(summary.average || 0)).padEnd(5, "☆")}</p>
-            <p className="mt-1">{summary.count} verified review(s)</p>
+        <div className="mt-5 rounded-[28px] bg-white p-6 shadow-card">
+          <div className="flex flex-wrap items-end gap-4">
+            <span className="font-display text-6xl text-ink">{summary.average.toFixed(1)}</span>
+            <div className="pb-2 text-sm text-slate">
+              <div className="flex items-center gap-1 text-amber-500">
+                {stars.map((value) => (
+                  <Star
+                    key={value}
+                    className={`h-4 w-4 ${value <= Math.round(summary.average || 0) ? "fill-current" : ""}`}
+                  />
+                ))}
+              </div>
+              <p className="mt-2">{summary.count} verified review(s)</p>
+            </div>
           </div>
-        </div>
-        <div className="mt-6 space-y-3 text-sm text-slate">
-          <p>Only signed-in customers can post or update a review.</p>
-          <p>Your review helps technicians and buyers choose the right spare part faster.</p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-[22px] bg-[#f5f8fb] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate">Review quality</p>
+              <p className="mt-2 text-sm font-semibold text-ink">Fitment, packaging, and part condition matter most.</p>
+            </div>
+            <div className="rounded-[22px] bg-[#f5f8fb] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate">Trust signal</p>
+              <p className="mt-2 text-sm font-semibold text-ink">Only signed-in customers can post or update a review.</p>
+            </div>
+          </div>
         </div>
 
         {user ? (
           <form
-            className="mt-8 space-y-4"
+            className="mt-8 space-y-4 rounded-[28px] bg-white p-6 shadow-card"
             onSubmit={async (event) => {
               event.preventDefault();
               setIsSubmitting(true);
@@ -120,8 +136,9 @@ export function ReviewPanel({
             <Button disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Submit review"}</Button>
           </form>
         ) : (
-          <div className="mt-8 rounded-[28px] border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate">
-            Login required to submit a review.
+          <div className="mt-8 rounded-[28px] border border-dashed border-slate-200 bg-white p-6 text-sm text-slate shadow-card">
+            <p className="font-semibold text-ink">Login required to submit a review.</p>
+            <p className="mt-2">Sign in to share fitment accuracy, packaging quality, and repair-shop feedback.</p>
           </div>
         )}
       </div>
@@ -129,23 +146,42 @@ export function ReviewPanel({
       <div className="grid gap-4">
         {reviews.length ? (
           reviews.map((review) => (
-            <div key={review.id} className="rounded-[28px] bg-white p-6 shadow-card">
+            <div key={review.id} className="rounded-[30px] bg-white p-6 shadow-card">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-ink">{review.user.name}</p>
-                  {review.title ? <p className="mt-1 text-sm font-medium text-ink/80">{review.title}</p> : null}
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eef5f8] text-accent">
+                    <UserRound className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-ink">{review.user.name}</p>
+                    <div className="mt-2 flex items-center gap-1 text-amber-500">
+                      {stars.map((value) => (
+                        <Star
+                          key={value}
+                          className={`h-4 w-4 ${value <= review.rating ? "fill-current" : ""}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right text-sm text-accent">
-                  <p>{review.rating}/5</p>
+                <div className="text-right text-sm text-slate">
+                  {review.title ? <p className="mt-1 text-sm font-medium text-ink/80">{review.title}</p> : null}
                   <p className="mt-1 text-slate">{new Date(review.createdAt).toLocaleDateString("en-IN")}</p>
                 </div>
               </div>
-              <p className="mt-4 text-sm leading-7 text-slate">{review.comment}</p>
+              <div className="mt-4 rounded-[22px] bg-[#f8fbfc] p-4">
+                <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate">
+                  <MessageSquareQuote className="h-4 w-4 text-accent" />
+                  Buyer feedback
+                </div>
+                <p className="text-sm leading-7 text-slate">{review.comment}</p>
+              </div>
             </div>
           ))
         ) : (
-          <div className="rounded-[28px] border border-dashed border-slate-200 bg-white p-8 text-sm text-slate shadow-card">
-            No reviews yet. Be the first buyer to share fitment feedback.
+          <div className="rounded-[30px] border border-dashed border-slate-200 bg-white p-8 text-sm text-slate shadow-card">
+            <p className="font-semibold text-ink">No reviews yet.</p>
+            <p className="mt-2">Be the first buyer to share fitment feedback, packaging quality, and delivery experience.</p>
           </div>
         )}
       </div>
