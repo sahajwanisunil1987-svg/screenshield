@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
@@ -56,6 +56,8 @@ export function ResourceManager({
   const [form, setForm] = useState<Record<string, string>>(createEmptyForm(fields));
   const [isActive, setIsActive] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   const load = async () => {
     if (!token) {
@@ -63,10 +65,13 @@ export function ResourceManager({
     }
 
     try {
+      setIsLoading(true);
       const response = await api.get(getUrl, authHeaders(token));
       setItems(response.data.items ?? response.data);
     } catch (error) {
       toast.error(getApiErrorMessage(error, `Unable to load ${title.toLowerCase()}`));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -104,6 +109,20 @@ export function ResourceManager({
     return subtitlePrefix ? `${subtitlePrefix}${value}` : value;
   };
 
+  const filteredItems = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return items.filter((item) => {
+      if (!normalizedQuery) {
+        return true;
+      }
+
+      const name = String(item.name ?? item.code ?? "").toLowerCase();
+      const subtitle = String(getSubtitle(item) ?? "").toLowerCase();
+      return name.includes(normalizedQuery) || subtitle.includes(normalizedQuery);
+    });
+  }, [items, query]);
+
   return (
     <div className="space-y-6 rounded-[28px] border border-white/10 bg-white/5 p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -118,6 +137,17 @@ export function ResourceManager({
             Cancel edit
           </Button>
         ) : null}
+      </div>
+      <div className="grid gap-3 lg:grid-cols-[1.5fr_auto]">
+        <Input
+          placeholder={`Search ${title.toLowerCase()} by name${subtitlePath ? " or mapped detail" : ""}`}
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          className="bg-white/95"
+        />
+        <div className="rounded-2xl border border-white/10 bg-black/10 px-4 py-3 text-sm text-white/70">
+          {filteredItems.length} of {items.length} visible
+        </div>
       </div>
       <div className={`grid gap-4 ${fields.length > 2 ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
         {fields.map((field) => (
@@ -172,57 +202,66 @@ export function ResourceManager({
         {editingId ? "Save changes" : "Add"}
       </Button>
       <div className="space-y-3 text-sm">
-        {items.map((item) => (
-          <div key={item.id} className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <span className="font-medium text-white">{item.name ?? item.code}</span>
-                <span
-                  className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${
-                    item.isActive ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-500/15 text-amber-300"
-                  }`}
-                >
-                  {item.isActive ? "Active" : "Inactive"}
-                </span>
-              </div>
-              {getSubtitle(item) ? <p className="text-white/60">{getSubtitle(item)}</p> : null}
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                className="text-cyan-300"
-                onClick={() => {
-                  const nextForm = fields.reduce<Record<string, string>>((acc, field) => {
-                    acc[field.key] = String(item[field.key] ?? "");
-                    return acc;
-                  }, {});
+        {isLoading
+          ? Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="h-20 animate-pulse rounded-[24px] bg-white/5" />
+            ))
+          : filteredItems.map((item) => (
+              <div key={item.id} className="flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-white/10 bg-black/10 p-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium text-white">{item.name ?? item.code}</span>
+                    <span
+                      className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${
+                        item.isActive ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-500/15 text-amber-300"
+                      }`}
+                    >
+                      {item.isActive ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+                  {getSubtitle(item) ? <p className="text-white/60">{getSubtitle(item)}</p> : null}
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    className="text-cyan-300"
+                    onClick={() => {
+                      const nextForm = fields.reduce<Record<string, string>>((acc, field) => {
+                        acc[field.key] = String(item[field.key] ?? "");
+                        return acc;
+                      }, {});
 
-                  setForm(nextForm);
-                  setIsActive(Boolean(item.isActive));
-                  setEditingId(item.id);
-                }}
-              >
-                Edit
-              </button>
-              <button
-                className="text-red-400"
-                onClick={async () => {
-                  try {
-                    await api.delete(`${deleteBaseUrl}/${item.id}`, authHeaders(token));
-                    toast.success("Deleted");
-                    if (editingId === item.id) {
-                      resetForm();
-                    }
-                    load();
-                  } catch (error) {
-                    toast.error(getApiErrorMessage(error, "Unable to delete item"));
-                  }
-                }}
-              >
-                Delete
-              </button>
-            </div>
+                      setForm(nextForm);
+                      setIsActive(Boolean(item.isActive));
+                      setEditingId(item.id);
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="text-red-400"
+                    onClick={async () => {
+                      try {
+                        await api.delete(`${deleteBaseUrl}/${item.id}`, authHeaders(token));
+                        toast.success("Deleted");
+                        if (editingId === item.id) {
+                          resetForm();
+                        }
+                        load();
+                      } catch (error) {
+                        toast.error(getApiErrorMessage(error, "Unable to delete item"));
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+        {!isLoading && !filteredItems.length ? (
+          <div className="rounded-[24px] border border-dashed border-white/10 bg-black/10 px-6 py-10 text-center text-sm text-white/55">
+            No {title.toLowerCase()} match the current search.
           </div>
-        ))}
+        ) : null}
       </div>
     </div>
   );
