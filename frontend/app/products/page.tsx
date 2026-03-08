@@ -74,6 +74,14 @@ export default async function ProductsPage({
 
   const currentPage = products.pagination.page;
   const totalPages = products.pagination.pages;
+  const totalProducts = products.pagination.total;
+  const startResult = totalProducts ? (currentPage - 1) * products.pagination.limit + 1 : 0;
+  const endResult = totalProducts ? startResult + products.items.length - 1 : 0;
+  const heroSummary = searchParams.search
+    ? `Search results for "${searchParams.search}" across verified spare parts.`
+    : activeFilters.length
+      ? "Filtered catalog tuned to your selected brand, model, and part type."
+      : "Browse our full spare-parts inventory with compatibility-aware product discovery.";
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1).filter((page) =>
     page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1
   );
@@ -86,6 +94,28 @@ export default async function ProductsPage({
           title="Filtered spare parts catalog"
           description="Query-param driven listing for SSR-friendly catalog results across brand, model, and part type."
         />
+        <div className="mt-6 grid gap-4 rounded-[32px] border border-slate-200/80 bg-panel p-5 shadow-card lg:grid-cols-[1.6fr_0.9fr_0.9fr]">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Search context</p>
+            <p className="mt-3 text-base text-slate">{heroSummary}</p>
+          </div>
+          <div className="rounded-[24px] bg-white/80 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Results shown</p>
+            <p className="mt-2 text-2xl font-semibold text-ink">
+              {startResult}-{endResult}
+            </p>
+            <p className="mt-1 text-sm text-slate">of {totalProducts} matching part(s)</p>
+          </div>
+          <div className="rounded-[24px] bg-white/80 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Current page</p>
+            <p className="mt-2 text-2xl font-semibold text-ink">
+              {products.pagination.page}/{products.pagination.pages}
+            </p>
+            <p className="mt-1 text-sm text-slate">
+              {activeFilters.length ? `${activeFilters.length} active filter(s)` : "All products visible"}
+            </p>
+          </div>
+        </div>
         <div className="mt-10">
           <CatalogFilters brands={brands} models={models} categories={categories} />
         </div>
@@ -108,7 +138,7 @@ export default async function ProductsPage({
             )}
           </div>
           <p className="text-sm text-slate">
-            Showing page {products.pagination.page} of {products.pagination.pages} · {products.pagination.total} result(s)
+            Showing {startResult}-{endResult} of {products.pagination.total} result(s)
           </p>
         </div>
         <div className="mt-10">
