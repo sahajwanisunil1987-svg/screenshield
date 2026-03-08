@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: "SpareKart | Mobile Spare Parts Store",
   description: "Find premium mobile spare parts by brand, model, and part type.",
   manifest: "/manifest.webmanifest",
+  other: {
+    "mobile-web-app-capable": "yes"
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

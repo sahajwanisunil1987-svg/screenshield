@@ -16,6 +16,11 @@ const refreshAccessToken = async () => {
     refreshPromise = api
       .post("/auth/refresh")
       .then((response) => {
+        if (response.status === 204 || !response.data?.token) {
+          useAuthStore.getState().clearAuth();
+          return null;
+        }
+
         useAuthStore.getState().setAuth(response.data.token, response.data.user);
         return response.data.token as string;
       })

@@ -18,6 +18,11 @@ export function AuthBootstrap() {
     api
       .post("/auth/refresh")
       .then((response) => {
+        if (response.status === 204 || !response.data?.token) {
+          clearAuth();
+          return;
+        }
+
         setAuth(response.data.token, response.data.user);
       })
       .catch(() => {

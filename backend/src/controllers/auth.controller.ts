@@ -40,15 +40,27 @@ export const me = async (req: Request, res: Response) => {
 export const refresh = async (req: Request, res: Response) => {
   const token = req.cookies?.[refreshCookieName];
   if (!token) {
-    throw new ApiError(StatusCodes.UNAUTHORIZED, "Session expired");
+    res.clearCookie(refreshCookieName, getCookieOptions());
+    res.status(StatusCodes.NO_CONTENT).send();
+    return;
   }
 
-  const result = await refreshAuthSession(token);
-  res.cookie(refreshCookieName, result.refreshToken, getCookieOptions());
-  res.status(StatusCodes.OK).json({
-    token: result.token,
-    user: result.user
-  });
+  try {
+    const result = await refreshAuthSession(token);
+    res.cookie(refreshCookieName, result.refreshToken, getCookieOptions());
+    res.status(StatusCodes.OK).json({
+      token: result.token,
+      user: result.user
+    });
+  } catch (error) {
+    if (error instanceof ApiError && error.statusCode === StatusCodes.UNAUTHORIZED) {
+      res.clearCookie(refreshCookieName, getCookieOptions());
+      res.status(StatusCodes.NO_CONTENT).send();
+      return;
+    }
+
+    throw error;
+  }
 };
 
 export const logout = async (_req: Request, res: Response) => {
