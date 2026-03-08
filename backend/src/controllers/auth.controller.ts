@@ -6,10 +6,12 @@ import { ApiError } from "../utils/api-error.js";
 
 const refreshCookieName = "sparekart_refresh";
 
+const isProduction = env.NODE_ENV === "production";
+
 const getCookieOptions = () => ({
   httpOnly: true,
-  sameSite: "lax" as const,
-  secure: env.NODE_ENV === "production",
+  sameSite: (isProduction ? "none" : "lax") as "none" | "lax",
+  secure: isProduction,
   path: "/api/auth",
   maxAge: 7 * 24 * 60 * 60 * 1000
 });
