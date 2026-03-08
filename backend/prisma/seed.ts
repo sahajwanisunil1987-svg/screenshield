@@ -12,6 +12,7 @@ async function main() {
   await prisma.invoice.deleteMany();
   await prisma.order.deleteMany();
   await prisma.inventory.deleteMany();
+  await prisma.productCompatibility.deleteMany();
   await prisma.productImage.deleteMany();
   await prisma.product.deleteMany();
   await prisma.mobileModel.deleteMany();
@@ -76,6 +77,7 @@ async function main() {
   const display = categories.find((category) => category.name === "LCD Display")!;
   const charging = categories.find((category) => category.name === "Charging Port")!;
   const vivoY21 = models.find((model) => model.name === "Vivo Y21")!;
+  const vivoV29 = models.find((model) => model.name === "Vivo V29")!;
   const iphone13 = models.find((model) => model.name === "iPhone 13")!;
   const galaxyA14 = models.find((model) => model.name === "Samsung Galaxy A14")!;
 
@@ -96,6 +98,7 @@ async function main() {
       warrantyMonths: 6,
       brandId: vivo.id,
       modelId: vivoY21.id,
+      compatibleModelIds: [vivoY21.id, vivoV29.id],
       categoryId: display.id,
       stock: 16,
       isFeatured: true,
@@ -117,6 +120,7 @@ async function main() {
       warrantyMonths: 6,
       brandId: vivo.id,
       modelId: vivoY21.id,
+      compatibleModelIds: [vivoY21.id],
       categoryId: battery.id,
       stock: 24,
       isFeatured: true,
@@ -138,6 +142,7 @@ async function main() {
       warrantyMonths: 6,
       brandId: samsung.id,
       modelId: galaxyA14.id,
+      compatibleModelIds: [galaxyA14.id],
       categoryId: charging.id,
       stock: 31,
       isFeatured: false,
@@ -159,6 +164,7 @@ async function main() {
       warrantyMonths: 6,
       brandId: apple.id,
       modelId: iphone13.id,
+      compatibleModelIds: [iphone13.id],
       categoryId: battery.id,
       stock: 11,
       isFeatured: true,
@@ -183,6 +189,11 @@ async function main() {
         categoryId: product.categoryId,
         stock: product.stock,
         isFeatured: product.isFeatured,
+        compatibilityModels: {
+          create: product.compatibleModelIds.map((modelId) => ({
+            modelId
+          }))
+        },
         images: {
           create: [
             {

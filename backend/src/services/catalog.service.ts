@@ -197,6 +197,20 @@ export const getProductBySlug = (slug: string) =>
       brand: true,
       model: true,
       category: true,
+      compatibilityModels: {
+        include: {
+          model: {
+            include: {
+              brand: true
+            }
+          }
+        },
+        orderBy: {
+          model: {
+            name: "asc"
+          }
+        }
+      },
       inventory: true,
       reviews: {
         include: {
@@ -255,6 +269,11 @@ export const listAdminProducts = async (query: {
         brand: true,
         model: true,
         category: true,
+        compatibilityModels: {
+          include: {
+            model: true
+          }
+        },
         inventory: true
       },
       orderBy: [{ updatedAt: "desc" }],
@@ -283,6 +302,16 @@ export const getAdminProductById = (id: string) =>
       brand: true,
       model: true,
       category: true,
+      compatibilityModels: {
+        include: {
+          model: true
+        },
+        orderBy: {
+          model: {
+            name: "asc"
+          }
+        }
+      },
       inventory: true
     }
   });
@@ -355,6 +384,7 @@ export const createProduct = async (payload: {
   warrantyMonths: number;
   brandId: string;
   modelId: string;
+  compatibleModelIds?: string[];
   categoryId: string;
   stock: number;
   lowStockLimit?: number;
@@ -362,43 +392,66 @@ export const createProduct = async (payload: {
   isFeatured: boolean;
   isActive: boolean;
   images: { url: string; alt?: string }[];
-}) =>
-  prisma.product.create({
+}) => {
+  const { compatibleModelIds = [], lowStockLimit, warehouseCode, stock, images, specifications, ...productData } = payload;
+  const normalizedCompatibleModelIds = Array.from(new Set([payload.modelId, ...compatibleModelIds]));
+
+  return prisma.product.create({
     data: {
-      ...payload,
+      ...productData,
       slug: toSlug(`${payload.name}-${payload.sku}`),
-      specifications: payload.specifications,
+      specifications,
+      compatibilityModels: {
+        create: normalizedCompatibleModelIds.map((modelId) => ({
+          modelId
+        }))
+      },
       images: {
-        create: payload.images.map((image, index) => ({
+        create: images.map((image, index) => ({
           ...image,
           sortOrder: index
         }))
       },
       inventory: {
         create: {
-          stock: payload.stock,
-          lowStockLimit: payload.lowStockLimit ?? 5,
-          warehouseCode: payload.warehouseCode
+          stock,
+          lowStockLimit: lowStockLimit ?? 5,
+          warehouseCode
         }
       }
     },
     include: {
       images: true,
-      inventory: true
+      inventory: true,
+      compatibilityModels: {
+        include: {
+          model: true
+        }
+      }
     }
   });
+};
 
 export const updateProduct = async (id: string, payload: Parameters<typeof createProduct>[0]) => {
   await prisma.productImage.deleteMany({ where: { productId: id } });
+  await prisma.productCompatibility.deleteMany({ where: { productId: id } });
+
+  const { compatibleModelIds = [], lowStockLimit, warehouseCode, stock, images, specifications, ...productData } = payload;
+  const normalizedCompatibleModelIds = Array.from(new Set([payload.modelId, ...compatibleModelIds]));
 
   return prisma.product.update({
     where: { id },
     data: {
-      ...payload,
+      ...productData,
       slug: toSlug(`${payload.name}-${payload.sku}`),
-      specifications: payload.specifications,
+      specifications,
+      compatibilityModels: {
+        create: normalizedCompatibleModelIds.map((modelId) => ({
+          modelId
+        }))
+      },
       images: {
-        create: payload.images.map((image, index) => ({
+        create: images.map((image, index) => ({
           ...image,
           sortOrder: index
         }))
@@ -406,21 +459,26 @@ export const updateProduct = async (id: string, payload: Parameters<typeof creat
       inventory: {
         upsert: {
           update: {
-            stock: payload.stock,
-            lowStockLimit: payload.lowStockLimit ?? 5,
-            warehouseCode: payload.warehouseCode
+            stock,
+            lowStockLimit: lowStockLimit ?? 5,
+            warehouseCode
           },
           create: {
-            stock: payload.stock,
-            lowStockLimit: payload.lowStockLimit ?? 5,
-            warehouseCode: payload.warehouseCode
+            stock,
+            lowStockLimit: lowStockLimit ?? 5,
+            warehouseCode
           }
         }
       }
     },
     include: {
       images: true,
-      inventory: true
+      inventory: true,
+      compatibilityModels: {
+        include: {
+          model: true
+        }
+      }
     }
   });
 };

@@ -22,6 +22,7 @@ const schema = z.object({
   warrantyMonths: z.coerce.number().min(0),
   brandId: z.string().min(1),
   modelId: z.string().min(1),
+  compatibleModelIds: z.array(z.string()).default([]),
   categoryId: z.string().min(1),
   stock: z.coerce.number().min(0),
   lowStockLimit: z.coerce.number().min(0).max(999),
@@ -47,6 +48,7 @@ export function ProductForm({ productId }: { productId?: string }) {
       warrantyMonths: 6,
       stock: 0,
       lowStockLimit: 5,
+      compatibleModelIds: [],
       isFeatured: false,
       isActive: true,
       specificationsText: "quality: Premium\nwarranty: 6 Months",
@@ -55,7 +57,9 @@ export function ProductForm({ productId }: { productId?: string }) {
   });
 
   const brandId = watch("brandId");
+  const modelId = watch("modelId");
   const imageUrls = watch("imageUrls");
+  const compatibleModelIds = watch("compatibleModelIds");
 
   useEffect(() => {
     Promise.all([api.get("/brands"), api.get("/models"), api.get("/categories")])
@@ -84,6 +88,10 @@ export function ProductForm({ productId }: { productId?: string }) {
         setValue("warrantyMonths", product.warrantyMonths);
         setValue("brandId", product.brand.id);
         setValue("modelId", product.model.id);
+        setValue(
+          "compatibleModelIds",
+          (product.compatibilityModels ?? []).map((entry: { model: { id: string } }) => entry.model.id)
+        );
         setValue("categoryId", product.category.id);
         setValue("stock", product.inventory?.stock ?? product.stock);
         setValue("lowStockLimit", product.inventory?.lowStockLimit ?? 5);
@@ -107,6 +115,25 @@ export function ProductForm({ productId }: { productId?: string }) {
   }, [productId, setValue]);
 
   const filteredModels = models.filter((model) => !brandId || model.brandId === brandId);
+
+  useEffect(() => {
+    if (!brandId) return;
+
+    const allowedIds = new Set(filteredModels.map((model) => model.id));
+    const nextCompatibleModels = compatibleModelIds.filter((modelId) => allowedIds.has(modelId));
+
+    if (nextCompatibleModels.length !== compatibleModelIds.length) {
+      setValue("compatibleModelIds", nextCompatibleModels, { shouldValidate: true });
+    }
+  }, [brandId, compatibleModelIds, filteredModels, setValue]);
+
+  useEffect(() => {
+    if (!modelId || compatibleModelIds.includes(modelId)) {
+      return;
+    }
+
+    setValue("compatibleModelIds", Array.from(new Set([...compatibleModelIds, modelId])), { shouldValidate: true });
+  }, [compatibleModelIds, modelId, setValue]);
 
   const uploadImages = async (files: FileList | null) => {
     if (!files?.length) {
@@ -183,6 +210,7 @@ export function ProductForm({ productId }: { productId?: string }) {
           warrantyMonths: values.warrantyMonths,
           brandId: values.brandId,
           modelId: values.modelId,
+          compatibleModelIds: Array.from(new Set([values.modelId, ...values.compatibleModelIds])),
           categoryId: values.categoryId,
           stock: values.stock,
           lowStockLimit: values.lowStockLimit,
@@ -234,6 +262,37 @@ export function ProductForm({ productId }: { productId?: string }) {
           <option key={category.id} value={category.id}>{category.name}</option>
         ))}
       </select>
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white md:col-span-2">
+        <p className="font-semibold text-white">Compatible models</p>
+        <p className="mt-1 text-xs text-white/60">
+          Choose every phone model this part supports. The primary model will be added automatically when you save.
+        </p>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {filteredModels.map((model) => {
+            const checked = compatibleModelIds.includes(model.id);
+
+            return (
+              <label key={model.id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/10 px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={(event) => {
+                    const nextValues = event.target.checked
+                      ? [...compatibleModelIds, model.id]
+                      : compatibleModelIds.filter((value) => value !== model.id);
+
+                    setValue("compatibleModelIds", Array.from(new Set(nextValues)), { shouldValidate: true });
+                  }}
+                />
+                <span>{model.name}</span>
+              </label>
+            );
+          })}
+        </div>
+        {!filteredModels.length ? (
+          <p className="mt-3 text-xs text-white/45">Select a brand first to load compatible models.</p>
+        ) : null}
+      </div>
       <textarea
         placeholder="Specifications as key: value, one per line"
         {...register("specificationsText")}

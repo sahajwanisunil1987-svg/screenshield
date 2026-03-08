@@ -57,6 +57,7 @@ model MobileModel {
   brand       Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
   isActive    Boolean   @default(true)
   products    Product[]
+  compatibleProducts ProductCompatibility[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -104,12 +105,25 @@ model Product {
   inventory          Inventory?
   orderItems         OrderItem[]
   wishlistItems      WishlistItem[]
+  compatibilityModels ProductCompatibility[]
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 
   @@unique([brandId, modelId, categoryId, name])
   @@index([brandId, modelId, categoryId, isFeatured, isActive])
   @@index([slug, sku])
+}
+
+model ProductCompatibility {
+  id        String      @id @default(cuid())
+  productId String
+  modelId   String
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  model     MobileModel @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+
+  @@unique([productId, modelId])
+  @@index([modelId])
 }
 
 model ProductImage {

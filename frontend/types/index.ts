@@ -46,6 +46,9 @@ export type Product = {
   reviewCount: number;
   brand: Brand;
   model: MobileModel;
+  compatibilityModels?: Array<{
+    model: MobileModel;
+  }>;
   category: Category;
   images: ProductImage[];
   inventory?: {

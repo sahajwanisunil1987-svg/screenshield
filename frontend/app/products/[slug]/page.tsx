@@ -69,6 +69,7 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
   const breadcrumbStructuredData = buildBreadcrumbStructuredData(product);
   const stock = product.inventory?.stock ?? product.stock;
   const savings = product.comparePrice ? Math.max(product.comparePrice - product.price, 0) : 0;
+  const compatibleModels = product.compatibilityModels?.map((entry) => entry.model) ?? [product.model];
   const trustPoints = [
     { icon: ShieldCheck, title: `${product.warrantyMonths} month warranty` },
     { icon: Truck, title: "Fast dispatch across India" },
@@ -169,12 +170,27 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
                   <p className="mt-2 font-semibold text-ink">{product.brand.name}</p>
                 </div>
                 <div className="rounded-2xl bg-[#f5f8fb] p-4">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate">Compatible model</p>
-                  <p className="mt-2 font-semibold text-ink">{product.model.name}</p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate">Compatible models</p>
+                  <p className="mt-2 font-semibold text-ink">
+                    {compatibleModels.slice(0, 3).map((model) => model.name).join(", ")}
+                  </p>
+                  {compatibleModels.length > 3 ? (
+                    <p className="mt-1 text-xs text-slate">+{compatibleModels.length - 3} more supported variants</p>
+                  ) : null}
                 </div>
                 <div className="rounded-2xl bg-[#f5f8fb] p-4">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate">Part type</p>
                   <p className="mt-2 font-semibold text-ink">{product.category.name}</p>
+                </div>
+              </div>
+              <div className="mt-4 rounded-2xl bg-[#f5f8fb] p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate">Supported model list</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {compatibleModels.map((model) => (
+                    <span key={model.id} className="rounded-full bg-white px-3 py-2 text-sm font-semibold text-ink shadow-sm">
+                      {model.name}
+                    </span>
+                  ))}
                 </div>
               </div>
             </div>

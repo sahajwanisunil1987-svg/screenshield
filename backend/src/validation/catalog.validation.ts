@@ -29,6 +29,7 @@ export const productSchema = z.object({
   warrantyMonths: z.coerce.number().min(0).default(6),
   brandId: z.string().min(1),
   modelId: z.string().min(1),
+  compatibleModelIds: z.array(z.string().min(1)).default([]).optional(),
   categoryId: z.string().min(1),
   stock: z.coerce.number().min(0).default(0),
   lowStockLimit: z.coerce.number().min(0).max(999).default(5).optional(),
