@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Heart, LogOut, ShoppingBag, Truck } from "lucide-react";
+import { GitCompareArrows, Heart, LogOut, ShoppingBag, Truck } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
+import { useCompareStore } from "@/store/compare-store";
 import { useWishlistStore } from "@/store/wishlist-store";
 import { useAuthStore } from "@/store/auth-store";
 import { api } from "@/lib/api";
@@ -17,11 +18,14 @@ export function Navbar() {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const items = useCartStore((state) => state.items);
   const cartHydrated = useCartStore((state) => state.hasHydrated);
+  const compareItems = useCompareStore((state) => state.items);
+  const compareHydrated = useCompareStore((state) => state.hasHydrated);
   const wishlist = useWishlistStore((state) => state.items);
   const wishlistHydrated = useWishlistStore((state) => state.hasHydrated);
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const cartCount = cartHydrated ? items.length : 0;
+  const compareCount = compareHydrated ? compareItems.length : 0;
   const wishlistCount = wishlistHydrated ? wishlist.length : 0;
 
   const onSearch = () => {
@@ -99,6 +103,12 @@ export function Navbar() {
               <Heart className="h-5 w-5" />
               <span className="absolute -right-1 -top-1 rounded-full bg-ember px-1.5 text-[10px]">
                 {wishlistCount}
+              </span>
+            </Link>
+            <Link href="/compare" className="relative rounded-full p-2 hover:bg-white/10">
+              <GitCompareArrows className="h-5 w-5" />
+              <span className="absolute -right-1 -top-1 rounded-full bg-white px-1.5 text-[10px] text-ink">
+                {compareCount}
               </span>
             </Link>
             <Link href="/cart" className="relative rounded-full p-2 hover:bg-white/10">

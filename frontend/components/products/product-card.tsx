@@ -2,16 +2,20 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, ShieldCheck, ShoppingCart, Star, Truck } from "lucide-react";
+import { GitCompareArrows, Heart, ShieldCheck, ShoppingCart, Star, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { Product } from "@/types";
 import { Button } from "../ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { useCartStore } from "@/store/cart-store";
+import { useCompareStore } from "@/store/compare-store";
 import { useWishlistStore } from "@/store/wishlist-store";
 
 export function ProductCard({ product }: { product: Product }) {
   const addItem = useCartStore((state) => state.addItem);
+  const toggleCompare = useCompareStore((state) => state.toggle);
+  const hasCompared = useCompareStore((state) => state.has);
+  const compareHydrated = useCompareStore((state) => state.hasHydrated);
   const toggle = useWishlistStore((state) => state.toggle);
   const has = useWishlistStore((state) => state.has);
   const wishlistHydrated = useWishlistStore((state) => state.hasHydrated);
@@ -141,6 +145,22 @@ export function ProductCard({ product }: { product: Product }) {
             View
           </Link>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            const result = toggleCompare(product);
+            if (result.limitReached) {
+              toast.error("You can compare up to 4 products at a time");
+              return;
+            }
+
+            toast.success(result.active ? "Added to compare" : "Removed from compare");
+          }}
+          className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-accent/30 hover:bg-accentSoft"
+        >
+          <GitCompareArrows className={`h-4 w-4 ${compareHydrated && hasCompared(product.id) ? "text-accent" : "text-slate"}`} />
+          {compareHydrated && hasCompared(product.id) ? "Remove from Compare" : "Compare Product"}
+        </button>
       </div>
     </div>
   );

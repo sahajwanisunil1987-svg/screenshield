@@ -1,16 +1,20 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Heart, ShoppingCart, Zap } from "lucide-react";
+import { GitCompareArrows, Heart, ShoppingCart, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Product } from "@/types";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/store/cart-store";
+import { useCompareStore } from "@/store/compare-store";
 import { useWishlistStore } from "@/store/wishlist-store";
 
 export function ProductActions({ product }: { product: Product }) {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
+  const toggleCompare = useCompareStore((state) => state.toggle);
+  const hasCompared = useCompareStore((state) => state.has);
+  const compareHydrated = useCompareStore((state) => state.hasHydrated);
   const toggle = useWishlistStore((state) => state.toggle);
   const has = useWishlistStore((state) => state.has);
   const wishlistHydrated = useWishlistStore((state) => state.hasHydrated);
@@ -55,6 +59,22 @@ export function ProductActions({ product }: { product: Product }) {
           className={`h-4 w-4 ${wishlistHydrated && has(product.id) ? "fill-rose-500 text-rose-500" : "text-slate"}`}
         />
         {wishlistHydrated && has(product.id) ? "Remove from Wishlist" : "Add to Wishlist"}
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          const result = toggleCompare(product);
+          if (result.limitReached) {
+            toast.error("You can compare up to 4 products at a time");
+            return;
+          }
+
+          toast.success(result.active ? "Added to compare" : "Removed from compare");
+        }}
+        className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-accent/30 hover:bg-accentSoft"
+      >
+        <GitCompareArrows className={`h-4 w-4 ${compareHydrated && hasCompared(product.id) ? "text-accent" : "text-slate"}`} />
+        {compareHydrated && hasCompared(product.id) ? "Remove from Compare" : "Add to Compare"}
       </button>
       <div className="grid gap-3 text-xs text-slate sm:grid-cols-3">
         <div className="rounded-2xl bg-white px-4 py-3">Secure payment flow</div>
