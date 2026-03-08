@@ -153,7 +153,16 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
   );
   doc.end();
 
-  return await new Promise<Buffer>((resolve) => {
+  const buffer = await new Promise<Buffer>((resolve) => {
     doc.on("end", () => resolve(Buffer.concat(buffers)));
   });
+
+  await prisma.invoice.update({
+    where: { orderId },
+    data: {
+      generatedAt: order.invoice.generatedAt ?? new Date()
+    }
+  });
+
+  return buffer;
 };

@@ -197,6 +197,33 @@ export type Coupon = {
   isActive: boolean;
 };
 
+export type InvoiceRecord = {
+  id: string;
+  orderId: string;
+  invoiceNumber: string;
+  gstin?: string | null;
+  billingName: string;
+  billingEmail?: string | null;
+  billingPhone?: string | null;
+  pdfUrl?: string | null;
+  generatedAt?: string | null;
+  lastDownloadedAt?: string | null;
+  downloadCount: number;
+  createdAt: string;
+  order: {
+    id: string;
+    orderNumber: string;
+    totalAmount: number;
+    paymentStatus: string;
+    status: string;
+    createdAt: string;
+    user: {
+      name: string;
+      email: string;
+    };
+  };
+};
+
 export type SearchSuggestion = {
   id: string;
   type: "product";

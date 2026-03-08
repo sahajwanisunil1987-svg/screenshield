@@ -302,9 +302,76 @@ export const users = async (_req: Request, res: Response) => {
   });
 };
 
+export const invoices = async (req: Request, res: Response) => {
+  const page = Number(req.query.page ?? 1);
+  const limit = Number(req.query.limit ?? 12);
+  const search = String(req.query.search ?? "").trim();
+  const status = String(req.query.status ?? "ALL");
+
+  const where: Prisma.InvoiceWhereInput = {
+    ...(status === "GENERATED" ? { generatedAt: { not: null } } : {}),
+    ...(status === "PENDING" ? { generatedAt: null } : {}),
+    ...(search
+      ? {
+          OR: [
+            { invoiceNumber: { contains: search, mode: "insensitive" } },
+            { billingName: { contains: search, mode: "insensitive" } },
+            { billingEmail: { contains: search, mode: "insensitive" } },
+            { order: { orderNumber: { contains: search, mode: "insensitive" } } }
+          ]
+        }
+      : {})
+  };
+
+  const [items, total] = await Promise.all([
+    prisma.invoice.findMany({
+      where,
+      include: {
+        order: {
+          select: {
+            id: true,
+            orderNumber: true,
+            totalAmount: true,
+            paymentStatus: true,
+            status: true,
+            createdAt: true,
+            user: {
+              select: {
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit
+    }),
+    prisma.invoice.count({ where })
+  ]);
+
+  res.json({
+    items,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  });
+};
+
 export const downloadInvoice = async (req: Request, res: Response) => {
   const id = getSingleParam(req.params.id)!;
   const buffer = await generateInvoicePdfBuffer(id);
+  await prisma.invoice.update({
+    where: { orderId: id },
+    data: {
+      lastDownloadedAt: new Date(),
+      downloadCount: { increment: 1 }
+    }
+  });
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader("Content-Disposition", `attachment; filename=invoice-${id}.pdf`);
   res.send(buffer);

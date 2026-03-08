@@ -311,7 +311,12 @@ model Invoice {
   billingEmail  String?
   billingPhone  String?
   pdfUrl        String?
+  generatedAt   DateTime?
+  lastDownloadedAt DateTime?
+  downloadCount Int      @default(0)
   order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([createdAt, generatedAt])
 }
