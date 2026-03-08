@@ -7,22 +7,38 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
 import { formatCurrency } from "@/lib/utils";
+import { AdminOrder, PaginatedResponse } from "@/types";
 
 const orderStatuses = ["PENDING", "CONFIRMED", "PACKED", "SHIPPED", "DELIVERED", "CANCELLED"];
 const paymentStatuses = ["PENDING", "PAID", "FAILED", "REFUNDED", "COD"];
 
 export default function AdminOrdersPage() {
   const token = useAuthStore((state) => state.token);
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [pagination, setPagination] = useState({ page: 1, limit: 8, total: 0, pages: 1 });
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [paymentFilter, setPaymentFilter] = useState("ALL");
+  const [page, setPage] = useState(1);
 
   const load = () => {
     if (!token) return;
+    const config = authHeaders(token);
     api
-      .get("/admin/orders", authHeaders(token))
-      .then((response) => setOrders(response.data))
+      .get<PaginatedResponse<AdminOrder>>("/admin/orders", {
+        ...config,
+        params: {
+          search: query || undefined,
+          status: statusFilter,
+          paymentStatus: paymentFilter,
+          page,
+          limit: 8
+        }
+      })
+      .then((response) => {
+        setOrders(response.data.items);
+        setPagination(response.data.pagination);
+      })
       .catch((error) => {
         toast.error(getApiErrorMessage(error, "Unable to load orders"));
       });
@@ -30,25 +46,19 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     load();
-  }, [token]);
+  }, [page, paymentFilter, query, statusFilter, token]);
 
-  const filteredOrders = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+  useEffect(() => {
+    setPage(1);
+  }, [paymentFilter, query, statusFilter]);
 
-    return orders.filter((order) => {
-      const matchesQuery =
-        !normalizedQuery ||
-        order.orderNumber.toLowerCase().includes(normalizedQuery) ||
-        order.user.name.toLowerCase().includes(normalizedQuery) ||
-        order.user.email.toLowerCase().includes(normalizedQuery) ||
-        (order.user.phone ?? "").toLowerCase().includes(normalizedQuery);
-
-      const matchesStatus = statusFilter === "ALL" || order.status === statusFilter;
-      const matchesPayment = paymentFilter === "ALL" || order.paymentStatus === paymentFilter;
-
-      return matchesQuery && matchesStatus && matchesPayment;
-    });
-  }, [orders, paymentFilter, query, statusFilter]);
+  const pageNumbers = useMemo(
+    () =>
+      Array.from({ length: pagination.pages }, (_, index) => index + 1).filter((entry) =>
+        entry === 1 || entry === pagination.pages || Math.abs(entry - pagination.page) <= 1
+      ),
+    [pagination.page, pagination.pages]
+  );
 
   return (
     <AdminGuard>
@@ -58,7 +68,7 @@ export default function AdminOrdersPage() {
             <div>
               <p className="text-sm font-semibold text-white">Order controls</p>
               <p className="text-sm text-white/60">
-                {filteredOrders.length} of {orders.length} orders visible
+                {pagination.total} orders found · page {pagination.page} of {pagination.pages}
               </p>
             </div>
             <button type="button" onClick={load} className="text-sm text-white/60 underline">
@@ -99,7 +109,7 @@ export default function AdminOrdersPage() {
           </div>
         </div>
         <div className="space-y-4 rounded-[28px] border border-white/10 bg-white/5 p-6">
-          {filteredOrders.map((order) => (
+          {orders.map((order) => (
             <div key={order.id} className="space-y-5 rounded-[28px] border border-white/10 bg-white/5 p-5 text-sm">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-2">
@@ -233,9 +243,48 @@ export default function AdminOrdersPage() {
               </div>
             </div>
           ))}
-          {!filteredOrders.length ? (
+          {!orders.length ? (
             <div className="rounded-[24px] border border-dashed border-white/10 bg-black/10 px-6 py-10 text-center text-sm text-white/55">
               No orders match the current search and filters.
+            </div>
+          ) : null}
+          {pagination.pages > 1 ? (
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.max(current - 1, 1))}
+                disabled={pagination.page === 1}
+                className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:text-white/30 hover:bg-white/10"
+              >
+                Previous
+              </button>
+              {pageNumbers.map((entry, index) => {
+                const previousPage = pageNumbers[index - 1];
+                const showGap = previousPage && entry - previousPage > 1;
+
+                return (
+                  <div key={entry} className="flex items-center gap-3">
+                    {showGap ? <span className="text-white/40">…</span> : null}
+                    <button
+                      type="button"
+                      onClick={() => setPage(entry)}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                        entry === pagination.page ? "bg-accent text-white" : "border border-white/10 text-white hover:bg-white/10"
+                      }`}
+                    >
+                      {entry}
+                    </button>
+                  </div>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.min(current + 1, pagination.pages))}
+                disabled={pagination.page === pagination.pages}
+                className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:text-white/30 hover:bg-white/10"
+              >
+                Next
+              </button>
             </div>
           ) : null}
         </div>

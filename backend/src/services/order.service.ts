@@ -279,18 +279,59 @@ export const trackOrder = async (orderNumber: string) => {
   return order;
 };
 
-export const adminOrders = () =>
-  prisma.order.findMany({
-    include: {
-      user: {
-        select: { name: true, email: true, phone: true }
+export const adminOrders = async (query?: {
+  search?: string;
+  status?: "ALL" | OrderStatus;
+  paymentStatus?: "ALL" | PaymentStatus;
+  page?: number;
+  limit?: number;
+}) => {
+  const page = query?.page ?? 1;
+  const limit = query?.limit ?? 8;
+
+  const where: Prisma.OrderWhereInput = {
+    ...(query?.status && query.status !== "ALL" ? { status: query.status } : {}),
+    ...(query?.paymentStatus && query.paymentStatus !== "ALL" ? { paymentStatus: query.paymentStatus } : {}),
+    ...(query?.search
+      ? {
+          OR: [
+            { orderNumber: { contains: query.search, mode: "insensitive" } },
+            { user: { name: { contains: query.search, mode: "insensitive" } } },
+            { user: { email: { contains: query.search, mode: "insensitive" } } },
+            { user: { phone: { contains: query.search, mode: "insensitive" } } }
+          ]
+        }
+      : {})
+  };
+
+  const [items, total] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      include: {
+        user: {
+          select: { name: true, email: true, phone: true }
+        },
+        items: true,
+        payment: true,
+        invoice: true
       },
-      items: true,
-      payment: true,
-      invoice: true
-    },
-    orderBy: { createdAt: "desc" }
-  });
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit
+    }),
+    prisma.order.count({ where })
+  ]);
+
+  return {
+    items,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  };
+};
 
 export const updateOrderStatus = (id: string, payload: { status: OrderStatus; paymentStatus?: PaymentStatus }) =>
   prisma.order.update({

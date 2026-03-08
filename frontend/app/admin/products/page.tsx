@@ -8,20 +8,35 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { Button } from "@/components/ui/button";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
-import { Product } from "@/types";
+import { PaginatedResponse, Product } from "@/types";
 
 export default function AdminProductsPage() {
   const token = useAuthStore((state) => state.token);
   const [data, setData] = useState<Product[]>([]);
+  const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, pages: 1 });
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
   const [featureFilter, setFeatureFilter] = useState<"ALL" | "FEATURED" | "STANDARD">("ALL");
+  const [page, setPage] = useState(1);
 
   const load = () => {
     if (!token) return;
+    const config = authHeaders(token);
     api
-      .get("/admin/products", authHeaders(token))
-      .then((response) => setData(response.data))
+      .get<PaginatedResponse<Product>>("/admin/products", {
+        ...config,
+        params: {
+          search: query || undefined,
+          status: statusFilter,
+          feature: featureFilter,
+          page,
+          limit: 12
+        }
+      })
+      .then((response) => {
+        setData(response.data.items);
+        setPagination(response.data.pagination);
+      })
       .catch((error) => {
         toast.error(getApiErrorMessage(error, "Unable to load products"));
       });
@@ -29,31 +44,19 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     load();
-  }, [token]);
+  }, [featureFilter, page, query, statusFilter, token]);
 
-  const filteredProducts = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+  useEffect(() => {
+    setPage(1);
+  }, [featureFilter, query, statusFilter]);
 
-    return data.filter((product) => {
-      const matchesQuery =
-        !normalizedQuery ||
-        product.name.toLowerCase().includes(normalizedQuery) ||
-        product.sku.toLowerCase().includes(normalizedQuery) ||
-        product.brand.name.toLowerCase().includes(normalizedQuery) ||
-        product.model.name.toLowerCase().includes(normalizedQuery) ||
-        product.category.name.toLowerCase().includes(normalizedQuery);
-
-      const matchesStatus =
-        statusFilter === "ALL" ||
-        (statusFilter === "ACTIVE" ? product.isActive : !product.isActive);
-
-      const matchesFeature =
-        featureFilter === "ALL" ||
-        (featureFilter === "FEATURED" ? product.isFeatured : !product.isFeatured);
-
-      return matchesQuery && matchesStatus && matchesFeature;
-    });
-  }, [data, featureFilter, query, statusFilter]);
+  const pageNumbers = useMemo(
+    () =>
+      Array.from({ length: pagination.pages }, (_, index) => index + 1).filter((entry) =>
+        entry === 1 || entry === pagination.pages || Math.abs(entry - pagination.page) <= 1
+      ),
+    [pagination.page, pagination.pages]
+  );
 
   return (
     <AdminGuard>
@@ -63,7 +66,7 @@ export default function AdminProductsPage() {
             <div>
               <p className="text-sm font-semibold text-white">Catalog controls</p>
               <p className="text-sm text-white/60">
-                {filteredProducts.length} of {data.length} products visible
+                {pagination.total} products found · page {pagination.page} of {pagination.pages}
               </p>
             </div>
             <Link href="/admin/products/new">
@@ -100,7 +103,7 @@ export default function AdminProductsPage() {
         </div>
         <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
           <div className="space-y-4">
-            {filteredProducts.map((product) => (
+            {data.map((product) => (
               <div key={product.id} className="flex items-center justify-between gap-4 border-b border-white/10 pb-4 text-sm">
                 <div>
                   <p className="font-semibold">{product.name}</p>
@@ -135,9 +138,48 @@ export default function AdminProductsPage() {
                 </div>
               </div>
             ))}
-            {!filteredProducts.length ? (
+            {!data.length ? (
               <div className="rounded-[24px] border border-dashed border-white/10 bg-black/10 px-6 py-10 text-center text-sm text-white/55">
                 No products match the current search and filters.
+              </div>
+            ) : null}
+            {pagination.pages > 1 ? (
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setPage((current) => Math.max(current - 1, 1))}
+                  disabled={pagination.page === 1}
+                  className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:text-white/30 hover:bg-white/10"
+                >
+                  Previous
+                </button>
+                {pageNumbers.map((entry, index) => {
+                  const previousPage = pageNumbers[index - 1];
+                  const showGap = previousPage && entry - previousPage > 1;
+
+                  return (
+                    <div key={entry} className="flex items-center gap-3">
+                      {showGap ? <span className="text-white/40">…</span> : null}
+                      <button
+                        type="button"
+                        onClick={() => setPage(entry)}
+                        className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                          entry === pagination.page ? "bg-accent text-white" : "border border-white/10 text-white hover:bg-white/10"
+                        }`}
+                      >
+                        {entry}
+                      </button>
+                    </div>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => setPage((current) => Math.min(current + 1, pagination.pages))}
+                  disabled={pagination.page === pagination.pages}
+                  className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:text-white/30 hover:bg-white/10"
+                >
+                  Next
+                </button>
               </div>
             ) : null}
           </div>

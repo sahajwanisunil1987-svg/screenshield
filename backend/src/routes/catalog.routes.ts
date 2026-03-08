@@ -4,6 +4,7 @@ import { authenticate, requireAdmin } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
 import { idParamSchema } from "../validation/common.js";
 import {
+  adminProductListSchema,
   brandSchema,
   categorySchema,
   modelSchema,
@@ -22,7 +23,13 @@ router.get("/products", validate({ query: productSearchSchema }), catalogControl
 router.get("/products/search", validate({ query: productSearchSchema }), catalogController.searchProducts);
 router.get("/products/suggestions", validate({ query: productSuggestionSchema }), catalogController.getProductSuggestions);
 router.get("/products/:slug", catalogController.getProductBySlug);
-router.get("/admin/products", authenticate, requireAdmin, catalogController.getAdminProducts);
+router.get(
+  "/admin/products",
+  authenticate,
+  requireAdmin,
+  validate({ query: adminProductListSchema }),
+  catalogController.getAdminProducts
+);
 router.get(
   "/admin/products/:id",
   authenticate,

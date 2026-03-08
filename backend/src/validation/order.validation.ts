@@ -55,3 +55,14 @@ export const inventoryUpdateSchema = z.object({
   warehouseCode: z.string().max(50).optional(),
   lastRestockedAt: z.string().datetime().optional()
 });
+
+export const adminOrderListSchema = z.object({
+  search: z.string().optional(),
+  status: z.enum(["ALL", "PENDING", "CONFIRMED", "PACKED", "SHIPPED", "DELIVERED", "CANCELLED"]).default("ALL").optional(),
+  paymentStatus: z
+    .enum(["ALL", "PENDING", "PAID", "FAILED", "REFUNDED", "COD"])
+    .default("ALL")
+    .optional(),
+  page: z.coerce.number().int().min(1).default(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(8).optional()
+});

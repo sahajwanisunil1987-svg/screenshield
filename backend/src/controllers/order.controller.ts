@@ -41,8 +41,8 @@ export const validateCoupon = async (req: Request, res: Response) => {
   res.json(await orderService.validateCoupon(req.body.code, req.body.subtotal));
 };
 
-export const adminOrders = async (_req: Request, res: Response) => {
-  res.json(await orderService.adminOrders());
+export const adminOrders = async (req: Request, res: Response) => {
+  res.json(await orderService.adminOrders(req.query));
 };
 
 export const updateStatus = async (req: Request, res: Response) => {

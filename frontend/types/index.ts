@@ -67,6 +67,16 @@ export type ProductListResponse = {
   };
 };
 
+export type PaginatedResponse<T> = {
+  items: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+};
+
 export type Review = {
   id: string;
   rating: number;
@@ -97,6 +107,24 @@ export type Order = {
     totalPrice: number;
     product?: Product;
   }>;
+  user?: {
+    name: string;
+    email: string;
+    phone?: string | null;
+  };
+  addressSnapshot?: Record<string, string | undefined>;
+  invoice?: {
+    invoiceNumber?: string | null;
+  } | null;
+  gstNumber?: string | null;
+};
+
+export type AdminOrder = Order & {
+  user: {
+    name: string;
+    email: string;
+    phone?: string | null;
+  };
 };
 
 export type User = {
@@ -117,6 +145,24 @@ export type User = {
     phone: string;
     gstNumber?: string | null;
   }>;
+  orders?: Array<{
+    id: string;
+    orderNumber: string;
+    createdAt: string;
+    status: string;
+    paymentStatus: string;
+  }>;
+  _count?: {
+    orders: number;
+  };
+};
+
+export type InventoryItem = {
+  id: string;
+  stock: number;
+  lowStockLimit: number;
+  warehouseCode?: string | null;
+  product: Product;
 };
 
 export type SearchSuggestion = {

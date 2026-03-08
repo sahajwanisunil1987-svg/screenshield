@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { generateInvoicePdfBuffer } from "../services/invoice.service.js";
@@ -61,20 +62,56 @@ export const dashboard = async (_req: Request, res: Response) => {
 };
 
 export const inventory = async (_req: Request, res: Response) => {
-  const items = await prisma.inventory.findMany({
-    include: {
-      product: {
-        include: {
-          brand: true,
-          model: true,
-          category: true
-        }
-      }
-    },
-    orderBy: { stock: "asc" }
-  });
+  const page = Number(_req.query.page ?? 1);
+  const limit = Number(_req.query.limit ?? 12);
+  const search = String(_req.query.search ?? "").trim();
+  const stock = String(_req.query.stock ?? "ALL");
 
-  res.json(items);
+  const where = {
+    ...(stock === "LOW" ? { stock: { lte: prisma.inventory.fields.lowStockLimit } } : {}),
+    ...(stock === "HEALTHY" ? { stock: { gt: prisma.inventory.fields.lowStockLimit } } : {}),
+    ...(search
+      ? {
+          OR: [
+            { warehouseCode: { contains: search, mode: "insensitive" as const } },
+            { product: { name: { contains: search, mode: "insensitive" as const } } },
+            { product: { sku: { contains: search, mode: "insensitive" as const } } },
+            { product: { brand: { name: { contains: search, mode: "insensitive" as const } } } },
+            { product: { model: { name: { contains: search, mode: "insensitive" as const } } } },
+            { product: { category: { name: { contains: search, mode: "insensitive" as const } } } }
+          ]
+        }
+      : {})
+  };
+
+  const [items, total] = await Promise.all([
+    prisma.inventory.findMany({
+      where,
+      include: {
+        product: {
+          include: {
+            brand: true,
+            model: true,
+            category: true
+          }
+        }
+      },
+      orderBy: { stock: "asc" },
+      skip: (page - 1) * limit,
+      take: limit
+    }),
+    prisma.inventory.count({ where })
+  ]);
+
+  res.json({
+    items,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  });
 };
 
 export const updateInventory = async (req: Request, res: Response) => {
@@ -102,15 +139,56 @@ export const updateInventory = async (req: Request, res: Response) => {
 };
 
 export const users = async (_req: Request, res: Response) => {
-  const items = await prisma.user.findMany({
-    where: { role: "CUSTOMER" },
-    include: {
-      orders: true
-    },
-    orderBy: { createdAt: "desc" }
-  });
+  const page = Number(_req.query.page ?? 1);
+  const limit = Number(_req.query.limit ?? 12);
+  const search = String(_req.query.search ?? "").trim();
+  const activity = String(_req.query.activity ?? "ALL");
 
-  res.json(items);
+  const where: Prisma.UserWhereInput = {
+    role: "CUSTOMER",
+    ...(search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { email: { contains: search, mode: "insensitive" } },
+            { phone: { contains: search, mode: "insensitive" } }
+          ]
+        }
+      : {}),
+    ...(activity === "WITH_ORDERS" ? { orders: { some: {} } } : {}),
+    ...(activity === "WITHOUT_ORDERS" ? { orders: { none: {} } } : {})
+  };
+
+  const [items, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      include: {
+        orders: {
+          take: 4,
+          orderBy: { createdAt: "desc" }
+        },
+        _count: {
+          select: {
+            orders: true
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit
+    }),
+    prisma.user.count({ where })
+  ]);
+
+  res.json({
+    items,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  });
 };
 
 export const downloadInvoice = async (req: Request, res: Response) => {

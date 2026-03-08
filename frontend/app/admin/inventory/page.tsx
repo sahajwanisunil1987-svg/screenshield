@@ -7,44 +7,49 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
+import { InventoryItem, PaginatedResponse } from "@/types";
 
 export default function AdminInventoryPage() {
   const token = useAuthStore((state) => state.token);
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, pages: 1 });
   const [query, setQuery] = useState("");
   const [stockFilter, setStockFilter] = useState<"ALL" | "LOW" | "HEALTHY">("ALL");
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     if (!token) return;
+    const config = authHeaders(token);
     api
-      .get("/admin/inventory", authHeaders(token))
-      .then((response) => setItems(response.data))
+      .get<PaginatedResponse<InventoryItem>>("/admin/inventory", {
+        ...config,
+        params: {
+          search: query || undefined,
+          stock: stockFilter,
+          page,
+          limit: 12
+        }
+      })
+      .then((response) => {
+        setItems(response.data.items);
+        setPagination(response.data.pagination);
+      })
       .catch((error) => {
         toast.error(getApiErrorMessage(error, "Unable to load inventory"));
       });
-  }, [token]);
+  }, [page, query, stockFilter, token]);
 
-  const filteredItems = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+  useEffect(() => {
+    setPage(1);
+  }, [query, stockFilter]);
 
-    return items.filter((item) => {
-      const matchesQuery =
-        !normalizedQuery ||
-        item.product.name.toLowerCase().includes(normalizedQuery) ||
-        item.product.sku.toLowerCase().includes(normalizedQuery) ||
-        item.product.brand.name.toLowerCase().includes(normalizedQuery) ||
-        item.product.model.name.toLowerCase().includes(normalizedQuery) ||
-        item.product.category.name.toLowerCase().includes(normalizedQuery) ||
-        (item.warehouseCode ?? "").toLowerCase().includes(normalizedQuery);
-
-      const isLowStock = item.stock <= item.lowStockLimit;
-      const matchesStock =
-        stockFilter === "ALL" ||
-        (stockFilter === "LOW" ? isLowStock : !isLowStock);
-
-      return matchesQuery && matchesStock;
-    });
-  }, [items, query, stockFilter]);
+  const pageNumbers = useMemo(
+    () =>
+      Array.from({ length: pagination.pages }, (_, index) => index + 1).filter((entry) =>
+        entry === 1 || entry === pagination.pages || Math.abs(entry - pagination.page) <= 1
+      ),
+    [pagination.page, pagination.pages]
+  );
 
   return (
     <AdminGuard>
@@ -53,7 +58,7 @@ export default function AdminInventoryPage() {
           <div>
             <p className="text-sm font-semibold text-white">Inventory controls</p>
             <p className="text-sm text-white/60">
-              {filteredItems.length} of {items.length} inventory records visible
+              {pagination.total} inventory records found · page {pagination.page} of {pagination.pages}
             </p>
           </div>
           <div className="grid gap-3 lg:grid-cols-[1.5fr_minmax(0,220px)]">
@@ -75,7 +80,7 @@ export default function AdminInventoryPage() {
           </div>
         </div>
         <div className="space-y-4 rounded-[28px] border border-white/10 bg-white/5 p-6">
-          {filteredItems.map((item) => (
+          {items.map((item) => (
             <div key={item.id} className="grid gap-4 rounded-[28px] border border-white/10 bg-white/5 p-5 text-sm lg:grid-cols-[1.2fr_1fr_auto]">
               <div className="space-y-2">
                 <p className="font-semibold text-white">{item.product.name}</p>
@@ -151,9 +156,48 @@ export default function AdminInventoryPage() {
               </div>
             </div>
           ))}
-          {!filteredItems.length ? (
+          {!items.length ? (
             <div className="rounded-[24px] border border-dashed border-white/10 bg-black/10 px-6 py-10 text-center text-sm text-white/55">
               No inventory records match the current search and filters.
+            </div>
+          ) : null}
+          {pagination.pages > 1 ? (
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.max(current - 1, 1))}
+                disabled={pagination.page === 1}
+                className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:text-white/30 hover:bg-white/10"
+              >
+                Previous
+              </button>
+              {pageNumbers.map((entry, index) => {
+                const previousPage = pageNumbers[index - 1];
+                const showGap = previousPage && entry - previousPage > 1;
+
+                return (
+                  <div key={entry} className="flex items-center gap-3">
+                    {showGap ? <span className="text-white/40">…</span> : null}
+                    <button
+                      type="button"
+                      onClick={() => setPage(entry)}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                        entry === pagination.page ? "bg-accent text-white" : "border border-white/10 text-white hover:bg-white/10"
+                      }`}
+                    >
+                      {entry}
+                    </button>
+                  </div>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.min(current + 1, pagination.pages))}
+                disabled={pagination.page === pagination.pages}
+                className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:text-white/30 hover:bg-white/10"
+              >
+                Next
+              </button>
             </div>
           ) : null}
         </div>

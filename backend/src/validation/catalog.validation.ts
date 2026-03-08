@@ -55,3 +55,11 @@ export const productSuggestionSchema = z.object({
   category: z.string().optional(),
   limit: z.coerce.number().min(1).max(10).default(6).optional()
 });
+
+export const adminProductListSchema = z.object({
+  search: z.string().optional(),
+  status: z.enum(["ALL", "ACTIVE", "INACTIVE"]).default("ALL").optional(),
+  feature: z.enum(["ALL", "FEATURED", "STANDARD"]).default("ALL").optional(),
+  page: z.coerce.number().int().min(1).default(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(12).optional()
+});

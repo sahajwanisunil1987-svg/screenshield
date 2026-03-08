@@ -64,7 +64,7 @@ export const getProducts = async (req: Request, res: Response) => {
 };
 
 export const getAdminProducts = async (_req: Request, res: Response) => {
-  res.json(await catalogService.getAdminProducts());
+  res.json(await catalogService.listAdminProducts(_req.query));
 };
 
 export const getAdminProductById = async (req: Request, res: Response) => {

@@ -219,6 +219,62 @@ export const getAdminProducts = async () =>
     orderBy: [{ updatedAt: "desc" }]
   });
 
+export const listAdminProducts = async (query: {
+  search?: string;
+  status?: "ALL" | "ACTIVE" | "INACTIVE";
+  feature?: "ALL" | "FEATURED" | "STANDARD";
+  page?: number;
+  limit?: number;
+}) => {
+  const page = query.page ?? 1;
+  const limit = query.limit ?? 12;
+
+  const where: Prisma.ProductWhereInput = {
+    ...(query.status === "ACTIVE" ? { isActive: true } : {}),
+    ...(query.status === "INACTIVE" ? { isActive: false } : {}),
+    ...(query.feature === "FEATURED" ? { isFeatured: true } : {}),
+    ...(query.feature === "STANDARD" ? { isFeatured: false } : {}),
+    ...(query.search
+      ? {
+          OR: [
+            { name: { contains: query.search, mode: "insensitive" } },
+            { sku: { contains: query.search, mode: "insensitive" } },
+            { brand: { name: { contains: query.search, mode: "insensitive" } } },
+            { model: { name: { contains: query.search, mode: "insensitive" } } },
+            { category: { name: { contains: query.search, mode: "insensitive" } } }
+          ]
+        }
+      : {})
+  };
+
+  const [items, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      include: {
+        images: { orderBy: { sortOrder: "asc" } },
+        brand: true,
+        model: true,
+        category: true,
+        inventory: true
+      },
+      orderBy: [{ updatedAt: "desc" }],
+      skip: (page - 1) * limit,
+      take: limit
+    }),
+    prisma.product.count({ where })
+  ]);
+
+  return {
+    items,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  };
+};
+
 export const getAdminProductById = (id: string) =>
   prisma.product.findUnique({
     where: { id },
