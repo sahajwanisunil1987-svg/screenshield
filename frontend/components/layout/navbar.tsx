@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { GitCompareArrows, Heart, LogOut, ShoppingBag, Truck } from "lucide-react";
+import { GitCompareArrows, Heart, LogOut, ShoppingBag, Truck, User2 } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 import { useCompareStore } from "@/store/compare-store";
 import { useWishlistStore } from "@/store/wishlist-store";
@@ -153,6 +153,52 @@ export function Navbar() {
             </button>
           </form>
         ) : null}
+        <div className="mt-4 grid grid-cols-5 gap-2 md:hidden">
+          <Link
+            href={user ? "/my-orders" : "/login"}
+            className="flex flex-col items-center justify-center rounded-[20px] border border-white/10 bg-white/5 px-3 py-3 text-[11px] font-semibold text-white/75 transition hover:bg-white/10 hover:text-white"
+          >
+            <User2 className="h-4 w-4" />
+            <span className="mt-2">Account</span>
+          </Link>
+          <Link
+            href="/track-order"
+            className="flex flex-col items-center justify-center rounded-[20px] border border-white/10 bg-white/5 px-3 py-3 text-[11px] font-semibold text-white/75 transition hover:bg-white/10 hover:text-white"
+          >
+            <Truck className="h-4 w-4" />
+            <span className="mt-2">Track</span>
+          </Link>
+          <Link
+            href="/wishlist"
+            className="relative flex flex-col items-center justify-center rounded-[20px] border border-white/10 bg-white/5 px-3 py-3 text-[11px] font-semibold text-white/75 transition hover:bg-white/10 hover:text-white"
+          >
+            <Heart className="h-4 w-4" />
+            <span className="mt-2">Wishlist</span>
+            <span className="absolute right-2 top-2 rounded-full bg-ember px-1.5 text-[10px] text-white">
+              {wishlistCount}
+            </span>
+          </Link>
+          <Link
+            href="/compare"
+            className="relative flex flex-col items-center justify-center rounded-[20px] border border-white/10 bg-white/5 px-3 py-3 text-[11px] font-semibold text-white/75 transition hover:bg-white/10 hover:text-white"
+          >
+            <GitCompareArrows className="h-4 w-4" />
+            <span className="mt-2">Compare</span>
+            <span className="absolute right-2 top-2 rounded-full bg-white px-1.5 text-[10px] text-ink">
+              {compareCount}
+            </span>
+          </Link>
+          <Link
+            href="/cart"
+            className="relative flex flex-col items-center justify-center rounded-[20px] border border-white/10 bg-white/5 px-3 py-3 text-[11px] font-semibold text-white/75 transition hover:bg-white/10 hover:text-white"
+          >
+            <ShoppingBag className="h-4 w-4" />
+            <span className="mt-2">Cart</span>
+            <span className="absolute right-2 top-2 rounded-full bg-accent px-1.5 text-[10px] text-white">
+              {cartCount}
+            </span>
+          </Link>
+        </div>
       </div>
     </header>
   );
