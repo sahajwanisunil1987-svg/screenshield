@@ -49,10 +49,11 @@ export function Footer() {
           </div>
           <div className="space-y-3 text-sm text-white/80">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Policies</p>
-            <p>Support</p>
-            <p>Returns</p>
-            <p>Privacy Policy</p>
-            <p>Terms</p>
+            <Link href="/support" className="transition hover:text-white">Support</Link>
+            <Link href="/returns" className="transition hover:text-white">Returns</Link>
+            <Link href="/privacy-policy" className="transition hover:text-white">Privacy Policy</Link>
+            <Link href="/terms" className="transition hover:text-white">Terms</Link>
+            <Link href="/contact" className="transition hover:text-white">Contact</Link>
             <div className="pt-3 text-white/65">
               <p>Contact: support@sparekart.in</p>
               <p className="mt-1">Instagram / YouTube / WhatsApp</p>
