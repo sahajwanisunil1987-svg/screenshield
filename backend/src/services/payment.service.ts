@@ -1,13 +1,13 @@
 import crypto from "crypto";
-import { PaymentStatus } from "@prisma/client";
+import { Order, Payment, PaymentStatus } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
 import { env } from "../config/env.js";
 import { prisma } from "../lib/prisma.js";
 import { razorpay } from "../lib/razorpay.js";
 import { ApiError } from "../utils/api-error.js";
 
-type OrderWithPayment = Awaited<ReturnType<typeof prisma.order.findUnique>> & {
-  payment: NonNullable<Awaited<ReturnType<typeof prisma.order.findUnique>>["payment"]>;
+type OrderWithPayment = Order & {
+  payment: Payment;
 };
 
 const getOrderWithPayment = async (orderId: string): Promise<OrderWithPayment> => {
