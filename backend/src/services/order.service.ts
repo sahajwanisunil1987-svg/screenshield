@@ -459,7 +459,7 @@ export const adminOrders = async (query?: {
   };
 };
 
-export const updateOrderStatus = (id: string, payload: {
+export const updateOrderStatus = async (id: string, payload: {
   status: OrderStatus;
   paymentStatus?: PaymentStatus;
   shippingCourier?: string;
@@ -467,23 +467,54 @@ export const updateOrderStatus = (id: string, payload: {
   estimatedDeliveryAt?: string;
   adminNotes?: string;
 }) =>
-  prisma.order.update({
-    where: { id },
-    data: {
-      status: payload.status,
-      ...(payload.paymentStatus ? { paymentStatus: payload.paymentStatus } : {}),
-      shippingCourier: payload.shippingCourier || null,
-      shippingAwb: payload.shippingAwb || null,
-      estimatedDeliveryAt: payload.estimatedDeliveryAt ? new Date(payload.estimatedDeliveryAt) : null,
-      adminNotes: payload.adminNotes || null,
-      ...(payload.status === OrderStatus.CANCELLED ? { cancelledAt: new Date() } : {})
-    },
-    include: {
-      items: true,
-      payment: true,
-      invoice: true,
-      user: {
-        select: { id: true, name: true, email: true, phone: true }
+  prisma.$transaction(async (tx) => {
+    const existingOrder = await tx.order.findUnique({
+      where: { id },
+      include: {
+        items: true
+      }
+    });
+
+    if (!existingOrder) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Order not found");
+    }
+
+    const shouldRestoreStock = existingOrder.status !== OrderStatus.CANCELLED && payload.status === OrderStatus.CANCELLED;
+
+    if (shouldRestoreStock) {
+      for (const item of existingOrder.items) {
+        const inventoryUpdate = await tx.inventory.updateMany({
+          where: { productId: item.productId },
+          data: { stock: { increment: item.quantity } }
+        });
+
+        if (inventoryUpdate.count === 0) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { increment: item.quantity } }
+          });
+        }
       }
     }
+
+    return tx.order.update({
+      where: { id },
+      data: {
+        status: payload.status,
+        ...(payload.paymentStatus ? { paymentStatus: payload.paymentStatus } : {}),
+        shippingCourier: payload.shippingCourier || null,
+        shippingAwb: payload.shippingAwb || null,
+        estimatedDeliveryAt: payload.estimatedDeliveryAt ? new Date(payload.estimatedDeliveryAt) : null,
+        adminNotes: payload.adminNotes || null,
+        ...(payload.status === OrderStatus.CANCELLED ? { cancelledAt: existingOrder.cancelledAt ?? new Date() } : {})
+      },
+      include: {
+        items: true,
+        payment: true,
+        invoice: true,
+        user: {
+          select: { id: true, name: true, email: true, phone: true }
+        }
+      }
+    });
   });
