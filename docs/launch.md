@@ -116,6 +116,7 @@
   - Payment verification
   - Review moderation
   - Invoice flow
+  - Webhook handling
 - Run a manual regression checklist before launch
 
 ## Final Launch Gate
