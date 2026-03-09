@@ -83,8 +83,12 @@ export default function MyOrdersPage() {
                       <span className="rounded-full bg-[#f5f8fb] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate">
                         {order.paymentStatus}
                       </span>
-                      {order.cancelRequestedAt ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">Cancel requested</span> : null}
-                      {order.returnRequestedAt ? <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">Return requested</span> : null}
+                      {order.cancelRequestStatus === "PENDING" ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">Cancel requested</span> : null}
+                      {order.cancelRequestStatus === "APPROVED" ? <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">Cancel approved</span> : null}
+                      {order.cancelRequestStatus === "REJECTED" ? <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-rose-700">Cancel declined</span> : null}
+                      {order.returnRequestStatus === "PENDING" ? <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">Return requested</span> : null}
+                      {order.returnRequestStatus === "APPROVED" ? <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">Return approved</span> : null}
+                      {order.returnRequestStatus === "REJECTED" ? <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-rose-700">Return declined</span> : null}
                     </div>
                   </div>
                 </div>
@@ -124,10 +128,10 @@ export default function MyOrdersPage() {
                         Download invoice
                       </a>
                     ) : null}
-                    {(["PENDING", "CONFIRMED"].includes(order.status) && !order.cancelRequestedAt) ? (
+                    {(["PENDING", "CONFIRMED"].includes(order.status) && !order.cancelRequestStatus) ? (
                       <button type="button" onClick={() => requestCancellation(order.id)} className="font-semibold text-amber-700 underline">Request cancellation</button>
                     ) : null}
-                    {(order.status === "DELIVERED" && !order.returnRequestedAt) ? (
+                    {(order.status === "DELIVERED" && !order.returnRequestStatus) ? (
                       <button type="button" onClick={() => requestReturn(order.id)} className="font-semibold text-sky-700 underline">Request return</button>
                     ) : null}
                     <Link href={`/track-order?orderNumber=${order.orderNumber}`} className="font-semibold text-accent underline">
@@ -136,7 +140,9 @@ export default function MyOrdersPage() {
                   </div>
                 </div>
                 {order.cancelRequestReason ? <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">Cancellation reason: {order.cancelRequestReason}</p> : null}
+                {order.cancelDecisionNote ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-800">Cancellation decision: {order.cancelDecisionNote}</p> : null}
                 {order.returnRequestReason ? <p className="rounded-2xl bg-sky-50 px-4 py-3 text-sm text-sky-800">Return reason: {order.returnRequestReason}</p> : null}
+                {order.returnDecisionNote ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-800">Return decision: {order.returnDecisionNote}</p> : null}
               </div>
             ))
           ) : (

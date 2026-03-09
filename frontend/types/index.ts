@@ -139,9 +139,15 @@ export type Order = {
   adminNotes?: string | null;
   cancelRequestedAt?: string | null;
   cancelRequestReason?: string | null;
+  cancelRequestStatus?: "PENDING" | "APPROVED" | "REJECTED" | null;
+  cancelDecisionAt?: string | null;
+  cancelDecisionNote?: string | null;
   cancelledAt?: string | null;
   returnRequestedAt?: string | null;
   returnRequestReason?: string | null;
+  returnRequestStatus?: "PENDING" | "APPROVED" | "REJECTED" | null;
+  returnDecisionAt?: string | null;
+  returnDecisionNote?: string | null;
   returnedAt?: string | null;
   items: Array<{
     id: string;
@@ -171,6 +177,22 @@ export type AdminOrder = Order & {
   };
 };
 
+export type UserOrderSummary = {
+  id: string;
+  orderNumber: string;
+  createdAt: string;
+  status: string;
+  paymentStatus: string;
+  totalAmount?: number;
+  items?: Array<{
+    id: string;
+    quantity: number;
+    productName: string;
+    productSku: string;
+    totalPrice: number;
+  }>;
+};
+
 export type User = {
   id: string;
   name: string;
@@ -178,15 +200,22 @@ export type User = {
   role: "CUSTOMER" | "ADMIN";
   phone?: string | null;
   addresses?: Address[];
-  orders?: Array<{
-    id: string;
-    orderNumber: string;
-    createdAt: string;
-    status: string;
-    paymentStatus: string;
-  }>;
+  orders?: UserOrderSummary[];
   _count?: {
     orders: number;
+    addresses?: number;
+  };
+};
+
+export type AdminUserDetail = User & {
+  addresses: Address[];
+  orders: UserOrderSummary[];
+  stats: {
+    totalOrders: number;
+    totalAddresses: number;
+    totalSpent: number;
+    averageOrderValue: number;
+    lastOrderAt?: string | null;
   };
 };
 

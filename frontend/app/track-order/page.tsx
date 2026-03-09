@@ -88,6 +88,12 @@ type TrackResult = {
   adminNotes?: string | null;
   cancelRequestedAt?: string | null;
   cancelRequestReason?: string | null;
+  cancelRequestStatus?: "PENDING" | "APPROVED" | "REJECTED" | null;
+  cancelDecisionNote?: string | null;
+  returnRequestedAt?: string | null;
+  returnRequestReason?: string | null;
+  returnRequestStatus?: "PENDING" | "APPROVED" | "REJECTED" | null;
+  returnDecisionNote?: string | null;
 };
 
 export default function TrackOrderPage() {
@@ -157,7 +163,8 @@ export default function TrackOrderPage() {
                 <div className="rounded-2xl bg-white p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Payment note</p><p className="mt-2 font-semibold text-ink">{paymentDescriptions[result.paymentStatus] ?? "Payment status updated."}</p></div>
               </div>
               {result.adminNotes ? <div className="mt-4 rounded-2xl bg-white p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Operations note</p><p className="mt-2 font-semibold text-ink">{result.adminNotes}</p></div> : null}
-              {result.cancelRequestReason ? <div className="mt-4 rounded-2xl bg-amber-50 p-4 text-amber-800"><p className="text-xs font-semibold uppercase tracking-[0.18em]">Cancellation request</p><p className="mt-2">{result.cancelRequestReason}</p></div> : null}
+              {result.cancelRequestReason ? <div className="mt-4 rounded-2xl bg-amber-50 p-4 text-amber-800"><p className="text-xs font-semibold uppercase tracking-[0.18em]">Cancellation request</p><p className="mt-2">{result.cancelRequestReason}</p>{result.cancelRequestStatus ? <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em]">Status: {result.cancelRequestStatus}</p> : null}{result.cancelDecisionNote ? <p className="mt-2 text-sm">Decision note: {result.cancelDecisionNote}</p> : null}</div> : null}
+              {result.returnRequestReason ? <div className="mt-4 rounded-2xl bg-sky-50 p-4 text-sky-800"><p className="text-xs font-semibold uppercase tracking-[0.18em]">Return request</p><p className="mt-2">{result.returnRequestReason}</p>{result.returnRequestStatus ? <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em]">Status: {result.returnRequestStatus}</p> : null}{result.returnDecisionNote ? <p className="mt-2 text-sm">Decision note: {result.returnDecisionNote}</p> : null}</div> : null}
               <div className="mt-6 rounded-[24px] bg-white p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>

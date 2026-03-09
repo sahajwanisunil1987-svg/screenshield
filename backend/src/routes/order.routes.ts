@@ -13,7 +13,8 @@ import {
   couponValidationSchema,
   createOrderSchema,
   inventoryUpdateSchema,
-  updateOrderStatusSchema
+  updateOrderStatusSchema,
+  reviewRequestSchema
 } from "../validation/order.validation.js";
 
 const router = Router();
@@ -61,6 +62,20 @@ router.delete(
   requireAdmin,
   validate({ params: idParamSchema }),
   orderController.deleteCoupon
+);
+router.patch(
+  "/admin/orders/:id/cancel-request",
+  authenticate,
+  requireAdmin,
+  validate({ params: idParamSchema, body: reviewRequestSchema }),
+  orderController.reviewCancelRequest
+);
+router.patch(
+  "/admin/orders/:id/return-request",
+  authenticate,
+  requireAdmin,
+  validate({ params: idParamSchema, body: reviewRequestSchema }),
+  orderController.reviewReturnRequest
 );
 router.patch(
   "/admin/orders/:id/status",

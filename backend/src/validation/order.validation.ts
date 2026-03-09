@@ -86,3 +86,8 @@ export const adminCouponListSchema = z.object({
   page: z.coerce.number().int().min(1).default(1).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(12).optional()
 });
+
+export const reviewRequestSchema = z.object({
+  action: z.enum(["APPROVE", "REJECT"]),
+  note: z.string().max(1000).optional()
+});

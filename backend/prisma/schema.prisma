@@ -41,6 +41,12 @@ enum ReviewStatus {
   HIDDEN
 }
 
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model Brand {
   id          String        @id @default(cuid())
   name        String        @unique
@@ -252,9 +258,15 @@ model Order {
   adminNotes          String?
   cancelRequestedAt   DateTime?
   cancelRequestReason String?
+  cancelRequestStatus RequestStatus?
+  cancelDecisionAt    DateTime?
+  cancelDecisionNote  String?
   cancelledAt         DateTime?
   returnRequestedAt   DateTime?
   returnRequestReason String?
+  returnRequestStatus RequestStatus?
+  returnDecisionAt    DateTime?
+  returnDecisionNote  String?
   returnedAt          DateTime?
   user                User           @relation(fields: [userId], references: [id])
   coupon              Coupon?        @relation(fields: [couponId], references: [id])

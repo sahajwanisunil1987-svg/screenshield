@@ -66,6 +66,41 @@ export const returnRequest = async (req: Request, res: Response) => {
   res.json(order);
 };
 
+
+export const reviewCancelRequest = async (req: Request, res: Response) => {
+  const order = await orderService.reviewCancelRequest(getSingleParam(req.params.id)!, req.body.action, req.body.note);
+  if (order.user?.id) {
+    await createNotification({
+      userId: order.user.id,
+      title: req.body.action === "APPROVE" ? "Cancellation approved" : "Cancellation declined",
+      message:
+        req.body.action === "APPROVE"
+          ? `Your cancellation request for ${order.orderNumber} has been approved.`
+          : `Your cancellation request for ${order.orderNumber} has been declined.`,
+      href: `/my-orders`,
+      kind: "ORDER"
+    });
+  }
+  res.json(order);
+};
+
+export const reviewReturnRequest = async (req: Request, res: Response) => {
+  const order = await orderService.reviewReturnRequest(getSingleParam(req.params.id)!, req.body.action, req.body.note);
+  if (order.user?.id) {
+    await createNotification({
+      userId: order.user.id,
+      title: req.body.action === "APPROVE" ? "Return approved" : "Return declined",
+      message:
+        req.body.action === "APPROVE"
+          ? `Your return request for ${order.orderNumber} has been approved.`
+          : `Your return request for ${order.orderNumber} has been declined.`,
+      href: `/my-orders`,
+      kind: "ORDER"
+    });
+  }
+  res.json(order);
+};
+
 export const downloadMyInvoice = async (req: Request, res: Response) => {
   const orderId = getSingleParam(req.params.id)!;
   const order = await orderService.getOrderById(orderId, req.user!.userId, false);

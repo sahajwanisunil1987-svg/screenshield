@@ -1,4 +1,4 @@
-import { OrderStatus, PaymentStatus, Prisma } from "@prisma/client";
+import { OrderStatus, PaymentStatus, Prisma, RequestStatus } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
 import { prisma } from "../lib/prisma.js";
 import { env } from "../config/env.js";
@@ -262,7 +262,10 @@ export const createOrder = async (
       include: {
         items: true,
         payment: true,
-        invoice: true
+        invoice: true,
+        user: {
+          select: { id: true, name: true, email: true, phone: true }
+        }
       }
     });
 
@@ -339,7 +342,10 @@ export const requestOrderCancellation = async (orderId: string, userId: string, 
     where: { id: orderId },
     data: {
       cancelRequestedAt: new Date(),
-      cancelRequestReason: reason
+      cancelRequestReason: reason,
+      cancelRequestStatus: RequestStatus.PENDING,
+      cancelDecisionAt: null,
+      cancelDecisionNote: null
     },
     include: {
       items: true,
@@ -368,12 +374,112 @@ export const requestReturn = async (orderId: string, userId: string, reason: str
     where: { id: orderId },
     data: {
       returnRequestedAt: new Date(),
-      returnRequestReason: reason
+      returnRequestReason: reason,
+      returnRequestStatus: RequestStatus.PENDING,
+      returnDecisionAt: null,
+      returnDecisionNote: null
     },
     include: {
       items: true,
       payment: true,
       invoice: true
+    }
+  });
+};
+
+export const reviewCancelRequest = async (orderId: string, action: "APPROVE" | "REJECT", note?: string) => {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      items: true,
+      payment: true,
+      invoice: true,
+      user: { select: { id: true, name: true, email: true, phone: true } }
+    }
+  });
+
+  if (!order) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Order not found");
+  }
+
+  if (order.cancelRequestStatus !== RequestStatus.PENDING) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "There is no pending cancellation request for this order");
+  }
+
+  if (action === "APPROVE") {
+    return updateOrderStatus(orderId, {
+      status: OrderStatus.CANCELLED,
+      paymentStatus: order.paymentStatus,
+      shippingCourier: order.shippingCourier ?? undefined,
+      shippingAwb: order.shippingAwb ?? undefined,
+      estimatedDeliveryAt: order.estimatedDeliveryAt?.toISOString(),
+      adminNotes: note ?? order.adminNotes ?? undefined
+    }).then((updated) =>
+      prisma.order.update({
+        where: { id: orderId },
+        data: {
+          cancelRequestStatus: RequestStatus.APPROVED,
+          cancelDecisionAt: new Date(),
+          cancelDecisionNote: note ?? null
+        },
+        include: {
+          items: true,
+          payment: true,
+          invoice: true,
+          user: { select: { id: true, name: true, email: true, phone: true } }
+        }
+      })
+    );
+  }
+
+  return prisma.order.update({
+    where: { id: orderId },
+    data: {
+      cancelRequestStatus: RequestStatus.REJECTED,
+      cancelDecisionAt: new Date(),
+      cancelDecisionNote: note ?? null
+    },
+    include: {
+      items: true,
+      payment: true,
+      invoice: true,
+      user: { select: { id: true, name: true, email: true, phone: true } }
+    }
+  });
+};
+
+export const reviewReturnRequest = async (orderId: string, action: "APPROVE" | "REJECT", note?: string) => {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      items: true,
+      payment: true,
+      invoice: true,
+      user: { select: { id: true, name: true, email: true, phone: true } }
+    }
+  });
+
+  if (!order) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Order not found");
+  }
+
+  if (order.returnRequestStatus !== RequestStatus.PENDING) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "There is no pending return request for this order");
+  }
+
+  return prisma.order.update({
+    where: { id: orderId },
+    data: {
+      returnRequestStatus: action === "APPROVE" ? RequestStatus.APPROVED : RequestStatus.REJECTED,
+      returnDecisionAt: new Date(),
+      returnDecisionNote: note ?? null,
+      ...(action === "APPROVE" ? { returnedAt: new Date() } : {})
+    },
+    include: {
+      items: true,
+      payment: true,
+      invoice: true,
+      user: { select: { id: true, name: true, email: true, phone: true } }
     }
   });
 };
@@ -393,8 +499,14 @@ export const trackOrder = async (orderNumber: string) => {
       adminNotes: true,
       cancelRequestedAt: true,
       cancelRequestReason: true,
+      cancelRequestStatus: true,
+      cancelDecisionAt: true,
+      cancelDecisionNote: true,
       returnRequestedAt: true,
-      returnRequestReason: true
+      returnRequestReason: true,
+      returnRequestStatus: true,
+      returnDecisionAt: true,
+      returnDecisionNote: true
     }
   });
 
