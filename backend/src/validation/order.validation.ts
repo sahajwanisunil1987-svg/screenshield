@@ -29,7 +29,15 @@ export const createOrderSchema = z.object({
 
 export const updateOrderStatusSchema = z.object({
   status: z.enum(["PENDING", "CONFIRMED", "PACKED", "SHIPPED", "DELIVERED", "CANCELLED"]),
-  paymentStatus: z.enum(["PENDING", "PAID", "FAILED", "REFUNDED", "COD"]).optional()
+  paymentStatus: z.enum(["PENDING", "PAID", "FAILED", "REFUNDED", "COD"]).optional(),
+  shippingCourier: z.string().max(120).optional(),
+  shippingAwb: z.string().max(120).optional(),
+  estimatedDeliveryAt: z.string().datetime().optional().or(z.literal("")),
+  adminNotes: z.string().max(1000).optional()
+});
+
+export const cancelOrderSchema = z.object({
+  reason: z.string().min(5).max(500)
 });
 
 export const couponValidationSchema = z.object({

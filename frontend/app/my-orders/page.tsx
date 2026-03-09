@@ -27,13 +27,30 @@ export default function MyOrdersPage() {
       });
   }, [token]);
 
+  const requestCancellation = async (orderId: string) => {
+    if (!token) return;
+    const reason = window.prompt("Reason for cancellation request");
+    if (!reason) return;
+
+    try {
+      const response = await api.post<Order>(`/orders/${orderId}/cancel-request`, { reason }, authHeaders(token));
+      setOrders((current) => current.map((item) => (item.id === orderId ? response.data : item)));
+      toast.success("Cancellation request submitted");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Unable to request cancellation"));
+    }
+  };
+
   return (
     <PageShell>
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
-        <h1 className="font-display text-4xl text-ink">My orders</h1>
-        <p className="mt-3 max-w-2xl text-sm text-slate">
-          Review placed orders, payment status, included items, and jump straight into tracking for any active shipment.
-        </p>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="font-display text-4xl text-ink">My orders</h1>
+            <p className="mt-3 max-w-2xl text-sm text-slate">Review order status, shipment details, invoices, and request cancellations before dispatch locks in.</p>
+          </div>
+          <Link href="/account" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-ink transition hover:bg-white">Manage account</Link>
+        </div>
         <div className="mt-10 space-y-4">
           {orders.length ? (
             orders.map((order) => (
@@ -52,6 +69,7 @@ export default function MyOrdersPage() {
                       <span className="rounded-full bg-[#f5f8fb] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate">
                         {order.paymentStatus}
                       </span>
+                      {order.cancelRequestedAt ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">Cancel requested</span> : null}
                     </div>
                   </div>
                 </div>
@@ -65,6 +83,14 @@ export default function MyOrdersPage() {
                     </div>
                   ))}
                 </div>
+                {(order.shippingCourier || order.shippingAwb || order.estimatedDeliveryAt || order.adminNotes) ? (
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Courier</p><p className="mt-2 font-semibold text-ink">{order.shippingCourier ?? "Pending"}</p></div>
+                    <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">AWB</p><p className="mt-2 font-semibold text-ink">{order.shippingAwb ?? "Pending"}</p></div>
+                    <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">ETA</p><p className="mt-2 font-semibold text-ink">{order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : "Pending"}</p></div>
+                    <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Ops note</p><p className="mt-2 font-semibold text-ink">{order.adminNotes ?? "No note yet"}</p></div>
+                  </div>
+                ) : null}
                 <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate">
                   <div className="flex flex-wrap items-center gap-3">
                     <span>Payment: {order.paymentStatus}</span>
@@ -83,14 +109,15 @@ export default function MyOrdersPage() {
                         Download invoice
                       </a>
                     ) : null}
+                    {(["PENDING", "CONFIRMED"].includes(order.status) && !order.cancelRequestedAt) ? (
+                      <button type="button" onClick={() => requestCancellation(order.id)} className="font-semibold text-amber-700 underline">Request cancellation</button>
+                    ) : null}
                     <Link href={`/track-order?orderNumber=${order.orderNumber}`} className="font-semibold text-accent underline">
                       Track order
                     </Link>
-                    <Link href={`/order-success?orderNumber=${order.orderNumber}`} className="font-semibold text-slate underline">
-                      View confirmation
-                    </Link>
                   </div>
                 </div>
+                {order.cancelRequestReason ? <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">Cancellation reason: {order.cancelRequestReason}</p> : null}
               </div>
             ))
           ) : (

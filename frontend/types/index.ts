@@ -106,6 +106,21 @@ export type AdminReview = Review & {
   };
 };
 
+export type Address = {
+  id: string;
+  fullName: string;
+  line1: string;
+  line2?: string | null;
+  landmark?: string | null;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone: string;
+  gstNumber?: string | null;
+  isDefault: boolean;
+};
+
 export type Order = {
   id: string;
   orderNumber: string;
@@ -117,6 +132,14 @@ export type Order = {
   status: string;
   paymentStatus: string;
   createdAt: string;
+  updatedAt?: string;
+  shippingCourier?: string | null;
+  shippingAwb?: string | null;
+  estimatedDeliveryAt?: string | null;
+  adminNotes?: string | null;
+  cancelRequestedAt?: string | null;
+  cancelRequestReason?: string | null;
+  cancelledAt?: string | null;
   items: Array<{
     id: string;
     quantity: number;
@@ -151,18 +174,7 @@ export type User = {
   email: string;
   role: "CUSTOMER" | "ADMIN";
   phone?: string | null;
-  addresses?: Array<{
-    fullName: string;
-    line1: string;
-    line2?: string | null;
-    landmark?: string | null;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-    phone: string;
-    gstNumber?: string | null;
-  }>;
+  addresses?: Address[];
   orders?: Array<{
     id: string;
     orderNumber: string;

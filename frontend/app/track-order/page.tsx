@@ -35,6 +35,12 @@ type TrackResult = {
   paymentStatus: string;
   createdAt: string;
   updatedAt: string;
+  shippingCourier?: string | null;
+  shippingAwb?: string | null;
+  estimatedDeliveryAt?: string | null;
+  adminNotes?: string | null;
+  cancelRequestedAt?: string | null;
+  cancelRequestReason?: string | null;
 };
 
 export default function TrackOrderPage() {
@@ -47,25 +53,14 @@ export default function TrackOrderPage() {
     const preset = new URLSearchParams(window.location.search).get("orderNumber");
     if (preset) {
       setOrderNumber(preset);
-      void (async () => {
-        try {
-          setIsLoading(true);
-          const response = await api.get(`/orders/track/${preset}`);
-          setResult(response.data);
-        } catch (error) {
-          setResult(null);
-          toast.error(getApiErrorMessage(error, "Unable to track order"));
-        } finally {
-          setIsLoading(false);
-        }
-      })();
+      void onTrack(preset);
     }
   }, []);
 
-  const onTrack = async () => {
+  const onTrack = async (value = orderNumber) => {
     try {
       setIsLoading(true);
-      const response = await api.get(`/orders/track/${orderNumber}`);
+      const response = await api.get(`/orders/track/${value}`);
       setResult(response.data);
     } catch (error) {
       setResult(null);
@@ -77,84 +72,50 @@ export default function TrackOrderPage() {
 
   return (
     <PageShell>
-      <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
         <div className="rounded-[36px] bg-white p-8 shadow-card">
           <h1 className="font-display text-4xl text-ink">Track your order</h1>
-          <p className="mt-3 max-w-2xl text-sm text-slate">
-            Enter your SpareKart order number to check the latest processing stage and payment state.
-          </p>
+          <p className="mt-3 max-w-2xl text-sm text-slate">Enter your SpareKart order number to check the latest processing stage, shipment fields, and payment state.</p>
           <div className="mt-6 grid gap-3 rounded-[28px] bg-panel p-4 text-sm text-slate md:grid-cols-3">
-            <div className="rounded-2xl bg-white/80 p-4">
-              <PackageSearch className="h-5 w-5 text-accent" />
-              <p className="mt-3 font-semibold text-ink">Order visibility</p>
-              <p className="mt-1 text-slate">Track order progression from placement to final delivery.</p>
-            </div>
-            <div className="rounded-2xl bg-white/80 p-4">
-              <Truck className="h-5 w-5 text-accent" />
-              <p className="mt-3 font-semibold text-ink">Dispatch clarity</p>
-              <p className="mt-1 text-slate">See the current movement stage before contacting support.</p>
-            </div>
-            <div className="rounded-2xl bg-white/80 p-4">
-              <ShieldCheck className="h-5 w-5 text-accent" />
-              <p className="mt-3 font-semibold text-ink">Payment context</p>
-              <p className="mt-1 text-slate">Check whether COD or online payment is already confirmed.</p>
-            </div>
+            <div className="rounded-2xl bg-white/80 p-4"><PackageSearch className="h-5 w-5 text-accent" /><p className="mt-3 font-semibold text-ink">Order visibility</p><p className="mt-1 text-slate">Track order progression from placement to final delivery.</p></div>
+            <div className="rounded-2xl bg-white/80 p-4"><Truck className="h-5 w-5 text-accent" /><p className="mt-3 font-semibold text-ink">Dispatch clarity</p><p className="mt-1 text-slate">See courier, AWB, and ETA as soon as the ops team updates them.</p></div>
+            <div className="rounded-2xl bg-white/80 p-4"><ShieldCheck className="h-5 w-5 text-accent" /><p className="mt-3 font-semibold text-ink">Payment context</p><p className="mt-1 text-slate">Check whether COD or online payment is already confirmed.</p></div>
           </div>
           <div className="mt-8 flex gap-3">
             <Input value={orderNumber} onChange={(event) => setOrderNumber(event.target.value)} placeholder="Enter order number" />
-            <Button onClick={onTrack} disabled={!orderNumber.trim() || isLoading}>
-              {isLoading ? "Tracking..." : "Track"}
-            </Button>
+            <Button disabled={isLoading || !orderNumber.trim()} onClick={() => onTrack()}>{isLoading ? "Checking..." : "Track"}</Button>
           </div>
+
           {result ? (
-            <div className="mt-8 rounded-[28px] bg-[#f5f8fb] p-6 text-sm text-slate">
-              <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="mt-8 rounded-[28px] bg-panel p-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Order number</p>
-                  <p className="mt-2 font-semibold text-ink">{result.orderNumber}</p>
+                  <h2 className="mt-2 font-display text-3xl text-ink">{result.orderNumber}</h2>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white">
-                    {result.status}
-                  </span>
-                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate">
-                    {result.paymentStatus}
-                  </span>
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-full bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white">{result.status}</span>
+                  <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate">{result.paymentStatus}</span>
                 </div>
+              </div>
+              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl bg-white p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Placed on</p><p className="mt-2 font-semibold text-ink">{formatDate(result.createdAt)}</p><p className="mt-1 text-xs text-slate">{formatDateTime(result.createdAt)}</p></div>
+                <div className="rounded-2xl bg-white p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Courier</p><p className="mt-2 font-semibold text-ink">{result.shippingCourier ?? "Pending"}</p></div>
+                <div className="rounded-2xl bg-white p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">AWB</p><p className="mt-2 font-semibold text-ink">{result.shippingAwb ?? "Pending"}</p></div>
+                <div className="rounded-2xl bg-white p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">ETA</p><p className="mt-2 font-semibold text-ink">{result.estimatedDeliveryAt ? formatDate(result.estimatedDeliveryAt) : "Pending"}</p></div>
               </div>
               <div className="mt-4 grid gap-3 md:grid-cols-2">
-                <div className="rounded-2xl bg-white p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Placed on</p>
-                  <p className="mt-2 font-semibold text-ink">{formatDate(result.createdAt)}</p>
-                  <p className="mt-1 text-xs text-slate">{formatDateTime(result.createdAt)}</p>
-                </div>
-                <div className="rounded-2xl bg-white p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Last updated</p>
-                  <p className="mt-2 font-semibold text-ink">{formatDate(result.updatedAt)}</p>
-                  <p className="mt-1 text-xs text-slate">{formatDateTime(result.updatedAt)}</p>
-                </div>
+                <div className="rounded-2xl bg-white p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Current status</p><p className="mt-2 font-semibold text-ink">{statusDescriptions[result.status] ?? "Order status updated."}</p></div>
+                <div className="rounded-2xl bg-white p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Payment note</p><p className="mt-2 font-semibold text-ink">{paymentDescriptions[result.paymentStatus] ?? "Payment status updated."}</p></div>
               </div>
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                <div className="rounded-2xl bg-white p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Current status</p>
-                  <p className="mt-2 font-semibold text-ink">{statusDescriptions[result.status] ?? "Order status updated."}</p>
-                </div>
-                <div className="rounded-2xl bg-white p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Payment note</p>
-                  <p className="mt-2 font-semibold text-ink">{paymentDescriptions[result.paymentStatus] ?? "Payment status updated."}</p>
-                </div>
-              </div>
+              {result.adminNotes ? <div className="mt-4 rounded-2xl bg-white p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Operations note</p><p className="mt-2 font-semibold text-ink">{result.adminNotes}</p></div> : null}
+              {result.cancelRequestReason ? <div className="mt-4 rounded-2xl bg-amber-50 p-4 text-amber-800"><p className="text-xs font-semibold uppercase tracking-[0.18em]">Cancellation request</p><p className="mt-2">{result.cancelRequestReason}</p></div> : null}
               <div className="mt-6 grid gap-3 md:grid-cols-5">
                 {timeline.map((step) => {
                   const reached = timeline.indexOf(result.status) >= timeline.indexOf(step);
 
                   return (
-                    <div
-                      key={step}
-                      className={`rounded-2xl px-3 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] ${
-                        reached ? "bg-accent text-white" : "bg-white text-slate"
-                      }`}
-                    >
+                    <div key={step} className={`rounded-2xl px-3 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] ${reached ? "bg-accent text-white" : "bg-white text-slate"}`}>
                       <div className="flex flex-col items-center gap-2">
                         {reached ? <CheckCircle2 className="h-4 w-4" /> : <ArrowRight className="h-4 w-4 opacity-40" />}
                         <span>{step === "PENDING" ? "Placed" : step === "CONFIRMED" ? "Confirmed" : step === "PACKED" ? "Packed" : step === "SHIPPED" ? "Shipped" : "Delivered"}</span>
@@ -175,17 +136,8 @@ export default function TrackOrderPage() {
                         : "Order delivered. If anything looks wrong, contact support with your order number."}
                 </p>
                 <div className="mt-4 flex flex-wrap gap-3">
-                  <Link href="/support">
-                    <Button variant="secondary">
-                      <LifeBuoy className="mr-2 h-4 w-4" />
-                      Contact support
-                    </Button>
-                  </Link>
-                  <Link href={`/my-orders`}>
-                    <Button variant="ghost" className="border border-slate-200 bg-white text-ink hover:bg-accentSoft">
-                      View my orders
-                    </Button>
-                  </Link>
+                  <Link href="/support"><Button variant="secondary"><LifeBuoy className="mr-2 h-4 w-4" />Contact support</Button></Link>
+                  <Link href="/my-orders"><Button variant="ghost" className="border border-slate-200 bg-white text-ink hover:bg-accentSoft">View my orders</Button></Link>
                 </div>
               </div>
             </div>

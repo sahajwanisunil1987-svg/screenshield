@@ -82,7 +82,7 @@ export function Navbar() {
               <Truck className="h-4 w-4" />
               Track
             </Link>
-            <Link href={user ? "/my-orders" : "/login"} className="rounded-full px-4 py-2 hover:bg-white/10">
+            <Link href={user ? "/account" : "/login"} className="rounded-full px-4 py-2 hover:bg-white/10">
               {user ? user.name.split(" ")[0] : "Login"}
             </Link>
             {user ? (
@@ -155,7 +155,7 @@ export function Navbar() {
         ) : null}
         <div className="mt-4 grid grid-cols-5 gap-2 md:hidden">
           <Link
-            href={user ? "/my-orders" : "/login"}
+            href={user ? "/account" : "/login"}
             className="flex flex-col items-center justify-center rounded-[20px] border border-white/10 bg-white/5 px-3 py-3 text-[11px] font-semibold text-white/75 transition hover:bg-white/10 hover:text-white"
           >
             <User2 className="h-4 w-4" />

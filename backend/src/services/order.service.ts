@@ -58,7 +58,7 @@ export const createOrder = async (
 
   let subtotal = 0;
   const orderItems = payload.items.map((item) => {
-      const product = products.find((entry: (typeof products)[number]) => entry.id === item.productId);
+    const product = products.find((entry: (typeof products)[number]) => entry.id === item.productId);
     if (!product) {
       throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid product in cart");
     }
@@ -218,7 +218,8 @@ export const getUserOrders = (userId: string) =>
     where: { userId },
     include: {
       items: true,
-      payment: true
+      payment: true,
+      invoice: true
     },
     orderBy: { createdAt: "desc" }
   });
@@ -260,6 +261,35 @@ export const getOrderById = async (orderId: string, userId?: string, isAdmin?: b
   return order;
 };
 
+export const requestOrderCancellation = async (orderId: string, userId: string, reason: string) => {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+
+  if (!order || order.userId != userId) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Order not found");
+  }
+
+  if (order.status !== OrderStatus.PENDING && order.status !== OrderStatus.CONFIRMED) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "This order can no longer be cancelled from the customer side");
+  }
+
+  if (order.cancelRequestedAt) {
+    throw new ApiError(StatusCodes.CONFLICT, "Cancellation has already been requested for this order");
+  }
+
+  return prisma.order.update({
+    where: { id: orderId },
+    data: {
+      cancelRequestedAt: new Date(),
+      cancelRequestReason: reason
+    },
+    include: {
+      items: true,
+      payment: true,
+      invoice: true
+    }
+  });
+};
+
 export const trackOrder = async (orderNumber: string) => {
   const order = await prisma.order.findUnique({
     where: { orderNumber },
@@ -268,7 +298,13 @@ export const trackOrder = async (orderNumber: string) => {
       status: true,
       paymentStatus: true,
       createdAt: true,
-      updatedAt: true
+      updatedAt: true,
+      shippingCourier: true,
+      shippingAwb: true,
+      estimatedDeliveryAt: true,
+      adminNotes: true,
+      cancelRequestedAt: true,
+      cancelRequestReason: true
     }
   });
 
@@ -333,12 +369,24 @@ export const adminOrders = async (query?: {
   };
 };
 
-export const updateOrderStatus = (id: string, payload: { status: OrderStatus; paymentStatus?: PaymentStatus }) =>
+export const updateOrderStatus = (id: string, payload: {
+  status: OrderStatus;
+  paymentStatus?: PaymentStatus;
+  shippingCourier?: string;
+  shippingAwb?: string;
+  estimatedDeliveryAt?: string;
+  adminNotes?: string;
+}) =>
   prisma.order.update({
     where: { id },
     data: {
       status: payload.status,
-      ...(payload.paymentStatus ? { paymentStatus: payload.paymentStatus } : {})
+      ...(payload.paymentStatus ? { paymentStatus: payload.paymentStatus } : {}),
+      shippingCourier: payload.shippingCourier || null,
+      shippingAwb: payload.shippingAwb || null,
+      estimatedDeliveryAt: payload.estimatedDeliveryAt ? new Date(payload.estimatedDeliveryAt) : null,
+      adminNotes: payload.adminNotes || null,
+      ...(payload.status === OrderStatus.CANCELLED ? { cancelledAt: new Date() } : {})
     },
     include: {
       items: true,
