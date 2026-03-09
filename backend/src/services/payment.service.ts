@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { Order, Payment, PaymentStatus } from "@prisma/client";
+import { Order, OrderStatus, Payment, PaymentStatus } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
 import { env } from "../config/env.js";
 import { prisma } from "../lib/prisma.js";
@@ -34,6 +34,10 @@ export const createRazorpayOrder = async (orderId: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "COD orders do not require Razorpay payment");
   }
 
+  if (order.status === OrderStatus.CANCELLED) {
+    throw new ApiError(StatusCodes.CONFLICT, "Cancelled orders cannot create a Razorpay payment intent");
+  }
+
   if (order.paymentStatus === PaymentStatus.PAID || order.payment.status === PaymentStatus.PAID) {
     throw new ApiError(StatusCodes.CONFLICT, "Order is already marked as paid");
   }
@@ -66,6 +70,10 @@ export const verifyRazorpayPayment = async (payload: {
     throw new ApiError(StatusCodes.BAD_REQUEST, "COD orders cannot be verified through Razorpay");
   }
 
+  if (order.status === OrderStatus.CANCELLED) {
+    throw new ApiError(StatusCodes.CONFLICT, "Cancelled orders cannot be verified as paid");
+  }
+
   if (order.paymentStatus === PaymentStatus.PAID || order.payment.status === PaymentStatus.PAID) {
     return { verified: true, alreadyProcessed: true };
   }
@@ -75,7 +83,7 @@ export const verifyRazorpayPayment = async (payload: {
   }
 
   const generatedSignature = crypto
-    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET as string)
+    .createHmac("sha256", env.RAZORPAY_KEY_SECRET)
     .update(`${payload.razorpayOrderId}|${payload.razorpayPaymentId}`)
     .digest("hex");
 
@@ -137,37 +145,54 @@ const upsertPaymentStatusFromWebhook = async (
   providerOrderId: string,
   providerPaymentId: string | undefined,
   nextStatus: PaymentStatus
-) => {
-  const payment = await prisma.payment.findFirst({
-    where: {
-      OR: [{ providerOrderId }, ...(providerPaymentId ? [{ providerPaymentId }] : [])]
-    },
-    include: {
-      order: true
+) =>
+  prisma.$transaction(async (tx) => {
+    const payment = await tx.payment.findFirst({
+      where: {
+        OR: [{ providerOrderId }, ...(providerPaymentId ? [{ providerPaymentId }] : [])]
+      },
+      include: {
+        order: true
+      }
+    });
+
+    if (!payment) {
+      return { updated: false, reason: "payment_not_found" };
     }
-  });
 
-  if (!payment) {
-    return { updated: false, reason: "payment_not_found" };
-  }
+    if (payment.provider === "COD" || payment.status === PaymentStatus.COD) {
+      return { updated: false, reason: "cod_order" };
+    }
 
-  await prisma.order.update({
-    where: { id: payment.orderId },
-    data: {
-      paymentStatus: nextStatus,
-      status: nextStatus === PaymentStatus.PAID ? "CONFIRMED" : payment.order.status,
-      payment: {
-        update: {
-          providerOrderId,
-          providerPaymentId,
-          status: nextStatus
+    if (payment.order.status === OrderStatus.CANCELLED) {
+      return { updated: false, reason: "cancelled_order" };
+    }
+
+    if (nextStatus === PaymentStatus.PAID && (payment.order.paymentStatus === PaymentStatus.PAID || payment.status === PaymentStatus.PAID)) {
+      return { updated: true, alreadyProcessed: true, orderId: payment.orderId };
+    }
+
+    if (nextStatus === PaymentStatus.FAILED && (payment.order.paymentStatus === PaymentStatus.PAID || payment.status === PaymentStatus.PAID)) {
+      return { updated: false, reason: "already_paid", orderId: payment.orderId };
+    }
+
+    await tx.order.update({
+      where: { id: payment.orderId },
+      data: {
+        paymentStatus: nextStatus,
+        status: nextStatus === PaymentStatus.PAID && payment.order.status === OrderStatus.PENDING ? OrderStatus.CONFIRMED : payment.order.status,
+        payment: {
+          update: {
+            providerOrderId,
+            providerPaymentId,
+            status: nextStatus
+          }
         }
       }
-    }
-  });
+    });
 
-  return { updated: true, orderId: payment.orderId };
-};
+    return { updated: true, orderId: payment.orderId, alreadyProcessed: false };
+  });
 
 export const handleRazorpayWebhook = async (payload: RazorpayWebhookPayload) => {
   const providerOrderId = payload.payload?.payment?.entity?.order_id;

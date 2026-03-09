@@ -43,7 +43,7 @@ type CouponValidationResult = {
 };
 
 const validateCouponWithClient = async (client: Pick<OrderTx, "coupon">, code: string, subtotal: number): Promise<CouponValidationResult> => {
-  const coupon = await prisma.coupon.findUnique({ where: { code: code.toUpperCase() } });
+  const coupon = await client.coupon.findUnique({ where: { code: code.toUpperCase() } });
   if (!coupon || !coupon.isActive) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid coupon code");
   }
@@ -477,6 +477,10 @@ export const updateOrderStatus = async (id: string, payload: {
 
     if (!existingOrder) {
       throw new ApiError(StatusCodes.NOT_FOUND, "Order not found");
+    }
+
+    if (existingOrder.status === OrderStatus.CANCELLED && payload.status !== OrderStatus.CANCELLED) {
+      throw new ApiError(StatusCodes.CONFLICT, "Cancelled orders cannot be moved back to an active state");
     }
 
     const shouldRestoreStock = existingOrder.status !== OrderStatus.CANCELLED && payload.status === OrderStatus.CANCELLED;
