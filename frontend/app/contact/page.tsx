@@ -11,22 +11,22 @@ const sections = [
   {
     title: "Customer support",
     body: [
-      "Use the support email or phone line for order tracking, product compatibility clarification, warranty queries, and checkout-related help.",
-      "For fastest handling, include your order number and a short description of the issue."
+      "Email us at sahajwanisunil1987@gmail.com or call +91 9001554862 for order tracking, product compatibility clarification, warranty queries, and checkout-related help.",
+      "For faster support, include your order number and a short description of the issue."
     ]
   },
   {
     title: "Business and workshop inquiries",
     body: [
-      "Repair-shop buyers and repeat workshop customers can reach out for larger order coordination, catalog assistance, or stock-related discussion.",
-      "SpareKart is built around workshop-ready parts discovery, so high-intent business inquiries should include the models and categories in demand."
+      "Repair-shop buyers and repeat workshop customers can contact us at sahajwanisunil1987@gmail.com or +91 9001554862 for larger order coordination, catalog assistance, or stock-related discussions.",
+      "For high-intent business inquiries, include the brands, models, and part categories you need."
     ]
   },
   {
     title: "Support hours",
     body: [
       "Support response times may vary based on order volume, operational hours, and whether the issue requires logistics or product verification.",
-      "For urgent tracking questions, keep your order number ready before contacting the team."
+      "For urgent tracking questions, keep your order number ready before contacting the team on +91 9001554862."
     ]
   }
 ];
@@ -36,7 +36,7 @@ export default function ContactPage() {
     <ContentPage
       eyebrow="Contact"
       title="Talk to the SpareKart team"
-      intro="Reach out for pre-order fitment guidance, order support, returns discussion, or workshop-focused buying help."
+      intro="Reach out at sahajwanisunil1987@gmail.com or +91 9001554862 for pre-order fitment guidance, order support, returns discussion, or workshop-focused buying help."
       sections={sections}
     />
   );

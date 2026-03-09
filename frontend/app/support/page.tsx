@@ -12,21 +12,21 @@ const sections = [
     title: "Order assistance",
     body: [
       "Use the SpareKart track-order flow to check the latest order status, shipping progression, and payment state.",
-      "If an order looks delayed or needs clarification, contact support with the order number so the dispatch and payment details can be checked quickly."
+      "If an order looks delayed or needs clarification, contact support at sahajwanisunil1987@gmail.com or +91 9001554862 with your order number so dispatch and payment details can be checked quickly."
     ]
   },
   {
     title: "Compatibility guidance",
     body: [
       "Mobile spare parts should be matched by brand, model, and part type before purchase. Where applicable, product pages also surface additional compatible models.",
-      "If you are unsure whether a part fits your device or repair requirement, contact support before placing the order."
+      "If you are unsure whether a part fits your device or repair requirement, contact support at sahajwanisunil1987@gmail.com or +91 9001554862 before placing the order."
     ]
   },
   {
     title: "Warranty and after-sales help",
     body: [
       "Warranty coverage applies according to the product listing and SpareKart replacement policy. Physical damage, mishandling, and incorrect installation are typically excluded.",
-      "For warranty-related help, keep your order details ready and describe the issue clearly so the support team can respond faster."
+      "For warranty-related help, keep your order details ready and describe the issue clearly so the support team can respond faster on email or phone."
     ]
   }
 ];
@@ -36,7 +36,7 @@ export default function SupportPage() {
     <ContentPage
       eyebrow="Customer support"
       title="Support that fits the repair workflow"
-      intro="SpareKart support is structured around faster order resolution, clearer compatibility guidance, and direct help for workshop and retail buyers."
+      intro="SpareKart support is structured around faster order resolution, clearer compatibility guidance, and direct help for workshop and retail buyers. Reach us at sahajwanisunil1987@gmail.com or +91 9001554862."
       sections={sections}
     />
   );

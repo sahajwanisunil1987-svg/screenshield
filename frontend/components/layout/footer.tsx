@@ -23,6 +23,7 @@ export function Footer() {
             </div>
           </div>
         </div>
+
         <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.9fr]">
           <div>
             <h3 className="font-display text-2xl">SpareKart</h3>
@@ -35,28 +36,41 @@ export function Footer() {
               <span className="rounded-full border border-white/10 px-3 py-2">India dispatch</span>
             </div>
           </div>
+
           <div className="space-y-3 text-sm text-white/80">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Explore</p>
             <Link href="/brands" className="transition hover:text-white">Brands</Link>
             <Link href="/categories" className="transition hover:text-white">Categories</Link>
             <Link href="/products" className="transition hover:text-white">Products</Link>
           </div>
+
           <div className="space-y-3 text-sm text-white/80">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Account</p>
             <Link href="/track-order" className="transition hover:text-white">Track Order</Link>
             <Link href="/login" className="transition hover:text-white">Login</Link>
             <Link href="/register" className="transition hover:text-white">Register</Link>
           </div>
+
           <div className="space-y-3 text-sm text-white/80">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Policies</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Support</p>
             <Link href="/support" className="transition hover:text-white">Support</Link>
+            <Link href="/contact" className="transition hover:text-white">Contact Us</Link>
             <Link href="/returns" className="transition hover:text-white">Returns</Link>
             <Link href="/privacy-policy" className="transition hover:text-white">Privacy Policy</Link>
             <Link href="/terms" className="transition hover:text-white">Terms</Link>
-            <Link href="/contact" className="transition hover:text-white">Contact</Link>
             <div className="pt-3 text-white/65">
-              <p>Contact: support@sparekart.in</p>
-              <p className="mt-1">Instagram / YouTube / WhatsApp</p>
+              <p>
+                Email:{" "}
+                <a href="mailto:sahajwanisunil1987@gmail.com" className="transition hover:text-white">
+                  sahajwanisunil1987@gmail.com
+                </a>
+              </ps>
+              <p className="mt-1">
+                Phone:{" "}
+                <a href="tel:+919001554862" className="transition hover:text-white">
+                  +91 9001554862
+                </a>
+              </p>
             </div>
           </div>
         </div>
