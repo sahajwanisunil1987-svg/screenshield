@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CheckCircle2, PackageCheck, ReceiptText, Truck } from "lucide-react";
 import { PageShell } from "@/components/layout/page-shell";
-import { Button } from "@/components/ui/button";
+import { OrderSuccessActions } from "./order-success-actions";
 
 export default function OrderSuccessPage({
   searchParams
@@ -37,21 +37,7 @@ export default function OrderSuccessPage({
               <p className="mt-1 text-sm text-slate">Use your order number any time to check shipment progress.</p>
             </div>
           </div>
-          <div className="mt-8 flex justify-center gap-3">
-            <Link href="/products">
-              <Button>Continue shopping</Button>
-            </Link>
-            <Link href="/my-orders">
-              <Button variant="secondary">View orders</Button>
-            </Link>
-            {searchParams.orderNumber ? (
-              <Link href={`/track-order?orderNumber=${searchParams.orderNumber}`}>
-                <Button variant="ghost" className="border border-slate-200 bg-white text-ink hover:bg-accentSoft">
-                  Track order
-                </Button>
-              </Link>
-            ) : null}
-          </div>
+          <OrderSuccessActions orderNumber={searchParams.orderNumber} />
         </div>
       </div>
     </PageShell>
