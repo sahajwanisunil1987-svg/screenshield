@@ -82,6 +82,16 @@ export function Navbar() {
               <Truck className="h-4 w-4" />
               Track
             </Link>
+            {user ? (
+              <Link href="/my-orders" className="hidden rounded-full px-4 py-2 hover:bg-white/10 lg:flex">
+                My Orders
+              </Link>
+            ) : null}
+            {user?.role === "ADMIN" ? (
+              <Link href="/admin/orders" className="hidden rounded-full px-4 py-2 hover:bg-white/10 lg:flex">
+                Admin
+              </Link>
+            ) : null}
             <Link href={user ? "/account" : "/login"} className="rounded-full px-4 py-2 hover:bg-white/10">
               {user ? "Account" : "Login"}
             </Link>
