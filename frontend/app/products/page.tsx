@@ -41,10 +41,10 @@ export default async function ProductsPage({
   if (searchParams.page) params.set("page", searchParams.page);
 
   const [products, brands, models, categories] = await Promise.all([
-    fetchApi<ProductListResponse>(`/products?${params.toString()}`),
-    fetchApi<Brand[]>("/brands"),
-    fetchApi<MobileModel[]>("/models"),
-    fetchApi<Category[]>("/categories")
+    fetchApi<ProductListResponse>(`/products?${params.toString()}`, { cache: "no-store", next: { revalidate: 0 } }),
+    fetchApi<Brand[]>("/brands", { cache: "no-store", next: { revalidate: 0 } }),
+    fetchApi<MobileModel[]>("/models", { cache: "no-store", next: { revalidate: 0 } }),
+    fetchApi<Category[]>("/categories", { cache: "no-store", next: { revalidate: 0 } })
   ]);
 
   const activeFilters = [

@@ -1,43 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import { ProductImage } from "@/types";
 
-export function ProductGallery({ images, productName }: { images: ProductImage[]; productName: string }) {
-  const gallery = images.length ? images : [{ url: "https://placehold.co/1000x1000", alt: productName }];
-  const [activeImage, setActiveImage] = useState(gallery[0]);
+type GalleryItem =
+  | { type: "image"; url: string; alt?: string | null }
+  | { type: "video"; url: string; alt?: string | null };
+
+export function ProductGallery({ images, productName, videoUrl }: { images: ProductImage[]; productName: string; videoUrl?: string | null }) {
+  const gallery = useMemo<GalleryItem[]>(() => {
+    const imageItems = (images.length ? images : [{ url: "https://placehold.co/1000x1000", alt: productName }]).map((image) => ({
+      type: "image" as const,
+      url: image.url,
+      alt: image.alt ?? productName
+    }));
+
+    return videoUrl ? [...imageItems, { type: "video" as const, url: videoUrl, alt: `${productName} demo video` }] : imageItems;
+  }, [images, productName, videoUrl]);
+  const [activeItem, setActiveItem] = useState(gallery[0]);
 
   return (
     <div className="space-y-4">
       <div className="rounded-[40px] bg-[radial-gradient(circle_at_top_left,rgba(15,118,110,0.16),transparent_32%),linear-gradient(180deg,#ffffff,#eef4f7)] p-3 shadow-card">
         <div className="group relative aspect-square overflow-hidden rounded-[32px] bg-white">
-          <Image
-            src={activeImage.url}
-            alt={activeImage.alt ?? productName}
-            fill
-            className="object-cover transition duration-500 group-hover:scale-110"
-          />
+{activeItem.type === "video" ? (
+            <video src={activeItem.url} controls className="h-full w-full object-cover" preload="metadata" />
+          ) : (
+            <Image
+              src={activeItem.url}
+              alt={activeItem.alt ?? productName}
+              fill
+              className="object-cover transition duration-500 group-hover:scale-110"
+            />
+          )}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-ink/70 to-transparent px-5 py-4 text-xs font-semibold uppercase tracking-[0.24em] text-white/90">
             <span>Hover to zoom</span>
-            <span>{gallery.findIndex((image) => image.url === activeImage.url) + 1}/{gallery.length}</span>
+            <span>{gallery.findIndex((item) => item.url === activeItem.url) + 1}/{gallery.length}</span>
           </div>
         </div>
       </div>
       <div className="grid grid-cols-4 gap-3">
-        {gallery.map((image, index) => {
-          const isActive = image.url === activeImage.url;
+        {gallery.map((item, index) => {
+          const isActive = item.url === activeItem.url;
 
           return (
             <button
-              key={`${image.url}-${index}`}
+              key={`${item.url}-${index}`}
               type="button"
-              onClick={() => setActiveImage(image)}
+              onClick={() => setActiveItem(item)}
               className={`relative aspect-square overflow-hidden rounded-[24px] border-2 bg-white shadow-card transition ${
                 isActive ? "border-accent ring-2 ring-accent/15" : "border-transparent hover:border-accent/40"
               }`}
             >
-              <Image src={image.url} alt={image.alt ?? productName} fill className="object-cover" />
+{item.type === "video" ? (
+                <div className="flex h-full w-full items-center justify-center bg-black text-xs font-semibold uppercase tracking-[0.2em] text-white">Video</div>
+              ) : (
+                <Image src={item.url} alt={item.alt ?? productName} fill className="object-cover" />
+              )}
             </button>
           );
         })}

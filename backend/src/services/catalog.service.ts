@@ -452,11 +452,12 @@ export const createProduct = async (payload: {
   stock: number;
   lowStockLimit?: number;
   warehouseCode?: string;
+  videoUrl?: string | null;
   isFeatured: boolean;
   isActive: boolean;
   images: { url: string; alt?: string }[];
 }) => {
-  const { compatibleModelIds = [], lowStockLimit, warehouseCode, stock, images, specifications, ...productData } = payload;
+  const { compatibleModelIds = [], lowStockLimit, warehouseCode, stock, images, specifications, videoUrl, ...productData } = payload;
   const normalizedCompatibleModelIds = Array.from(new Set([payload.modelId, ...compatibleModelIds]));
 
   return prisma.product.create({
@@ -464,6 +465,7 @@ export const createProduct = async (payload: {
       ...productData,
       slug: toSlug(`${payload.name}-${payload.sku}`),
       specifications,
+      videoUrl: videoUrl || null,
       compatibilityModels: {
         create: normalizedCompatibleModelIds.map((modelId) => ({
           modelId
@@ -499,7 +501,7 @@ export const updateProduct = async (id: string, payload: Parameters<typeof creat
   await prisma.productImage.deleteMany({ where: { productId: id } });
   await prisma.productCompatibility.deleteMany({ where: { productId: id } });
 
-  const { compatibleModelIds = [], lowStockLimit, warehouseCode, stock, images, specifications, ...productData } = payload;
+  const { compatibleModelIds = [], lowStockLimit, warehouseCode, stock, images, specifications, videoUrl, ...productData } = payload;
   const normalizedCompatibleModelIds = Array.from(new Set([payload.modelId, ...compatibleModelIds]));
 
   return prisma.product.update({
@@ -508,6 +510,7 @@ export const updateProduct = async (id: string, payload: Parameters<typeof creat
       ...productData,
       slug: toSlug(`${payload.name}-${payload.sku}`),
       specifications,
+      videoUrl: videoUrl || null,
       compatibilityModels: {
         create: normalizedCompatibleModelIds.map((modelId) => ({
           modelId

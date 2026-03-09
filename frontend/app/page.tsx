@@ -59,10 +59,10 @@ const supportPoints = [
 
 export default async function HomePage() {
   const [brands, categories, models, featured] = await Promise.all([
-    fetchApi<Brand[]>("/brands"),
-    fetchApi<Category[]>("/categories"),
-    fetchApi<MobileModel[]>("/models"),
-    fetchApi<ProductListResponse>("/products?featured=true&limit=4")
+    fetchApi<Brand[]>("/brands", { cache: "no-store", next: { revalidate: 0 } }),
+    fetchApi<Category[]>("/categories", { cache: "no-store", next: { revalidate: 0 } }),
+    fetchApi<MobileModel[]>("/models", { cache: "no-store", next: { revalidate: 0 } }),
+    fetchApi<ProductListResponse>("/products?featured=true&limit=4", { cache: "no-store", next: { revalidate: 0 } })
   ]);
 
   return (

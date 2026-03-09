@@ -20,7 +20,7 @@ type ProductPayload = {
 };
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const payload = await fetchApi<ProductPayload>(`/products/${params.slug}`);
+  const payload = await fetchApi<ProductPayload>(`/products/${params.slug}`, { cache: "no-store", next: { revalidate: 0 } });
   const product = payload.product;
 
   if (!product) {
@@ -58,7 +58,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function ProductDetailsPage({ params }: { params: { slug: string } }) {
-  const payload = await fetchApi<ProductPayload>(`/products/${params.slug}`);
+  const payload = await fetchApi<ProductPayload>(`/products/${params.slug}`, { cache: "no-store", next: { revalidate: 0 } });
 
   if (!payload.product) {
     notFound();
@@ -97,7 +97,7 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
           <span className="text-ink">{product.name}</span>
         </div>
         <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-          <ProductGallery images={product.images} productName={product.name} />
+          <ProductGallery images={product.images} productName={product.name} videoUrl={product.videoUrl} />
           <div className="space-y-6 rounded-[40px] bg-white p-6 shadow-card sm:p-8">
             <div>
               <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">

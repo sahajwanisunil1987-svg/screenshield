@@ -44,6 +44,7 @@ export type Product = {
   stock: number;
   averageRating: number;
   reviewCount: number;
+  videoUrl?: string | null;
   brand: Brand;
   model: MobileModel;
   compatibilityModels?: Array<{

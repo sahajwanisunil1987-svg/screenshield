@@ -29,6 +29,7 @@ const schema = z.object({
   lowStockLimit: z.coerce.number().min(0).max(999),
   warehouseCode: z.string().optional(),
   imageUrls: z.string().min(5),
+  videoUrl: z.string().url().optional().or(z.literal("")),
   specificationsText: z.string().min(3),
   isFeatured: z.boolean().default(false),
   isActive: z.boolean().default(true)
@@ -53,13 +54,15 @@ export function ProductForm({ productId }: { productId?: string }) {
       isFeatured: false,
       isActive: true,
       specificationsText: "quality: Premium\nwarranty: 6 Months",
-      imageUrls: ""
+      imageUrls: "",
+      videoUrl: ""
     }
   });
 
   const brandId = watch("brandId");
   const modelId = watch("modelId");
   const imageUrls = watch("imageUrls");
+  const videoUrl = watch("videoUrl");
   const compatibleModelIds = watch("compatibleModelIds");
   const imagePreviewUrls = imageUrls
     .split("\n")
@@ -119,6 +122,7 @@ export function ProductForm({ productId }: { productId?: string }) {
           "imageUrls",
           product.images.map((image: { url: string }) => image.url).join("\n")
         );
+        setValue("videoUrl", product.videoUrl ?? "");
       })
       .catch((error) => {
         toast.error(getApiErrorMessage(error, "Unable to load product"));
@@ -189,6 +193,37 @@ export function ProductForm({ productId }: { productId?: string }) {
     }
   };
 
+  const uploadVideo = async (file: File | null) => {
+    if (!file) {
+      return;
+    }
+
+    if (!token) {
+      toast.error("Please login again before uploading");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await api.post("/admin/upload", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data"
+        }
+      });
+
+      setValue("videoUrl", response.data.url, { shouldValidate: true });
+      toast.success("Product video uploaded");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Unable to upload video"));
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <form
       onSubmit={handleSubmit(async (values) => {
@@ -227,6 +262,7 @@ export function ProductForm({ productId }: { productId?: string }) {
           stock: values.stock,
           lowStockLimit: values.lowStockLimit,
           warehouseCode: values.warehouseCode,
+          videoUrl: values.videoUrl || undefined,
           isFeatured: values.isFeatured,
           isActive: values.isActive,
           images
@@ -283,7 +319,38 @@ export function ProductForm({ productId }: { productId?: string }) {
           {filteredModels.map((model) => {
             const checked = compatibleModelIds.includes(model.id);
 
-            return (
+            const uploadVideo = async (file: File | null) => {
+    if (!file) {
+      return;
+    }
+
+    if (!token) {
+      toast.error("Please login again before uploading");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await api.post("/admin/upload", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data"
+        }
+      });
+
+      setValue("videoUrl", response.data.url, { shouldValidate: true });
+      toast.success("Product video uploaded");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Unable to upload video"));
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
               <label key={model.id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/10 px-4 py-3">
                 <input
                   type="checkbox"
@@ -319,7 +386,7 @@ export function ProductForm({ productId }: { productId?: string }) {
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm font-semibold text-white">Upload product images</p>
-            <p className="mt-1 text-xs text-white/60">Files Cloudinary par upload hongi aur URLs automatically add ho jayengi.</p>
+            <p className="mt-1 text-xs text-white/60">Add 1 primary image and up to 6 support images. Fresh uploads go first.</p>
           </div>
           <label className="inline-flex cursor-pointer items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-accentSoft">
             {isUploading ? "Uploading..." : "Choose Images"}
@@ -348,11 +415,42 @@ export function ProductForm({ productId }: { productId?: string }) {
                       fill
                       className="object-cover"
                     />
+                    {index === 0 ? (
+                      <span className="absolute left-2 top-2 rounded-full bg-accent px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white">
+                        Primary
+                      </span>
+                    ) : null}
                   </div>
                   <p className="truncate px-3 py-2 text-[11px] text-white/55">Image {index + 1}</p>
                 </div>
               ))}
             </div>
+          </div>
+        ) : null}
+      </div>
+      <Input placeholder="Optional product video URL" {...register("videoUrl")} className="md:col-span-2" />
+      <div className="rounded-2xl border border-dashed border-white/20 bg-white/5 p-4 md:col-span-2">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-white">Upload demo video</p>
+            <p className="mt-1 text-xs text-white/60">Optional 1 short video for fitment or quality demo.</p>
+          </div>
+          <label className="inline-flex cursor-pointer items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-accentSoft">
+            {isUploading ? "Uploading..." : "Choose Video"}
+            <input
+              type="file"
+              accept="video/*"
+              className="hidden"
+              onChange={(event) => {
+                void uploadVideo(event.target.files?.[0] ?? null);
+                event.currentTarget.value = "";
+              }}
+            />
+          </label>
+        </div>
+        {videoUrl ? (
+          <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+            <video src={videoUrl} controls className="aspect-video w-full bg-black" preload="metadata" />
           </div>
         ) : null}
       </div>

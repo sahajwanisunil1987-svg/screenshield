@@ -34,9 +34,10 @@ export const productSchema = z.object({
   stock: z.coerce.number().min(0).default(0),
   lowStockLimit: z.coerce.number().min(0).max(999).default(5).optional(),
   warehouseCode: z.string().max(50).optional(),
+  videoUrl: z.string().url().optional().nullable(),
   isFeatured: z.boolean().default(false),
   isActive: z.boolean().default(true),
-  images: z.array(z.object({ url: z.string().url(), alt: z.string().optional() })).min(1)
+  images: z.array(z.object({ url: z.string().url(), alt: z.string().optional() })).min(1).max(7)
 });
 
 export const productSearchSchema = z.object({
