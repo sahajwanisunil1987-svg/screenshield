@@ -316,6 +316,35 @@ export const requestOrderCancellation = async (orderId: string, userId: string, 
   });
 };
 
+export const requestReturn = async (orderId: string, userId: string, reason: string) => {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+
+  if (!order || order.userId != userId) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Order not found");
+  }
+
+  if (order.status !== OrderStatus.DELIVERED) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Return requests are allowed only after delivery.");
+  }
+
+  if (order.returnRequestedAt) {
+    throw new ApiError(StatusCodes.CONFLICT, "Return has already been requested for this order");
+  }
+
+  return prisma.order.update({
+    where: { id: orderId },
+    data: {
+      returnRequestedAt: new Date(),
+      returnRequestReason: reason
+    },
+    include: {
+      items: true,
+      payment: true,
+      invoice: true
+    }
+  });
+};
+
 export const trackOrder = async (orderNumber: string) => {
   const order = await prisma.order.findUnique({
     where: { orderNumber },
@@ -330,7 +359,9 @@ export const trackOrder = async (orderNumber: string) => {
       estimatedDeliveryAt: true,
       adminNotes: true,
       cancelRequestedAt: true,
-      cancelRequestReason: true
+      cancelRequestReason: true,
+      returnRequestedAt: true,
+      returnRequestReason: true
     }
   });
 

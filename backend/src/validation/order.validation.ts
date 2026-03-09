@@ -40,6 +40,10 @@ export const cancelOrderSchema = z.object({
   reason: z.string().min(5).max(500)
 });
 
+export const returnOrderSchema = z.object({
+  reason: z.string().min(5).max(500)
+});
+
 export const couponValidationSchema = z.object({
   code: z.string().min(2),
   subtotal: z.coerce.number().positive()

@@ -9,6 +9,7 @@ import {
   adminOrderListSchema,
   couponSchema,
   cancelOrderSchema,
+  returnOrderSchema,
   couponValidationSchema,
   createOrderSchema,
   inventoryUpdateSchema,
@@ -22,6 +23,7 @@ router.get("/orders/my-orders", authenticate, orderController.myOrders);
 router.get("/orders/:id", authenticate, validate({ params: idParamSchema }), orderController.getOrder);
 router.get("/orders/:id/invoice", authenticate, validate({ params: idParamSchema }), orderController.downloadMyInvoice);
 router.post("/orders/:id/cancel-request", authenticate, validate({ params: idParamSchema, body: cancelOrderSchema }), orderController.cancelRequest);
+router.post("/orders/:id/return-request", authenticate, validate({ params: idParamSchema, body: returnOrderSchema }), orderController.returnRequest);
 router.get("/orders/track/:orderNumber", orderController.trackOrder);
 router.post("/coupons/validate", orderRateLimiter, validate({ body: couponValidationSchema }), orderController.validateCoupon);
 

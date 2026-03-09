@@ -39,6 +39,10 @@ export const cancelRequest = async (req: Request, res: Response) => {
   res.json(await orderService.requestOrderCancellation(getSingleParam(req.params.id)!, req.user!.userId, req.body.reason));
 };
 
+export const returnRequest = async (req: Request, res: Response) => {
+  res.json(await orderService.requestReturn(getSingleParam(req.params.id)!, req.user!.userId, req.body.reason));
+};
+
 export const downloadMyInvoice = async (req: Request, res: Response) => {
   const orderId = getSingleParam(req.params.id)!;
   const order = await orderService.getOrderById(orderId, req.user!.userId, false);

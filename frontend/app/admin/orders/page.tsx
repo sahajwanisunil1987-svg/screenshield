@@ -155,6 +155,7 @@ export default function AdminOrdersPage() {
                       <span className="rounded-full bg-cyan-500/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-200">{order.status}</span>
                       <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200">{order.paymentStatus}</span>
                       {order.cancelRequestedAt ? <span className="rounded-full bg-amber-500/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-200">Cancel requested</span> : null}
+                      {order.returnRequestedAt ? <span className="rounded-full bg-sky-500/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-200">Return requested</span> : null}
                     </div>
                     <p className="text-white/60">Placed {formatDate(order.createdAt)} · {order.user.name} · {order.user.email}</p>
                   </div>
@@ -177,6 +178,7 @@ export default function AdminOrdersPage() {
                       <p className="mt-2">{[order.addressSnapshot?.line1, order.addressSnapshot?.line2, order.addressSnapshot?.city, order.addressSnapshot?.state, order.addressSnapshot?.postalCode ?? order.addressSnapshot?.pincode].filter(Boolean).join(", ")}</p>
                     </div>
                     {order.cancelRequestReason ? <div className="rounded-2xl bg-amber-50/10 p-3 text-amber-100"><p className="text-xs uppercase tracking-[0.16em] text-amber-200/80">Cancel reason</p><p className="mt-2">{order.cancelRequestReason}</p></div> : null}
+                    {order.returnRequestReason ? <div className="rounded-2xl bg-sky-50/10 p-3 text-sky-100"><p className="text-xs uppercase tracking-[0.16em] text-sky-200/80">Return reason</p><p className="mt-2">{order.returnRequestReason}</p></div> : null}
                     <div className="grid gap-3 md:grid-cols-2">
                       {order.items.map((item) => (
                         <div key={item.id} className="rounded-2xl bg-white/5 p-3">

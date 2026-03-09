@@ -140,6 +140,9 @@ export type Order = {
   cancelRequestedAt?: string | null;
   cancelRequestReason?: string | null;
   cancelledAt?: string | null;
+  returnRequestedAt?: string | null;
+  returnRequestReason?: string | null;
+  returnedAt?: string | null;
   items: Array<{
     id: string;
     quantity: number;
@@ -192,7 +195,16 @@ export type InventoryItem = {
   stock: number;
   lowStockLimit: number;
   warehouseCode?: string | null;
+  lastRestockedAt?: string | null;
   product: Product;
+};
+
+export type InventorySummary = {
+  critical: number;
+  low: number;
+  healthy: number;
+  totalUnits: number;
+  reorderUnits: number;
 };
 
 export type Coupon = {

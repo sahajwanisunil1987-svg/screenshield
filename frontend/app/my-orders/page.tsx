@@ -41,6 +41,20 @@ export default function MyOrdersPage() {
     }
   };
 
+  const requestReturn = async (orderId: string) => {
+    if (!token) return;
+    const reason = window.prompt("Reason for return request");
+    if (!reason) return;
+
+    try {
+      const response = await api.post<Order>(`/orders/${orderId}/return-request`, { reason }, authHeaders(token));
+      setOrders((current) => current.map((item) => (item.id === orderId ? response.data : item)));
+      toast.success("Return request submitted");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Unable to request return"));
+    }
+  };
+
   return (
     <PageShell>
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
@@ -70,6 +84,7 @@ export default function MyOrdersPage() {
                         {order.paymentStatus}
                       </span>
                       {order.cancelRequestedAt ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">Cancel requested</span> : null}
+                      {order.returnRequestedAt ? <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">Return requested</span> : null}
                     </div>
                   </div>
                 </div>
@@ -112,12 +127,16 @@ export default function MyOrdersPage() {
                     {(["PENDING", "CONFIRMED"].includes(order.status) && !order.cancelRequestedAt) ? (
                       <button type="button" onClick={() => requestCancellation(order.id)} className="font-semibold text-amber-700 underline">Request cancellation</button>
                     ) : null}
+                    {(order.status === "DELIVERED" && !order.returnRequestedAt) ? (
+                      <button type="button" onClick={() => requestReturn(order.id)} className="font-semibold text-sky-700 underline">Request return</button>
+                    ) : null}
                     <Link href={`/track-order?orderNumber=${order.orderNumber}`} className="font-semibold text-accent underline">
                       Track order
                     </Link>
                   </div>
                 </div>
                 {order.cancelRequestReason ? <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">Cancellation reason: {order.cancelRequestReason}</p> : null}
+                {order.returnRequestReason ? <p className="rounded-2xl bg-sky-50 px-4 py-3 text-sm text-sky-800">Return reason: {order.returnRequestReason}</p> : null}
               </div>
             ))
           ) : (
