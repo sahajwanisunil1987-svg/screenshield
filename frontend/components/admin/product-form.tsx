@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -60,6 +61,10 @@ export function ProductForm({ productId }: { productId?: string }) {
   const modelId = watch("modelId");
   const imageUrls = watch("imageUrls");
   const compatibleModelIds = watch("compatibleModelIds");
+  const imagePreviewUrls = imageUrls
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
 
   useEffect(() => {
     if (!token) return;
@@ -329,13 +334,25 @@ export function ProductForm({ productId }: { productId?: string }) {
             />
           </label>
         </div>
-        {imageUrls ? (
-          <p className="mt-3 text-xs text-white/60">
-            {imageUrls
-              .split("\n")
-              .map((line) => line.trim())
-              .filter(Boolean).length} image URL(s) ready
-          </p>
+        {imagePreviewUrls.length ? (
+          <div className="mt-4 space-y-3">
+            <p className="text-xs text-white/60">{imagePreviewUrls.length} image URL(s) ready</p>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {imagePreviewUrls.map((url, index) => (
+                <div key={`${url}-${index}`} className="overflow-hidden rounded-2xl border border-white/10 bg-black/20">
+                  <div className="relative aspect-square">
+                    <Image
+                      src={url}
+                      alt={`Uploaded preview ${index + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <p className="truncate px-3 py-2 text-[11px] text-white/55">Image {index + 1}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         ) : null}
       </div>
       <label className="flex items-center gap-2 text-sm text-white md:col-span-1">
