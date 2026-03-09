@@ -60,11 +60,12 @@ export function Footer() {
             <Link href="/terms" className="transition hover:text-white">Terms</Link>
             <div className="pt-3 text-white/65">
               <p>
-                Email:{" "}
-                <a href="mailto:sahajwanisunil1987@gmail.com" className="transition hover:text-white">
-                  sahajwanisunil1987@gmail.com
-                </a>
-              </ps>
+  Email:{" "}
+  <a href="mailto:sahajwanisunil1987@gmail.com" className="transition hover:text-white">
+    sahajwanisunil1987@gmail.com
+  </a>
+</p>
+
               <p className="mt-1">
                 Phone:{" "}
                 <a href="tel:+919001554862" className="transition hover:text-white">

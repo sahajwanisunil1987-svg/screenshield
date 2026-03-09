@@ -69,3 +69,5 @@ services:
         sync: false
       - key: NEXT_PUBLIC_RAZORPAY_KEY_ID
         sync: false
+      - key: NEXT_PUBLIC_SITE_URL
+        sync: false
