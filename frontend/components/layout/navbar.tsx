@@ -83,7 +83,7 @@ export function Navbar() {
               Track
             </Link>
             <Link href={user ? "/account" : "/login"} className="rounded-full px-4 py-2 hover:bg-white/10">
-              {user ? user.name.split(" ")[0] : "Login"}
+              {user ? "Account" : "Login"}
             </Link>
             {user ? (
               <button
