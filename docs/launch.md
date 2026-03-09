@@ -112,6 +112,7 @@
   - `npm --workspace backend run test`
 - Expand coverage beyond the current baseline
   - Auth
+  - Admin analytics
   - Order creation
   - Payment verification
   - Review moderation
