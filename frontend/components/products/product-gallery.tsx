@@ -16,7 +16,7 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
       alt: image.alt ?? productName
     }));
 
-    return videoUrl ? [...imageItems, { type: "video" as const, url: videoUrl, alt: `${productName} demo video` }] : imageItems;
+    return videoUrl ? [...imageItems, { type: "video" as const, url: videoUrl, alt: `${productName} product video` }] : imageItems;
   }, [images, productName, videoUrl]);
   const [activeItem, setActiveItem] = useState(gallery[0]);
 

@@ -23,7 +23,7 @@ export default function AdminLoginPage() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const { theme, isDark, toggleTheme } = useAdminTheme();
   const [mounted, setMounted] = useState(false);
-  const { register, handleSubmit, setValue } = useForm<z.infer<typeof schema>>({
+  const { register, handleSubmit } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema)
   });
 
@@ -130,28 +130,6 @@ export default function AdminLoginPage() {
               </Button>
             </>
           )}
-        </div>
-        <div
-          className={`mt-6 rounded-2xl p-4 text-sm ${
-            isDark ? "bg-white/10 text-white/75" : "bg-slate-100 text-slate"
-          }`}
-        >
-          <p className={`font-semibold ${isDark ? "text-white" : "text-ink"}`}>Demo admin</p>
-          <p>admin@sparekart.in / Admin@123</p>
-          <button
-            type="button"
-            onClick={() => {
-              setValue("email", "admin@sparekart.in");
-              setValue("password", "Admin@123");
-            }}
-            className={`mt-3 rounded-full border px-4 py-2 text-xs font-semibold transition ${
-              isDark
-                ? "border-white/15 text-white hover:bg-white/10"
-                : "border-slate-200 text-ink hover:bg-white"
-            }`}
-          >
-            Use Demo Credentials
-          </button>
         </div>
       </form>
     </div>

@@ -12,7 +12,6 @@ The project is now a strong working MVP with substantial product, admin, search,
 
 It is best described as:
 
-- Demo-ready: yes
 - Soft-launch ready with caution: close
 - Fully production-ready for real traffic: not yet
 

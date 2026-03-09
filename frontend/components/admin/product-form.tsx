@@ -432,7 +432,7 @@ export function ProductForm({ productId }: { productId?: string }) {
       <div className="rounded-2xl border border-dashed border-white/20 bg-white/5 p-4 md:col-span-2">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-sm font-semibold text-white">Upload demo video</p>
+            <p className="text-sm font-semibold text-white">Upload product video</p>
             <p className="mt-1 text-xs text-white/60">Optional 1 short video for fitment or quality demo.</p>
           </div>
           <label className="inline-flex cursor-pointer items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-accentSoft">
