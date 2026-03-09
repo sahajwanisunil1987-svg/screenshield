@@ -8,7 +8,7 @@ const refreshCookieName = "sparekart_refresh";
 
 const isProduction = env.NODE_ENV === "production";
 
-const getCookieOptions = () => ({
+const getRefreshCookieOptions = () => ({
   httpOnly: true,
   sameSite: (isProduction ? "none" : "lax") as "none" | "lax",
   secure: isProduction,
@@ -16,9 +16,16 @@ const getCookieOptions = () => ({
   maxAge: 7 * 24 * 60 * 60 * 1000
 });
 
+const getRefreshClearCookieOptions = () => ({
+  httpOnly: true,
+  sameSite: (isProduction ? "none" : "lax") as "none" | "lax",
+  secure: isProduction,
+  path: "/api/auth"
+});
+
 export const register = async (req: Request, res: Response) => {
   const result = await registerUser(req.body);
-  res.cookie(refreshCookieName, result.refreshToken, getCookieOptions());
+  res.cookie(refreshCookieName, result.refreshToken, getRefreshCookieOptions());
   res.status(StatusCodes.CREATED).json({
     token: result.token,
     user: result.user
@@ -27,7 +34,7 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   const result = await loginUser(req.body);
-  res.cookie(refreshCookieName, result.refreshToken, getCookieOptions());
+  res.cookie(refreshCookieName, result.refreshToken, getRefreshCookieOptions());
   res.status(StatusCodes.OK).json({
     token: result.token,
     user: result.user
@@ -42,21 +49,21 @@ export const me = async (req: Request, res: Response) => {
 export const refresh = async (req: Request, res: Response) => {
   const token = req.cookies?.[refreshCookieName];
   if (!token) {
-    res.clearCookie(refreshCookieName, getCookieOptions());
+    res.clearCookie(refreshCookieName, getRefreshClearCookieOptions());
     res.status(StatusCodes.NO_CONTENT).send();
     return;
   }
 
   try {
     const result = await refreshAuthSession(token);
-    res.cookie(refreshCookieName, result.refreshToken, getCookieOptions());
+    res.cookie(refreshCookieName, result.refreshToken, getRefreshCookieOptions());
     res.status(StatusCodes.OK).json({
       token: result.token,
       user: result.user
     });
   } catch (error) {
     if (error instanceof ApiError && error.statusCode === StatusCodes.UNAUTHORIZED) {
-      res.clearCookie(refreshCookieName, getCookieOptions());
+      res.clearCookie(refreshCookieName, getRefreshClearCookieOptions());
       res.status(StatusCodes.NO_CONTENT).send();
       return;
     }
@@ -66,6 +73,6 @@ export const refresh = async (req: Request, res: Response) => {
 };
 
 export const logout = async (_req: Request, res: Response) => {
-  res.clearCookie(refreshCookieName, getCookieOptions());
+  res.clearCookie(refreshCookieName, getRefreshClearCookieOptions());
   res.status(StatusCodes.NO_CONTENT).send();
 };
