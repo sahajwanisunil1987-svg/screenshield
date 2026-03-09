@@ -14,7 +14,7 @@
     "dev": "npm-run-all --parallel dev:backend dev:frontend",
     "dev:frontend": "npm --workspace frontend run dev",
     "dev:backend": "npm --workspace backend run dev",
-    "build": "npm-run-all build:backend build:frontend",
+    "build": "sh -c 'if [ \"$VERCEL\" = \"1\" ]; then npm run build:frontend; else npm-run-all build:backend build:frontend; fi'",
     "build:frontend": "npm --workspace frontend run build",
     "build:backend": "npm --workspace backend run build",
     "lint": "npm-run-all lint:backend lint:frontend",
