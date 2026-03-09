@@ -6,7 +6,11 @@ import { prisma } from "../lib/prisma.js";
 import { razorpay } from "../lib/razorpay.js";
 import { ApiError } from "../utils/api-error.js";
 
-const getOrderWithPayment = async (orderId: string) => {
+type OrderWithPayment = Awaited<ReturnType<typeof prisma.order.findUnique>> & {
+  payment: NonNullable<Awaited<ReturnType<typeof prisma.order.findUnique>>["payment"]>;
+};
+
+const getOrderWithPayment = async (orderId: string): Promise<OrderWithPayment> => {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { payment: true }
@@ -20,7 +24,7 @@ const getOrderWithPayment = async (orderId: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Payment record not found for order");
   }
 
-  return order;
+  return order as OrderWithPayment;
 };
 
 export const createRazorpayOrder = async (orderId: string) => {
