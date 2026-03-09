@@ -337,6 +337,61 @@ export const users = async (_req: Request, res: Response) => {
   });
 };
 
+
+export const userDetail = async (req: Request, res: Response) => {
+  const id = getSingleParam(req.params.id)!;
+  const user = await prisma.user.findFirst({
+    where: {
+      id,
+      role: "CUSTOMER"
+    },
+    include: {
+      addresses: {
+        orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }]
+      },
+      orders: {
+        take: 8,
+        orderBy: { createdAt: "desc" },
+        include: {
+          items: {
+            select: {
+              id: true,
+              quantity: true,
+              productName: true,
+              productSku: true,
+              totalPrice: true
+            }
+          }
+        }
+      },
+      _count: {
+        select: {
+          orders: true,
+          addresses: true
+        }
+      }
+    }
+  });
+
+  if (!user) {
+    return res.status(404).json({ message: "Customer not found" });
+  }
+
+  const totalSpent = user.orders.reduce((sum, order) => sum + Number(order.totalAmount ?? 0), 0);
+  const lastOrderAt = user.orders[0]?.createdAt ?? null;
+
+  res.json({
+    ...user,
+    stats: {
+      totalOrders: user._count.orders,
+      totalAddresses: user._count.addresses,
+      totalSpent,
+      averageOrderValue: user._count.orders ? totalSpent / user._count.orders : 0,
+      lastOrderAt
+    }
+  });
+};
+
 export const invoices = async (req: Request, res: Response) => {
   const page = Number(req.query.page ?? 1);
   const limit = Number(req.query.limit ?? 12);

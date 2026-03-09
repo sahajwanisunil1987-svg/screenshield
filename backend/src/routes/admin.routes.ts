@@ -13,6 +13,7 @@ router.get("/admin/dashboard", validate({ query: adminDashboardSchema }), adminC
 router.get("/admin/inventory", validate({ query: adminInventoryListSchema }), adminController.inventory);
 router.patch("/admin/inventory/:id", validate({ params: idParamSchema, body: inventoryUpdateSchema }), adminController.updateInventory);
 router.get("/admin/users", validate({ query: adminUserListSchema }), adminController.users);
+router.get("/admin/users/:id", validate({ params: idParamSchema }), adminController.userDetail);
 router.get("/admin/invoices", validate({ query: adminInvoiceListSchema }), adminController.invoices);
 router.get("/admin/orders/:id/invoice", adminController.downloadInvoice);
 

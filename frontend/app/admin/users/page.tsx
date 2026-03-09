@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AdminGuard } from "@/components/admin/admin-guard";
@@ -88,7 +89,12 @@ export default function AdminUsersPage() {
                   <p className="text-white/60">{user.email}</p>
                   <p className="mt-1 text-white/40">{user.phone ?? "No phone added"}</p>
                 </div>
-                <span>{user._count?.orders ?? user.orders?.length ?? 0} orders</span>
+                <div className="flex items-center gap-3">
+                  <span>{user._count?.orders ?? user.orders?.length ?? 0} orders</span>
+                  <Link href={`/admin/users/${user.id}`} className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-cyan-200 transition hover:bg-white/10">
+                    View details
+                  </Link>
+                </div>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 {user.orders?.map((order) => (
