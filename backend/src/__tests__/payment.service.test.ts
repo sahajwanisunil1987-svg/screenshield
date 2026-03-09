@@ -103,4 +103,95 @@ describe("payment service hardening", () => {
       "Invalid Razorpay webhook signature"
     );
   });
+
+  it("marks webhook-captured payments as paid", async () => {
+    prepareTestEnv();
+
+    const prismaMock = {
+      payment: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "payment_1",
+          orderId: "order_3",
+          order: {
+            id: "order_3",
+            status: "PENDING"
+          }
+        })
+      },
+      order: {
+        update: vi.fn().mockResolvedValue({})
+      }
+    };
+
+    vi.doMock("../lib/prisma.js", () => ({ prisma: prismaMock }));
+    vi.doMock("../lib/razorpay.js", () => ({
+      razorpay: {
+        orders: {
+          create: vi.fn()
+        }
+      }
+    }));
+
+    const { handleRazorpayWebhook } = await import("../services/payment.service.js");
+    const result = await handleRazorpayWebhook({
+      event: "payment.captured",
+      payload: {
+        payment: {
+          entity: {
+            id: "pay_2",
+            order_id: "order_provider_2"
+          }
+        }
+      }
+    });
+
+    expect(result).toMatchObject({
+      received: true,
+      handled: true,
+      updated: true,
+      orderId: "order_3"
+    });
+    expect(prismaMock.order.update).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores unsupported webhook events safely", async () => {
+    prepareTestEnv();
+
+    vi.doMock("../lib/prisma.js", () => ({
+      prisma: {
+        payment: {
+          findFirst: vi.fn()
+        },
+        order: {
+          update: vi.fn()
+        }
+      }
+    }));
+    vi.doMock("../lib/razorpay.js", () => ({
+      razorpay: {
+        orders: {
+          create: vi.fn()
+        }
+      }
+    }));
+
+    const { handleRazorpayWebhook } = await import("../services/payment.service.js");
+    const result = await handleRazorpayWebhook({
+      event: "refund.created",
+      payload: {
+        payment: {
+          entity: {
+            id: "pay_ignored",
+            order_id: "order_ignored"
+          }
+        }
+      }
+    });
+
+    expect(result).toMatchObject({
+      received: true,
+      handled: false,
+      reason: "ignored_event"
+    });
+  });
 });
