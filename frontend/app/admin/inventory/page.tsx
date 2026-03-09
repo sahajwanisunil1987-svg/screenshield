@@ -123,7 +123,7 @@ export default function AdminInventoryPage() {
             const suggestedReorder = Math.max(reorderSuggestion(item), 0);
 
             return (
-              <div key={item.id} className="grid gap-4 rounded-[28px] border border-white/10 bg-white/5 p-5 text-sm lg:grid-cols-[1.2fr_1fr_auto]">
+              <div key={item.id} className="grid gap-4 rounded-[28px] border border-white/10 bg-white/5 p-5 text-sm xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
                 <div className="space-y-3">
                   <div>
                     <div className="flex flex-wrap items-center gap-3">
@@ -141,13 +141,23 @@ export default function AdminInventoryPage() {
                   <p className="text-xs text-white/45">{item.lastRestockedAt ? `Last restocked ${formatDate(item.lastRestockedAt)}` : "No restock date recorded yet."}</p>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <input type="number" value={item.stock} onChange={(event) => setItems((current) => current.map((entry) => (entry.id === item.id ? { ...entry, stock: Number(event.target.value) } : entry)))} className="rounded-2xl bg-white px-4 py-3 text-sm text-ink" />
-                  <input type="number" value={item.lowStockLimit} onChange={(event) => setItems((current) => current.map((entry) => (entry.id === item.id ? { ...entry, lowStockLimit: Number(event.target.value) } : entry)))} className="rounded-2xl bg-white px-4 py-3 text-sm text-ink" />
-                  <input value={item.warehouseCode ?? ""} onChange={(event) => setItems((current) => current.map((entry) => (entry.id === item.id ? { ...entry, warehouseCode: event.target.value } : entry)))} placeholder="Warehouse" className="rounded-2xl bg-white px-4 py-3 text-sm text-ink" />
-                </div>
+                <div className="space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    <label className="space-y-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/45">
+                      <span>On hand</span>
+                      <input type="number" value={item.stock} onChange={(event) => setItems((current) => current.map((entry) => (entry.id === item.id ? { ...entry, stock: Number(event.target.value) } : entry)))} className="w-full rounded-2xl bg-white px-4 py-3 text-sm normal-case tracking-normal text-ink" />
+                    </label>
+                    <label className="space-y-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/45">
+                      <span>Low-stock line</span>
+                      <input type="number" value={item.lowStockLimit} onChange={(event) => setItems((current) => current.map((entry) => (entry.id === item.id ? { ...entry, lowStockLimit: Number(event.target.value) } : entry)))} className="w-full rounded-2xl bg-white px-4 py-3 text-sm normal-case tracking-normal text-ink" />
+                    </label>
+                    <label className="space-y-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/45 sm:col-span-2 xl:col-span-1">
+                      <span>Warehouse code</span>
+                      <input value={item.warehouseCode ?? ""} onChange={(event) => setItems((current) => current.map((entry) => (entry.id === item.id ? { ...entry, warehouseCode: event.target.value } : entry)))} placeholder="Warehouse" className="w-full rounded-2xl bg-white px-4 py-3 text-sm normal-case tracking-normal text-ink" />
+                    </label>
+                  </div>
 
-                <div className="flex flex-col items-start gap-3 lg:items-end">
+                  <div className="flex flex-wrap items-center gap-3 xl:justify-end">
                   <button className="rounded-full border border-white/10 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10" onClick={async () => {
                     try {
                       const response = await api.patch(`/admin/inventory/${item.id}`, { stock: item.stock, lowStockLimit: item.lowStockLimit, warehouseCode: item.warehouseCode || undefined }, authHeaders(token));
@@ -158,6 +168,7 @@ export default function AdminInventoryPage() {
                     }
                   }}>Save</button>
                   {suggestedReorder > 0 ? <button type="button" onClick={() => setItems((current) => current.map((entry) => (entry.id === item.id ? { ...entry, stock: entry.stock + suggestedReorder } : entry)))} className="rounded-full bg-cyan-500/15 px-4 py-2 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-500/25">Apply suggested reorder</button> : null}
+                  </div>
                 </div>
               </div>
             );
