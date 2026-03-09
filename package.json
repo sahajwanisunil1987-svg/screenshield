@@ -21,7 +21,11 @@
     "lint:frontend": "npm --workspace frontend run lint",
     "lint:backend": "npm --workspace backend run lint",
     "db:push": "npm --workspace backend run prisma:push",
-    "db:seed": "npm --workspace backend run prisma:seed"
+    "db:seed": "npm --workspace backend run prisma:seed",
+    "db:generate": "npm --workspace backend run prisma:generate",
+    "release:verify": "npm-run-all db:generate build:backend build:frontend",
+    "release:schema": "npm-run-all db:push db:generate build:backend build:frontend",
+    "deploy:check": "node -e \"console.log(Buffer.from('TG9jYWwgcHJlLXJlbGVhc2U6CjEuIG5wbSBydW4gcmVsZWFzZTp2ZXJpZnkKMi4gSWYgUHJpc21hIHNjaGVtYSBjaGFuZ2VkOiBucG0gcnVuIHJlbGVhc2U6c2NoZW1hCgpQcm9kdWN0aW9uIHJvbGxvdXQ6CjMuIGdpdCBwdXNoCjQuIFJlbmRlciBiYWNrZW5kIHNoZWxsOiBucG0gcnVuIHByaXNtYTpwdXNoICYmIG5wbSBydW4gcHJpc21hOmdlbmVyYXRlIChvbmx5IGlmIHNjaGVtYSBjaGFuZ2VkKQo1LiBSZWRlcGxveSBSZW5kZXIgYmFja2VuZAo2LiBSZWRlcGxveSBWZXJjZWwgZnJvbnRlbmQgaWYgZnJvbnRlbmQgY2hhbmdlZAoKU21va2UgY2hlY2tzOgo3LiBPcGVuIC9hcGkvaGVhbHRoCjguIFRlc3QgbG9naW4KOS4gVGVzdCBjaGVja291dAoxMC4gVGVzdCB0aGUgY2hhbmdlZCBmZWF0dXJlIGluIHByb2R1Y3Rpb24=','base64').toString())\""
   },
   "devDependencies": {
     "npm-run-all": "^4.1.5"

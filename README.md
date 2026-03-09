@@ -36,6 +36,19 @@ npm run db:seed
 npm run dev
 ```
 
+4. Before pushing a release, use:
+
+```bash
+npm run release:verify
+npm run deploy:check
+```
+
+If the release changes Prisma schema, use:
+
+```bash
+npm run release:schema
+```
+
 Frontend runs at `http://localhost:3000`.
 Backend runs at `http://localhost:4000`.
 
@@ -65,35 +78,38 @@ git push -u origin main
 
 ## Deployment
 
-### Render Blueprint
+Current production split:
+- Frontend: Vercel
+- Backend: Render
+- Database: Render PostgreSQL
 
-This repo includes [render.yaml](/Users/apple/Desktop/ScreenSheild/render.yaml) for a two-service deployment:
+### Render
+
+This repo includes [render.yaml](/Users/apple/screenshield/render.yaml) for backend and database setup:
 
 - `sparekart-backend` as a Node web service
-- `sparekart-frontend` as a Next.js web service
 - `sparekart-postgres` as the managed PostgreSQL database
 
-Before creating the Blueprint on Render:
-
-1. Push this repo to GitHub, GitLab, or Bitbucket.
-2. In Render, create a new Blueprint and point it at the repo.
-3. Fill in the non-synced secrets:
-   - `RAZORPAY_KEY_ID`
-   - `RAZORPAY_KEY_SECRET`
-   - `CLOUDINARY_CLOUD_NAME`
-   - `CLOUDINARY_API_KEY`
-   - `CLOUDINARY_API_SECRET`
-   - `SMTP_HOST`
-   - `SMTP_USER`
-   - `SMTP_PASS`
-   - `WHATSAPP_WEBHOOK_URL`
-   - `NEXT_PUBLIC_RAZORPAY_KEY_ID`
-4. After the first backend deploy, run:
+After a backend deploy that changes Prisma schema, open the Render backend shell and run:
 
 ```bash
-npx prisma db push
-node --env-file=.env --import tsx prisma/seed.ts
+npm run prisma:push
+npm run prisma:generate
 ```
+
+### Vercel
+
+Frontend should be deployed from the `frontend` root directory with:
+
+- Framework: `Next.js`
+- Root Directory: `frontend`
+- Build Command: `npm run build`
+- Install Command: `npm install`
+
+Required frontend env vars:
+- `NEXT_PUBLIC_API_BASE_URL`
+- `NEXT_PUBLIC_SITE_URL`
+- `NEXT_PUBLIC_RAZORPAY_KEY_ID`
 
 ### Notes for production
 
@@ -127,3 +143,20 @@ After seeding:
 - Invoice generation returns PDF metadata and a downloadable HTML invoice endpoint scaffold.
 - The project uses Prisma with PostgreSQL and includes seed data for brands, models, categories, products, coupons, and users.
 - The repo is prepared for Git, Docker, and Render Blueprint deployment.
+
+## Release Flow
+
+Use these commands before shipping changes:
+
+```bash
+npm run release:verify
+npm run deploy:check
+```
+
+If Prisma schema changed locally:
+
+```bash
+npm run release:schema
+```
+
+Production schema sync is separate from local sync. Run `npm run prisma:push && npm run prisma:generate` inside the Render backend shell after schema changes.

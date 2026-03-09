@@ -6,9 +6,10 @@
   - Login
   - Refresh page
   - Confirm the session stays active
-- Run the latest Prisma sync on the production database
-  - `npm run prisma:push`
-  - `npm run prisma:generate`
+- Run the latest Prisma sync on both databases when schema changed
+  - Local: `cd /Users/apple/screenshield && npm run db:push`
+  - Render backend shell: `npm run prisma:push`
+  - Render backend shell: `npm run prisma:generate`
 - Verify Razorpay end to end with production keys
   - Create order
   - Complete payment
@@ -29,7 +30,7 @@
 - Set strong secrets on Render
   - `JWT_SECRET`
   - `JWT_REFRESH_SECRET`
-- Confirm backend `FRONTEND_URL` matches the exact frontend Render URL
+- Confirm backend `FRONTEND_URL` matches the exact Vercel frontend URL
 - Confirm `SITE_URL` and `NEXT_PUBLIC_SITE_URL` are correct
 - Confirm rate limiting is active on auth, search, order, payment, and upload endpoints
 - Confirm abuse protection thresholds suit real traffic
@@ -59,7 +60,7 @@
 - Confirm `/api/health` is returning DB-up status in production
 - Add a database backup and recovery plan
 - Add a deployment rollback plan
-- Document Render environment variables and deployment steps
+- Document Render and Vercel environment variables and deployment steps
   - See [operations.md](/home/mistermobiletriveni/screen/screenshield/docs/operations.md)
 
 ## Data
@@ -128,7 +129,7 @@
 - No broken checkout path
 - Payment and COD both working
 - Auth persists on refresh
-- Database schema fully in sync
+- Local and Render production database schema both in sync
 - Real environment variables set
 - Monitoring in place
 

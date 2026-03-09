@@ -178,9 +178,7 @@ export const inventory = async (_req: Request, res: Response) => {
   const search = String(_req.query.search ?? "").trim();
   const stock = String(_req.query.stock ?? "ALL");
 
-  const where = {
-    ...(stock === "LOW" ? { stock: { lte: prisma.inventory.fields.lowStockLimit } } : {}),
-    ...(stock === "HEALTHY" ? { stock: { gt: prisma.inventory.fields.lowStockLimit } } : {}),
+  const baseWhere = {
     ...(search
       ? {
           OR: [
@@ -195,7 +193,14 @@ export const inventory = async (_req: Request, res: Response) => {
       : {})
   };
 
-  const [items, total] = await Promise.all([
+  const where = {
+    ...baseWhere,
+    ...(stock === "CRITICAL" ? { stock: { lte: 2 } } : {}),
+    ...(stock === "LOW" ? { stock: { lte: prisma.inventory.fields.lowStockLimit } } : {}),
+    ...(stock === "HEALTHY" ? { stock: { gt: prisma.inventory.fields.lowStockLimit } } : {})
+  };
+
+  const [items, total, allMatching] = await Promise.all([
     prisma.inventory.findMany({
       where,
       include: {
@@ -207,12 +212,41 @@ export const inventory = async (_req: Request, res: Response) => {
           }
         }
       },
-      orderBy: { stock: "asc" },
+      orderBy: [{ stock: "asc" }, { updatedAt: "asc" }],
       skip: (page - 1) * limit,
       take: limit
     }),
-    prisma.inventory.count({ where })
+    prisma.inventory.count({ where }),
+    prisma.inventory.findMany({
+      where: baseWhere,
+      select: {
+        stock: true,
+        lowStockLimit: true
+      }
+    })
   ]);
+
+  const summary = allMatching.reduce(
+    (acc, item) => {
+      const reorderTo = Math.max(item.lowStockLimit * 3, 12);
+      const reorderQty = Math.max(reorderTo - item.stock, 0);
+      acc.totalUnits += item.stock;
+      acc.reorderUnits += reorderQty;
+
+      if (item.stock <= 2) {
+        acc.critical += 1;
+      }
+
+      if (item.stock <= item.lowStockLimit) {
+        acc.low += 1;
+      } else {
+        acc.healthy += 1;
+      }
+
+      return acc;
+    },
+    { critical: 0, low: 0, healthy: 0, totalUnits: 0, reorderUnits: 0 }
+  );
 
   res.json({
     items,
@@ -221,7 +255,8 @@ export const inventory = async (_req: Request, res: Response) => {
       limit,
       total,
       pages: Math.ceil(total / limit)
-    }
+    },
+    summary
   });
 };
 

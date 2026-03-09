@@ -19,7 +19,7 @@ describe("order service", () => {
       }
     };
 
-    const prismaMock = {
+    const tx = {
       product: {
         findMany: vi.fn().mockResolvedValue([
           {
@@ -38,14 +38,22 @@ describe("order service", () => {
         create: vi.fn().mockResolvedValue(createdOrder)
       },
       inventory: {
-        upsert: vi.fn().mockResolvedValue({})
+        updateMany: vi.fn().mockResolvedValue({ count: 1 })
       },
       coupon: {
-        update: vi.fn().mockResolvedValue({})
+        findUnique: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 })
       },
       address: {
         findFirst: vi.fn().mockResolvedValue(null),
-        upsert: vi.fn().mockResolvedValue({})
+        create: vi.fn().mockResolvedValue({})
+      }
+    };
+
+    const prismaMock = {
+      $transaction: vi.fn().mockImplementation(async (callback) => callback(tx)),
+      coupon: {
+        findUnique: vi.fn()
       }
     };
 
@@ -71,20 +79,21 @@ describe("order service", () => {
     });
 
     expect(order).toBe(createdOrder);
-    expect(prismaMock.order.create).toHaveBeenCalledTimes(1);
+    expect(tx.order.create).toHaveBeenCalledTimes(1);
 
-    const orderCreateArgs = prismaMock.order.create.mock.calls[0][0];
+    const orderCreateArgs = tx.order.create.mock.calls[0][0];
     expect(orderCreateArgs.data.paymentStatus).toBe(PaymentStatus.COD);
     expect(orderCreateArgs.data.payment.create.provider).toBe("COD");
     expect(orderCreateArgs.data.payment.create.status).toBe(PaymentStatus.COD);
     expect(orderCreateArgs.data.invoice.create.invoiceNumber).toBe("INV-2026-1234");
-    expect(prismaMock.inventory.upsert).toHaveBeenCalledTimes(1);
+    expect(tx.inventory.updateMany).toHaveBeenCalledTimes(1);
+    expect(tx.address.create).toHaveBeenCalledTimes(1);
   });
 
   it("rejects order creation when stock is insufficient", async () => {
     prepareTestEnv();
 
-    const prismaMock = {
+    const tx = {
       product: {
         findMany: vi.fn().mockResolvedValue([
           {
@@ -98,6 +107,13 @@ describe("order service", () => {
             }
           }
         ])
+      }
+    };
+
+    const prismaMock = {
+      $transaction: vi.fn().mockImplementation(async (callback) => callback(tx)),
+      coupon: {
+        findUnique: vi.fn()
       }
     };
 

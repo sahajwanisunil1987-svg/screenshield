@@ -24,6 +24,6 @@ export const adminUserListSchema = z.object({
 
 export const adminInventoryListSchema = z.object({
   search: z.string().optional(),
-  stock: z.enum(["ALL", "LOW", "HEALTHY"]).default("ALL").optional(),
+  stock: z.enum(["ALL", "CRITICAL", "LOW", "HEALTHY"]).default("ALL").optional(),
   ...paginationFields
 });

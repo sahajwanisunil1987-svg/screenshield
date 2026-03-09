@@ -84,6 +84,41 @@ npm run prisma:push
 npm run prisma:generate
 ```
 
+## Prisma Schema Rollout
+
+When a change touches `backend/prisma/schema.prisma`, do not stop after local sync. The local command only updates the local PostgreSQL instance.
+
+1. Sync the local database:
+
+```bash
+cd /Users/apple/screenshield
+npm run db:push
+```
+
+2. Verify the local app against the new schema:
+- backend build passes
+- frontend build passes if API types changed
+- the changed feature works locally
+
+3. Commit and push the schema change.
+
+4. Sync the Render production database from the backend service shell:
+
+```bash
+npm run prisma:push
+npm run prisma:generate
+```
+
+5. Redeploy the Render backend.
+
+6. Redeploy the Vercel frontend if the release includes frontend changes.
+
+7. Run production smoke checks:
+- `https://<backend-domain>/api/health`
+- login
+- checkout
+- the feature affected by the schema change
+
 ## Payment Operations
 
 - Configure `RAZORPAY_WEBHOOK_SECRET`

@@ -8,7 +8,7 @@ SpareKart has completed the planned implementation sequence:
 - `P2`: complete
 - `P3`: complete
 
-The project is now a strong working MVP with substantial product, admin, search, invoice, analytics, moderation, and compare functionality in place.
+The project is now a strong working MVP with substantial product, admin, search, invoice, analytics, moderation, compare, account-management, notification, and operational tooling functionality in place.
 
 It is best described as:
 
@@ -143,14 +143,30 @@ That root-level script does not exist inside the `backend` folder.
 
 ## Known Deployment Notes
 
-- Frontend and backend are separate Render origins, so refresh-cookie auth in production depends on the backend using secure cookies with `SameSite=None`.
+- Frontend is on Vercel and backend is on Render, so refresh-cookie auth in production depends on the backend using secure cookies with `SameSite=None`.
 - Prisma schema changes must be pushed against the live Render database after deploys that change the schema.
-- Some features such as invoice history and review moderation depend on the database being fully in sync with the latest schema.
+- Local `npm run db:push` only updates local PostgreSQL. Production schema sync must be run separately from the Render backend shell.
+- Some features such as invoice history, notifications, and review moderation depend on the database being fully in sync with the latest schema.
 - Razorpay webhook verification now depends on `RAZORPAY_WEBHOOK_SECRET` being set correctly in production.
 
 ## Recommended Next Step
 
 Use the launch checklist and [operations.md](/home/mistermobiletriveni/screen/screenshield/docs/operations.md) runbook to close the remaining production-hardening items before calling the project fully production-ready.
+
+## Release Commands
+
+Use these from the repo root:
+
+```bash
+npm run release:verify
+npm run deploy:check
+```
+
+If the release includes Prisma schema changes:
+
+```bash
+npm run release:schema
+```
 
 ## Current Reality
 

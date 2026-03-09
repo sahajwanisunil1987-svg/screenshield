@@ -39,3 +39,8 @@ app.get("/api/health", healthCheck);
 app.use("/api", router);
 app.use(notFoundHandler);
 app.use(errorHandler);
+app.get("/", (_req, res) => {
+  res.status(200).json({
+    message: "SpareKart API is running"
+  });
+});
