@@ -213,39 +213,52 @@ async function main() {
     });
   }
 
-  const adminPasswordHash = await bcrypt.hash("Admin@123", 10);
-  const customerPasswordHash = await bcrypt.hash("User@1234", 10);
+  if (process.env.SEED_DEMO_USERS === "true") {
+    const adminEmail = process.env.SEED_ADMIN_EMAIL;
+    const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+    const customerEmail = process.env.SEED_CUSTOMER_EMAIL;
+    const customerPassword = process.env.SEED_CUSTOMER_PASSWORD;
 
-  await prisma.user.create({
-    data: {
-      name: "SpareKart Admin",
-      email: "admin@sparekart.in",
-      passwordHash: adminPasswordHash,
-      role: UserRole.ADMIN,
-      phone: "9999999999"
+    if (!adminEmail || !adminPassword || !customerEmail || !customerPassword) {
+      throw new Error("SEED_DEMO_USERS=true requires SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD, SEED_CUSTOMER_EMAIL, and SEED_CUSTOMER_PASSWORD");
     }
-  });
 
-  await prisma.user.create({
-    data: {
-      name: "Rahul Sharma",
-      email: "user@sparekart.in",
-      passwordHash: customerPasswordHash,
-      role: UserRole.CUSTOMER,
-      phone: "9876543210",
-      addresses: {
-        create: {
-          fullName: "Rahul Sharma",
-          line1: "12 MG Road",
-          city: "Bengaluru",
-          state: "Karnataka",
-          postalCode: "560001",
-          phone: "9876543210",
-          isDefault: true
+    const adminPasswordHash = await bcrypt.hash(adminPassword, 10);
+    const customerPasswordHash = await bcrypt.hash(customerPassword, 10);
+
+    await prisma.user.create({
+      data: {
+        name: "Admin User",
+        email: adminEmail,
+        passwordHash: adminPasswordHash,
+        role: UserRole.ADMIN,
+        phone: "9999999999",
+        emailVerified: true
+      }
+    });
+
+    await prisma.user.create({
+      data: {
+        name: "Test Customer",
+        email: customerEmail,
+        passwordHash: customerPasswordHash,
+        role: UserRole.CUSTOMER,
+        phone: "9876543210",
+        emailVerified: true,
+        addresses: {
+          create: {
+            fullName: "Test Customer",
+            line1: "12 MG Road",
+            city: "Bengaluru",
+            state: "Karnataka",
+            postalCode: "560001",
+            phone: "9876543210",
+            isDefault: true
+          }
         }
       }
-    }
-  });
+    });
+  }
 
   await prisma.coupon.createMany({
     data: [
