@@ -1,7 +1,10 @@
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { StatusCodes } from "http-status-codes";
 import { prisma } from "../lib/prisma.js";
+import { env } from "../config/env.js";
 import { ApiError } from "../utils/api-error.js";
+import { sendPasswordResetEmail, sendVerificationEmail } from "./notification.service.js";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/jwt.js";
 
 const sanitizeUser = <T extends { passwordHash: string }>(user: T) => {
@@ -15,6 +18,7 @@ const profileSelect = {
   email: true,
   phone: true,
   role: true,
+  emailVerified: true,
   createdAt: true,
   addresses: {
     orderBy: [{ isDefault: "desc" as const }, { createdAt: "desc" as const }],
@@ -48,16 +52,24 @@ export const registerUser = async (payload: {
   }
 
   const passwordHash = await bcrypt.hash(payload.password, 10);
+  const verifyToken = crypto.randomBytes(24).toString("hex");
+  const verifyTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
   const user = await prisma.user.create({
     data: {
       name: payload.name,
       email: payload.email,
       phone: payload.phone,
-      passwordHash
+      passwordHash,
+      verifyToken,
+      verifyTokenExpiresAt
     }
   });
 
-  return issueAuthPayload(user);
+  const siteUrl = env.SITE_URL || env.FRONTEND_URL;
+  await sendVerificationEmail(user.email, `${siteUrl}/verify-email?token=${verifyToken}`);
+
+  const profile = await getAuthUserById(user.id);
+  return issueAuthPayload({ ...user, emailVerified: profile.emailVerified });
 };
 
 export const loginUser = async (payload: { email: string; password: string }) => {
@@ -72,10 +84,14 @@ export const loginUser = async (payload: { email: string; password: string }) =>
     throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid credentials");
   }
 
+  if (!user.emailVerified) {
+    throw new ApiError(StatusCodes.FORBIDDEN, "Please verify your email before logging in");
+  }
+
   return issueAuthPayload(user);
 };
 
-export const issueAuthPayload = <T extends { id: string; role: "CUSTOMER" | "ADMIN"; email: string; passwordHash: string }>(
+export const issueAuthPayload = <T extends { id: string; role: "CUSTOMER" | "ADMIN"; email: string; passwordHash: string; emailVerified?: boolean }>(
   user: T
 ) => {
   const payload = {
@@ -264,4 +280,92 @@ export const refreshAuthSession = async (refreshToken: string) => {
     refreshToken: next.refreshToken,
     user: profile
   };
+};
+
+
+export const verifyEmail = async (token: string) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      verifyToken: token,
+      verifyTokenExpiresAt: { gt: new Date() }
+    }
+  });
+
+  if (!user) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid or expired verification link");
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      emailVerified: true,
+      verifyToken: null,
+      verifyTokenExpiresAt: null
+    }
+  });
+
+  return getAuthUserById(user.id);
+};
+
+export const resendVerificationEmail = async (email: string) => {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user || user.emailVerified) {
+    return { ok: true };
+  }
+
+  const verifyToken = crypto.randomBytes(24).toString("hex");
+  const verifyTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { verifyToken, verifyTokenExpiresAt }
+  });
+
+  const siteUrl = env.SITE_URL || env.FRONTEND_URL;
+  await sendVerificationEmail(user.email, `${siteUrl}/verify-email?token=${verifyToken}`);
+  return { ok: true };
+};
+
+export const requestPasswordReset = async (email: string) => {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    return { ok: true };
+  }
+
+  const resetToken = crypto.randomBytes(24).toString("hex");
+  const resetTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { resetToken, resetTokenExpiresAt }
+  });
+
+  const siteUrl = env.SITE_URL || env.FRONTEND_URL;
+  await sendPasswordResetEmail(user.email, `${siteUrl}/reset-password?token=${resetToken}`);
+  return { ok: true };
+};
+
+export const resetPassword = async (token: string, password: string) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      resetToken: token,
+      resetTokenExpiresAt: { gt: new Date() }
+    }
+  });
+
+  if (!user) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid or expired reset link");
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash,
+      resetToken: null,
+      resetTokenExpiresAt: null
+    }
+  });
+
+  return { ok: true };
 };

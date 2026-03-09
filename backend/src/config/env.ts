@@ -12,6 +12,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(8),
   JWT_REFRESH_SECRET: z.string().min(8).optional(),
   FRONTEND_URL: z.string().default("http://localhost:3000"),
+  SITE_URL: z.string().optional(),
   COMPANY_NAME: z.string().default("SpareKart"),
   COMPANY_LEGAL_NAME: z.string().default("SpareKart Electronics"),
   COMPANY_GSTIN: z.string().default("27ABCDE1234F1Z5"),

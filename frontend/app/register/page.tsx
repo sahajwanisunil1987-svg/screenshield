@@ -38,7 +38,7 @@ export default function RegisterPage() {
     try {
       const response = await api.post("/auth/register", values);
       setAuth(response.data.token, response.data.user);
-      toast.success("Account created");
+      toast.success("Account created. Verify your email from your inbox before next login.");
       router.push("/");
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Unable to create account"));

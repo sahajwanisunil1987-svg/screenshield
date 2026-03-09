@@ -65,9 +65,10 @@ export default function LoginPage() {
             </Button>
           </form>
           )}
-          <p className="mt-6 text-sm text-slate">
-            New customer? <Link href="/register" className="font-semibold text-accent">Create an account</Link>
-          </p>
+          <div className="mt-6 flex items-center justify-between gap-4 text-sm text-slate">
+            <p>New customer? <Link href="/register" className="font-semibold text-accent">Create an account</Link></p>
+            <Link href="/forgot-password" className="font-semibold text-accent">Forgot password?</Link>
+          </div>
           <div className="mt-6 rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate">
             <p className="font-semibold text-ink">Demo customer</p>
             <p>user@sparekart.in / User@1234</p>

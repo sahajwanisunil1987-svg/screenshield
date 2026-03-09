@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { env } from "../config/env.js";
-import { getAuthUserById, loginUser, refreshAuthSession, registerUser } from "../services/auth.service.js";
+import { getAuthUserById, loginUser, refreshAuthSession, registerUser, requestPasswordReset, resendVerificationEmail, resetPassword, verifyEmail } from "../services/auth.service.js";
 import { ApiError } from "../utils/api-error.js";
 
 const refreshCookieName = "sparekart_refresh";
@@ -75,4 +75,25 @@ export const refresh = async (req: Request, res: Response) => {
 export const logout = async (_req: Request, res: Response) => {
   res.clearCookie(refreshCookieName, getRefreshClearCookieOptions());
   res.status(StatusCodes.NO_CONTENT).send();
+};
+
+
+export const verifyEmailHandler = async (req: Request, res: Response) => {
+  const user = await verifyEmail(req.body.token);
+  res.status(StatusCodes.OK).json({ user });
+};
+
+export const resendVerificationHandler = async (req: Request, res: Response) => {
+  await resendVerificationEmail(req.body.email);
+  res.status(StatusCodes.OK).json({ ok: true });
+};
+
+export const forgotPasswordHandler = async (req: Request, res: Response) => {
+  await requestPasswordReset(req.body.email);
+  res.status(StatusCodes.OK).json({ ok: true });
+};
+
+export const resetPasswordHandler = async (req: Request, res: Response) => {
+  await resetPassword(req.body.token, req.body.password);
+  res.status(StatusCodes.OK).json({ ok: true });
 };

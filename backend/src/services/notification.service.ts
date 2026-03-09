@@ -84,3 +84,22 @@ export const sendWhatsappNotification = async (payload: unknown) => {
 
   return { ok: response.ok };
 };
+
+
+export const sendVerificationEmail = async (email: string, verifyUrl: string) => {
+  await transporter.sendMail({
+    from: env.SMTP_USER,
+    to: email,
+    subject: "Verify your SpareKart account",
+    html: `<p>Verify your account by clicking <a href="${verifyUrl}">this link</a>.</p>`
+  });
+};
+
+export const sendPasswordResetEmail = async (email: string, resetUrl: string) => {
+  await transporter.sendMail({
+    from: env.SMTP_USER,
+    to: email,
+    subject: "Reset your SpareKart password",
+    html: `<p>Reset your password by clicking <a href="${resetUrl}">this link</a>.</p>`
+  });
+};
