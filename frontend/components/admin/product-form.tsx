@@ -179,7 +179,8 @@ export function ProductForm({ productId }: { productId?: string }) {
         .map((line) => line.trim())
         .filter(Boolean);
 
-      setValue("imageUrls", [...existing, ...uploadedUrls].join("\n"), { shouldValidate: true });
+      // Put fresh uploads first so public surfaces pick the latest image as primary.
+      setValue("imageUrls", [...uploadedUrls, ...existing].join("\n"), { shouldValidate: true });
       toast.success(`${uploadedUrls.length} image${uploadedUrls.length > 1 ? "s" : ""} uploaded`);
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Unable to upload image"));
