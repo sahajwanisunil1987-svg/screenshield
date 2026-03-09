@@ -62,7 +62,13 @@ export function ProductForm({ productId }: { productId?: string }) {
   const compatibleModelIds = watch("compatibleModelIds");
 
   useEffect(() => {
-    Promise.all([api.get("/brands"), api.get("/models"), api.get("/categories")])
+    if (!token) return;
+
+    Promise.all([
+      api.get("/brands", authHeaders(token)),
+      api.get("/models", authHeaders(token)),
+      api.get("/categories", authHeaders(token))
+    ])
       .then(([b, m, c]) => {
         setBrands(b.data);
         setModels(m.data);
@@ -71,7 +77,7 @@ export function ProductForm({ productId }: { productId?: string }) {
       .catch((error) => {
         toast.error(getApiErrorMessage(error, "Unable to load product form data"));
       });
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     if (!productId) return;

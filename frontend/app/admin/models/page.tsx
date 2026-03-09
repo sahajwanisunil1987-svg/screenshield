@@ -5,20 +5,24 @@ import { toast } from "sonner";
 import { AdminGuard } from "@/components/admin/admin-guard";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { ResourceManager } from "@/components/admin/resource-manager";
-import { api, getApiErrorMessage } from "@/lib/api";
+import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
+import { useAuthStore } from "@/store/auth-store";
 import { Brand } from "@/types";
 
 export default function AdminModelsPage() {
+  const token = useAuthStore((state) => state.token);
   const [brands, setBrands] = useState<Brand[]>([]);
 
   useEffect(() => {
+    if (!token) return;
+
     api
-      .get("/brands")
+      .get("/brands", authHeaders(token))
       .then((response) => setBrands(response.data))
       .catch((error) => {
         toast.error(getApiErrorMessage(error, "Unable to load brands"));
       });
-  }, []);
+  }, [token]);
 
   return (
     <AdminGuard>
