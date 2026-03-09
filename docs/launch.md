@@ -138,3 +138,50 @@
 - Implementation: complete
 - Launch hardening: largely complete
 - Final external dependency blocker: live Razorpay credential and webhook verification
+## Launch Signoff
+
+Mark each item `PASS` or `FAIL` during final release validation.
+
+### Customer
+
+- [ ] Customer login works
+- [ ] Session persists after refresh
+- [ ] Account page loads
+- [ ] Profile update works
+- [ ] Address add/edit/delete works
+- [ ] Product search works
+- [ ] Product page loads
+- [ ] Cart works
+- [ ] Checkout opens
+- [ ] COD checkout works
+- [ ] My Orders loads
+- [ ] Notifications loads
+- [ ] Track order works
+
+### Admin
+
+- [ ] Admin login works
+- [ ] Admin orders page loads
+- [ ] Order status update works
+- [ ] Courier/AWB/ETA save works
+- [ ] Admin inventory page loads
+- [ ] Low-stock filters and summary work
+
+### Platform
+
+- [ ] Backend health returns `status: ok`
+- [ ] Backend health returns `db: up`
+- [ ] No CORS errors in browser console
+- [ ] No network errors in browser console
+- [ ] No production-breaking console errors
+- [ ] Render production schema is in sync
+- [ ] Vercel frontend is on latest deploy
+- [ ] Render backend is on latest deploy
+
+### Payments
+
+- [ ] Razorpay flow verified if live keys are active
+- [ ] Failed payment does not mark order paid
+- [ ] Duplicate payment callback does not corrupt status
+- [ ] COD restrictions behave as expected
+
