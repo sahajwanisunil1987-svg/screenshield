@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bell, GitCompareArrows, Heart, LogOut, Package, ShoppingBag, ShieldCheck, Truck, User2 } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 import { useCompareStore } from "@/store/compare-store";
 import { useWishlistStore } from "@/store/wishlist-store";
 import { useAuthStore } from "@/store/auth-store";
-import { api } from "@/lib/api";
+import { api, authHeaders } from "@/lib/api";
 import { SearchSuggestion } from "@/types";
 import { SearchAutocomplete } from "@/components/ui/search-autocomplete";
 
@@ -22,11 +22,25 @@ export function Navbar() {
   const compareHydrated = useCompareStore((state) => state.hasHydrated);
   const wishlist = useWishlistStore((state) => state.items);
   const wishlistHydrated = useWishlistStore((state) => state.hasHydrated);
+  const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const cartCount = cartHydrated ? items.length : 0;
   const compareCount = compareHydrated ? compareItems.length : 0;
   const wishlistCount = wishlistHydrated ? wishlist.length : 0;
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+
+  useEffect(() => {
+    if (user?.role !== "CUSTOMER" || !token) {
+      setUnreadNotifications(0);
+      return;
+    }
+
+    api
+      .get<{ unreadCount: number }>("/account/notifications", authHeaders(token))
+      .then((response) => setUnreadNotifications(response.data.unreadCount ?? 0))
+      .catch(() => setUnreadNotifications(0));
+  }, [token, user?.id, user?.role]);
 
   const onSearch = () => {
     const params = new URLSearchParams();
@@ -87,8 +101,9 @@ export function Navbar() {
                 <Link href="/my-orders" className="hidden rounded-full px-4 py-2 hover:bg-white/10 lg:flex">
                   My Orders
                 </Link>
-                <Link href="/notifications" className="hidden rounded-full px-4 py-2 hover:bg-white/10 lg:flex">
+                <Link href="/notifications" className="relative hidden rounded-full px-4 py-2 hover:bg-white/10 lg:flex">
                   Notifications
+                  {unreadNotifications > 0 ? <span className="absolute -right-1 -top-1 rounded-full bg-ember px-1.5 text-[10px] text-white">{unreadNotifications}</span> : null}
                 </Link>
               </>
             ) : null}
@@ -195,10 +210,11 @@ export function Navbar() {
           {user?.role === "CUSTOMER" ? (
             <Link
               href="/notifications"
-              className="flex flex-col items-center justify-center rounded-[20px] border border-white/10 bg-white/5 px-3 py-3 text-[11px] font-semibold text-white/75 transition hover:bg-white/10 hover:text-white"
+              className="relative flex flex-col items-center justify-center rounded-[20px] border border-white/10 bg-white/5 px-3 py-3 text-[11px] font-semibold text-white/75 transition hover:bg-white/10 hover:text-white"
             >
               <Bell className="h-4 w-4" />
               <span className="mt-2">Alerts</span>
+              {unreadNotifications > 0 ? <span className="absolute right-2 top-2 rounded-full bg-ember px-1.5 text-[10px] text-white">{unreadNotifications}</span> : null}
             </Link>
           ) : null}
           {user?.role === "ADMIN" ? (
