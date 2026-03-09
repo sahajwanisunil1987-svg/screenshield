@@ -10,29 +10,46 @@ export const notFoundHandler = (_req: Request, res: Response) => {
 
 export const errorHandler = (
   error: Error,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ) => {
+  const logPayload = {
+    ts: new Date().toISOString(),
+    level: "error",
+    requestId: req.requestId ?? null,
+    method: req.method,
+    path: req.originalUrl,
+    userId: req.user?.userId ?? null,
+    error: error.message,
+    stack: process.env.NODE_ENV === "production" ? undefined : error.stack
+  };
+
   if (error instanceof ZodError) {
     return res.status(StatusCodes.BAD_REQUEST).json({
       message: "Validation failed",
-      errors: error.flatten()
+      errors: error.flatten(),
+      requestId: req.requestId
     });
   }
 
   if (error instanceof PrismaClientKnownRequestError) {
+    console.error(JSON.stringify({ ...logPayload, code: error.code }));
     return res.status(StatusCodes.BAD_REQUEST).json({
       message: error.message,
-      code: error.code
+      code: error.code,
+      requestId: req.requestId
     });
   }
 
   if (error instanceof ApiError) {
-    return res.status(error.statusCode).json({ message: error.message });
+    console.error(JSON.stringify({ ...logPayload, statusCode: error.statusCode }));
+    return res.status(error.statusCode).json({ message: error.message, requestId: req.requestId });
   }
 
+  console.error(JSON.stringify(logPayload));
   return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-    message: error.message || "Internal server error"
+    message: error.message || "Internal server error",
+    requestId: req.requestId
   });
 };

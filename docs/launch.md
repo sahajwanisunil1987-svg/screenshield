@@ -30,8 +30,8 @@
   - `JWT_REFRESH_SECRET`
 - Confirm backend `FRONTEND_URL` matches the exact frontend Render URL
 - Confirm `SITE_URL` and `NEXT_PUBLIC_SITE_URL` are correct
-- Add rate limiting on auth, search, order, and payment endpoints
-- Add basic abuse protection
+- Confirm rate limiting is active on auth, search, order, payment, and upload endpoints
+- Confirm abuse protection thresholds suit real traffic
   - Login throttling
   - Coupon validation throttling
   - Upload protection
@@ -40,6 +40,8 @@
 
 ## Payments
 
+- Configure `RAZORPAY_WEBHOOK_SECRET`
+- Point Razorpay webhook to `/api/payments/razorpay/webhook`
 - Verify Razorpay webhook or equivalent reconciliation strategy
 - Confirm no order is marked paid without verification
 - Verify payment failure and retry behavior
@@ -47,14 +49,16 @@
 
 ## Operations
 
-- Add logging and monitoring
-  - Backend errors
+- Confirm backend structured request and error logging is visible in Render logs
+- Add monitoring and alerting
   - Payment failures
   - Order creation failures
 - Add uptime and health monitoring for frontend and backend
+- Confirm `/api/health` is returning DB-up status in production
 - Add a database backup and recovery plan
 - Add a deployment rollback plan
 - Document Render environment variables and deployment steps
+  - See [operations.md](/home/mistermobiletriveni/screen/screenshield/docs/operations.md)
 
 ## Data
 
@@ -103,7 +107,9 @@
 
 ## Testing
 
-- Add at least a minimal test suite for
+- Run backend automated tests
+  - `npm --workspace backend run test`
+- Expand coverage beyond the current baseline
   - Auth
   - Order creation
   - Payment verification

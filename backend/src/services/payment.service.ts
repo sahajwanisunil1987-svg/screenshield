@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { PaymentStatus } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
+import { env } from "../config/env.js";
 import { prisma } from "../lib/prisma.js";
 import { razorpay } from "../lib/razorpay.js";
 import { ApiError } from "../utils/api-error.js";
@@ -63,4 +64,110 @@ export const verifyRazorpayPayment = async (payload: {
   });
 
   return { verified: true };
+};
+
+export const verifyRazorpayWebhookSignature = (rawBody: Buffer, signature?: string) => {
+  if (!env.RAZORPAY_WEBHOOK_SECRET) {
+    throw new ApiError(StatusCodes.SERVICE_UNAVAILABLE, "Razorpay webhook secret is not configured");
+  }
+
+  if (!signature) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Missing Razorpay signature");
+  }
+
+  const expectedSignature = crypto
+    .createHmac("sha256", env.RAZORPAY_WEBHOOK_SECRET)
+    .update(rawBody)
+    .digest("hex");
+
+  if (expectedSignature !== signature) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid Razorpay webhook signature");
+  }
+};
+
+type RazorpayWebhookPayload = {
+  event: string;
+  payload?: {
+    payment?: {
+      entity?: {
+        id?: string;
+        order_id?: string;
+      };
+    };
+  };
+};
+
+const upsertPaymentStatusFromWebhook = async (
+  providerOrderId: string,
+  providerPaymentId: string | undefined,
+  nextStatus: PaymentStatus
+) => {
+  const payment = await prisma.payment.findFirst({
+    where: {
+      OR: [{ providerOrderId }, ...(providerPaymentId ? [{ providerPaymentId }] : [])]
+    },
+    include: {
+      order: true
+    }
+  });
+
+  if (!payment) {
+    return { updated: false, reason: "payment_not_found" };
+  }
+
+  await prisma.order.update({
+    where: { id: payment.orderId },
+    data: {
+      paymentStatus: nextStatus,
+      status: nextStatus === PaymentStatus.PAID ? "CONFIRMED" : payment.order.status,
+      payment: {
+        update: {
+          providerOrderId,
+          providerPaymentId,
+          status: nextStatus
+        }
+      }
+    }
+  });
+
+  return { updated: true, orderId: payment.orderId };
+};
+
+export const handleRazorpayWebhook = async (payload: RazorpayWebhookPayload) => {
+  const providerOrderId = payload.payload?.payment?.entity?.order_id;
+  const providerPaymentId = payload.payload?.payment?.entity?.id;
+
+  if (!providerOrderId) {
+    return {
+      received: true,
+      handled: false,
+      event: payload.event,
+      reason: "missing_provider_order_id"
+    };
+  }
+
+  if (payload.event === "payment.captured" || payload.event === "order.paid") {
+    return {
+      received: true,
+      handled: true,
+      event: payload.event,
+      ...(await upsertPaymentStatusFromWebhook(providerOrderId, providerPaymentId, PaymentStatus.PAID))
+    };
+  }
+
+  if (payload.event === "payment.failed") {
+    return {
+      received: true,
+      handled: true,
+      event: payload.event,
+      ...(await upsertPaymentStatusFromWebhook(providerOrderId, providerPaymentId, PaymentStatus.FAILED))
+    };
+  }
+
+  return {
+    received: true,
+    handled: false,
+    event: payload.event,
+    reason: "ignored_event"
+  };
 };

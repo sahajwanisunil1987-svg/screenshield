@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as orderController from "../controllers/order.controller.js";
 import { authenticate, requireAdmin } from "../middleware/auth.middleware.js";
+import { orderRateLimiter } from "../middleware/rate-limit.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
 import { idParamSchema } from "../validation/common.js";
 import {
@@ -15,11 +16,11 @@ import {
 
 const router = Router();
 
-router.post("/orders/create", authenticate, validate({ body: createOrderSchema }), orderController.createOrder);
+router.post("/orders/create", authenticate, orderRateLimiter, validate({ body: createOrderSchema }), orderController.createOrder);
 router.get("/orders/my-orders", authenticate, orderController.myOrders);
 router.get("/orders/:id", authenticate, validate({ params: idParamSchema }), orderController.getOrder);
 router.get("/orders/track/:orderNumber", orderController.trackOrder);
-router.post("/coupons/validate", validate({ body: couponValidationSchema }), orderController.validateCoupon);
+router.post("/coupons/validate", orderRateLimiter, validate({ body: couponValidationSchema }), orderController.validateCoupon);
 
 router.get(
   "/admin/orders",

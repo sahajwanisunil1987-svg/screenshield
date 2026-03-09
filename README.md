@@ -101,6 +101,8 @@ node --env-file=.env --import tsx prisma/seed.ts
 - The current Render setup uses free plans as a starting point. Upgrade before production traffic.
 - Email, Cloudinary, and Razorpay are wired but require real credentials.
 - If you want a single-platform deploy elsewhere, split frontend and backend envs the same way as the included Render blueprint.
+- For rollout, rollback, and health checks, see [docs/operations.md](/home/mistermobiletriveni/screen/screenshield/docs/operations.md).
+- For launch gating, see [docs/launch.md](/home/mistermobiletriveni/screen/screenshield/docs/launch.md).
 
 ## Core features
 

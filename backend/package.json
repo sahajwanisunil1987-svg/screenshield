@@ -8,6 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/server.js",
     "lint": "tsc --noEmit",
+    "test": "vitest run",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
@@ -45,5 +46,9 @@
     "typescript": "^5.8.2",
     "zod": "^3.24.2"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.1.0",
+    "vitest": "^3.2.4"
+  }
 }

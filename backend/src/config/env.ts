@@ -6,6 +6,7 @@ dotenv.config();
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().default(4000),
+  LOG_LEVEL: z.enum(["silent", "error", "warn", "info"]).default("info"),
   DATABASE_URL: z.string().min(1),
   DIRECT_URL: z.string().min(1),
   JWT_SECRET: z.string().min(8),
@@ -18,8 +19,10 @@ const envSchema = z.object({
   COMPANY_EMAIL: z.string().default("support@sparekart.in"),
   COMPANY_ADDRESS_LINE1: z.string().default("Repair Market, Unit 12"),
   COMPANY_ADDRESS_LINE2: z.string().default("Mumbai, Maharashtra 400001"),
+  HEALTHCHECK_TOKEN: z.string().optional(),
   RAZORPAY_KEY_ID: z.string().default("rzp_test_xxxxx"),
   RAZORPAY_KEY_SECRET: z.string().default("xxxxxx"),
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),

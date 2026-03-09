@@ -66,10 +66,10 @@ The main remaining work is operational and production-hardening:
 
 - Confirm auth refresh persistence works correctly on Render after login
 - Verify Razorpay live payment flow and reconciliation behavior
-- Add rate limiting and abuse protection
-- Add monitoring and alerting
-- Add backups and rollback planning
-- Add critical-flow tests
+- Confirm the new rate limiting and abuse protection thresholds in production
+- Add external monitoring and alerting around the new health and logging baseline
+- Finalize backups and rollback planning
+- Expand the new baseline backend test suite into payment, order, moderation, and invoice flows
 - Replace placeholder business, support, and policy content
 - Verify all production env vars are correct
 
@@ -126,6 +126,7 @@ That root-level script does not exist inside the `backend` folder.
 - `DIRECT_URL`
 - `RAZORPAY_KEY_ID`
 - `RAZORPAY_KEY_SECRET`
+- `RAZORPAY_WEBHOOK_SECRET`
 - `COMPANY_NAME`
 - `COMPANY_LEGAL_NAME`
 - `COMPANY_GSTIN`
@@ -145,7 +146,8 @@ That root-level script does not exist inside the `backend` folder.
 - Frontend and backend are separate Render origins, so refresh-cookie auth in production depends on the backend using secure cookies with `SameSite=None`.
 - Prisma schema changes must be pushed against the live Render database after deploys that change the schema.
 - Some features such as invoice history and review moderation depend on the database being fully in sync with the latest schema.
+- Razorpay webhook verification now depends on `RAZORPAY_WEBHOOK_SECRET` being set correctly in production.
 
 ## Recommended Next Step
 
-Use the launch checklist and close the remaining production-hardening items before calling the project fully production-ready.
+Use the launch checklist and [operations.md](/home/mistermobiletriveni/screen/screenshield/docs/operations.md) runbook to close the remaining production-hardening items before calling the project fully production-ready.
