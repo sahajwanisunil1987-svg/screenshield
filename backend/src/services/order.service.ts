@@ -28,7 +28,21 @@ const assertCodAllowed = (postalCode: string | undefined, totalAmount: number) =
   }
 };
 
-export const validateCoupon = async (code: string, subtotal: number) => {
+type OrderTx = Prisma.TransactionClient;
+
+type CouponValidationResult = {
+  coupon: {
+    id: string;
+    type: "PERCENTAGE" | "FLAT";
+    value: Prisma.Decimal;
+    maxDiscount: Prisma.Decimal | null;
+    usageLimit: number | null;
+    usedCount: number;
+  };
+  discount: number;
+};
+
+const validateCouponWithClient = async (client: Pick<OrderTx, "coupon">, code: string, subtotal: number): Promise<CouponValidationResult> => {
   const coupon = await prisma.coupon.findUnique({ where: { code: code.toUpperCase() } });
   if (!coupon || !coupon.isActive) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid coupon code");
@@ -58,6 +72,43 @@ export const validateCoupon = async (code: string, subtotal: number) => {
   return { coupon, discount };
 };
 
+export const validateCoupon = async (code: string, subtotal: number) => validateCouponWithClient(prisma, code, subtotal);
+
+const upsertDefaultAddress = async (client: OrderTx, userId: string, address: Record<string, string | undefined>) => {
+  const existingDefaultAddress = await client.address.findFirst({
+    where: { userId, isDefault: true },
+    select: { id: true }
+  });
+
+  const addressData = {
+    fullName: address.fullName as string,
+    line1: address.line1 as string,
+    line2: address.line2 as string | undefined,
+    landmark: address.landmark as string | undefined,
+    city: address.city as string,
+    state: address.state as string,
+    postalCode: (address.postalCode ?? address.pincode) as string,
+    country: (address.country as string | undefined) ?? "India",
+    phone: address.phone as string,
+    gstNumber: address.gstNumber as string | undefined,
+    isDefault: true
+  };
+
+  if (existingDefaultAddress) {
+    return client.address.update({
+      where: { id: existingDefaultAddress.id },
+      data: addressData
+    });
+  }
+
+  return client.address.create({
+    data: {
+      userId,
+      ...addressData
+    }
+  });
+};
+
 export const createOrder = async (
   userId: string,
   payload: {
@@ -68,175 +119,157 @@ export const createOrder = async (
     notes?: string;
   }
 ) => {
-  const productIds = payload.items.map((item) => item.productId);
-  const products = await prisma.product.findMany({
-    where: { id: { in: productIds }, isActive: true },
-    include: { inventory: true }
-  });
-
-  if (products.length !== payload.items.length) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "One or more products are unavailable");
+  if (!payload.items.length) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Cart is empty");
   }
 
-  let subtotal = 0;
-  const orderItems = payload.items.map((item) => {
-    const product = products.find((entry: (typeof products)[number]) => entry.id === item.productId);
-    if (!product) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid product in cart");
+  return prisma.$transaction(async (tx) => {
+    const productIds = payload.items.map((item) => item.productId);
+    const products = await tx.product.findMany({
+      where: { id: { in: productIds }, isActive: true },
+      include: { inventory: true }
+    });
+
+    if (products.length !== payload.items.length) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "One or more products are unavailable");
     }
 
-    if ((product.inventory?.stock ?? product.stock) < item.quantity) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, `Insufficient stock for ${product.name}`);
+    let subtotal = 0;
+    const orderItems = payload.items.map((item) => {
+      const product = products.find((entry: (typeof products)[number]) => entry.id === item.productId);
+      if (!product) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid product in cart");
+      }
+
+      if ((product.inventory?.stock ?? product.stock) < item.quantity) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, `Insufficient stock for ${product.name}`);
+      }
+
+      const lineTotal = Number(product.price) * item.quantity;
+      subtotal += lineTotal;
+
+      return {
+        productId: product.id,
+        quantity: item.quantity,
+        unitPrice: decimal(Number(product.price)),
+        totalPrice: decimal(lineTotal),
+        productName: product.name,
+        productSku: product.sku
+      };
+    });
+
+    let discountAmount = 0;
+    let couponId: string | undefined;
+    let couponUsageLimit: number | null = null;
+    if (payload.couponCode) {
+      const { coupon, discount } = await validateCouponWithClient(tx, payload.couponCode, subtotal);
+      discountAmount = discount;
+      couponId = coupon.id;
+      couponUsageLimit = coupon.usageLimit;
     }
 
-    const lineTotal = Number(product.price) * item.quantity;
-    subtotal += lineTotal;
+    const shippingAmount = subtotal > 999 ? 0 : 79;
+    const taxAmount = subtotal * 0.18;
+    const totalAmount = subtotal - discountAmount + shippingAmount + taxAmount;
 
-    return {
-      productId: product.id,
-      quantity: item.quantity,
-      unitPrice: decimal(Number(product.price)),
-      totalPrice: decimal(lineTotal),
-      productName: product.name,
-      productSku: product.sku
-    };
-  });
+    if (payload.paymentMethod === "COD") {
+      assertCodAllowed((payload.address.postalCode ?? payload.address.pincode) as string | undefined, totalAmount);
+    }
 
-  let discountAmount = 0;
-  let couponId: string | undefined;
-  if (payload.couponCode) {
-    const { coupon, discount } = await validateCoupon(payload.couponCode, subtotal);
-    discountAmount = discount;
-    couponId = coupon.id;
-  }
+    for (const product of products) {
+      const qty = payload.items.find((item) => item.productId === product.id)?.quantity ?? 0;
+      if (!qty) continue;
 
-  const shippingAmount = subtotal > 999 ? 0 : 79;
-  const taxAmount = subtotal * 0.18;
-  const totalAmount = subtotal - discountAmount + shippingAmount + taxAmount;
+      if (product.inventory) {
+        const inventoryUpdate = await tx.inventory.updateMany({
+          where: {
+            productId: product.id,
+            stock: { gte: qty }
+          },
+          data: {
+            stock: { decrement: qty }
+          }
+        });
 
-  if (payload.paymentMethod === "COD") {
-    assertCodAllowed((payload.address.postalCode ?? payload.address.pincode) as string | undefined, totalAmount);
-  }
-
-  const order = await prisma.order.create({
-    data: {
-      userId,
-      orderNumber: createOrderNumber(),
-      couponId,
-      addressSnapshot: payload.address,
-      subtotal: decimal(subtotal),
-      discountAmount: decimal(discountAmount),
-      shippingAmount: decimal(shippingAmount),
-      taxAmount: decimal(taxAmount),
-      totalAmount: decimal(totalAmount),
-      notes: payload.notes,
-      gstNumber: payload.address.gstNumber,
-      paymentStatus: payload.paymentMethod === "COD" ? PaymentStatus.COD : PaymentStatus.PENDING,
-      items: {
-        create: orderItems
-      },
-      payment: {
-        create: {
-          amount: decimal(totalAmount),
-          status: payload.paymentMethod === "COD" ? PaymentStatus.COD : PaymentStatus.PENDING,
-          provider: payload.paymentMethod === "COD" ? "COD" : "RAZORPAY"
+        if (inventoryUpdate.count === 0) {
+          throw new ApiError(StatusCodes.BAD_REQUEST, `Insufficient stock for ${product.name}`);
         }
-      },
-      invoice: {
-        create: {
-          invoiceNumber: createInvoiceNumber(),
-          gstin: payload.address.gstNumber,
-          billingName: payload.address.fullName as string,
-          billingEmail: payload.address.email as string | undefined,
-          billingPhone: payload.address.phone as string
+      } else {
+        const productUpdate = await tx.product.updateMany({
+          where: {
+            id: product.id,
+            stock: { gte: qty }
+          },
+          data: {
+            stock: { decrement: qty }
+          }
+        });
+
+        if (productUpdate.count === 0) {
+          throw new ApiError(StatusCodes.BAD_REQUEST, `Insufficient stock for ${product.name}`);
         }
       }
-    },
-    include: {
-      items: true,
-      payment: true,
-      invoice: true
     }
-  });
 
-  await Promise.all(
-    products.map((product: (typeof products)[number]) => {
-      const qty = payload.items.find((item) => item.productId === product.id)?.quantity ?? 0;
-      return prisma.inventory.upsert({
-        where: { productId: product.id },
-        update: {
-          stock: { decrement: qty }
+    if (couponId) {
+      const couponUpdate = await tx.coupon.updateMany({
+        where: {
+          id: couponId,
+          ...(couponUsageLimit ? { usedCount: { lt: couponUsageLimit } } : {})
         },
-        create: {
-          productId: product.id,
-          stock: Math.max(product.stock - qty, 0),
-          lowStockLimit: 5
-        }
+        data: { usedCount: { increment: 1 } }
       });
-    })
-  );
 
-  if (couponId) {
-    await prisma.coupon.update({
-      where: { id: couponId },
-      data: { usedCount: { increment: 1 } }
-    });
-  }
-
-  const existingDefaultAddress = await prisma.address.findFirst({
-    where: { userId, isDefault: true },
-    select: { id: true }
-  });
-
-  await prisma.address.upsert({
-    where: existingDefaultAddress ? { id: existingDefaultAddress.id } : { id: "__new_default_address__" },
-    update: {
-      fullName: payload.address.fullName as string,
-      line1: payload.address.line1 as string,
-      line2: payload.address.line2 as string | undefined,
-      landmark: payload.address.landmark as string | undefined,
-      city: payload.address.city as string,
-      state: payload.address.state as string,
-      postalCode: (payload.address.postalCode ?? payload.address.pincode) as string,
-      country: (payload.address.country as string | undefined) ?? "India",
-      phone: payload.address.phone as string,
-      gstNumber: payload.address.gstNumber as string | undefined,
-      isDefault: true
-    },
-    create: {
-      userId,
-      fullName: payload.address.fullName as string,
-      line1: payload.address.line1 as string,
-      line2: payload.address.line2 as string | undefined,
-      landmark: payload.address.landmark as string | undefined,
-      city: payload.address.city as string,
-      state: payload.address.state as string,
-      postalCode: (payload.address.postalCode ?? payload.address.pincode) as string,
-      country: (payload.address.country as string | undefined) ?? "India",
-      phone: payload.address.phone as string,
-      gstNumber: payload.address.gstNumber as string | undefined,
-      isDefault: true
+      if (couponUpdate.count === 0) {
+        throw new ApiError(StatusCodes.CONFLICT, "Coupon usage limit reached");
+      }
     }
-  }).catch(async () => {
-    await prisma.address.create({
+
+    const order = await tx.order.create({
       data: {
         userId,
-        fullName: payload.address.fullName as string,
-        line1: payload.address.line1 as string,
-        line2: payload.address.line2 as string | undefined,
-        landmark: payload.address.landmark as string | undefined,
-        city: payload.address.city as string,
-        state: payload.address.state as string,
-        postalCode: (payload.address.postalCode ?? payload.address.pincode) as string,
-        country: (payload.address.country as string | undefined) ?? "India",
-        phone: payload.address.phone as string,
-        gstNumber: payload.address.gstNumber as string | undefined,
-        isDefault: true
+        orderNumber: createOrderNumber(),
+        couponId,
+        addressSnapshot: payload.address,
+        subtotal: decimal(subtotal),
+        discountAmount: decimal(discountAmount),
+        shippingAmount: decimal(shippingAmount),
+        taxAmount: decimal(taxAmount),
+        totalAmount: decimal(totalAmount),
+        notes: payload.notes,
+        gstNumber: payload.address.gstNumber,
+        paymentStatus: payload.paymentMethod === "COD" ? PaymentStatus.COD : PaymentStatus.PENDING,
+        items: {
+          create: orderItems
+        },
+        payment: {
+          create: {
+            amount: decimal(totalAmount),
+            status: payload.paymentMethod === "COD" ? PaymentStatus.COD : PaymentStatus.PENDING,
+            provider: payload.paymentMethod === "COD" ? "COD" : "RAZORPAY"
+          }
+        },
+        invoice: {
+          create: {
+            invoiceNumber: createInvoiceNumber(),
+            gstin: payload.address.gstNumber,
+            billingName: payload.address.fullName as string,
+            billingEmail: payload.address.email as string | undefined,
+            billingPhone: payload.address.phone as string
+          }
+        }
+      },
+      include: {
+        items: true,
+        payment: true,
+        invoice: true
       }
     });
-  });
 
-  return order;
+    await upsertDefaultAddress(tx, userId, payload.address);
+
+    return order;
+  });
 };
 
 export const getUserOrders = (userId: string) =>
