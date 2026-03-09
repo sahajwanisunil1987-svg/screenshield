@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { prisma } from "../lib/prisma.js";
 import { generateInvoicePdfBuffer } from "../services/invoice.service.js";
-import { sendOrderConfirmation, sendWhatsappNotification } from "../services/notification.service.js";
+import { createNotification, sendOrderConfirmation, sendWhatsappNotification } from "../services/notification.service.js";
 import * as orderService from "../services/order.service.js";
 import { getSingleParam } from "../utils/helpers.js";
 
@@ -14,7 +14,14 @@ export const createOrder = async (req: Request, res: Response) => {
   if (user) {
     await Promise.allSettled([
       sendOrderConfirmation(user.email, order.orderNumber),
-      sendWhatsappNotification({ orderNumber: order.orderNumber, user: user.name })
+      sendWhatsappNotification({ orderNumber: order.orderNumber, user: user.name }),
+      createNotification({
+        userId: req.user!.userId,
+        title: "Order placed",
+        message: `Your order ${order.orderNumber} has been placed successfully.`,
+        href: `/my-orders`,
+        kind: "ORDER"
+      })
     ]);
   }
 
@@ -36,11 +43,27 @@ export const getOrder = async (req: Request, res: Response) => {
 };
 
 export const cancelRequest = async (req: Request, res: Response) => {
-  res.json(await orderService.requestOrderCancellation(getSingleParam(req.params.id)!, req.user!.userId, req.body.reason));
+  const order = await orderService.requestOrderCancellation(getSingleParam(req.params.id)!, req.user!.userId, req.body.reason);
+  await createNotification({
+    userId: req.user!.userId,
+    title: "Cancellation requested",
+    message: `We have received your cancellation request for order ${order.orderNumber}.`,
+    href: `/my-orders`,
+    kind: "ORDER"
+  });
+  res.json(order);
 };
 
 export const returnRequest = async (req: Request, res: Response) => {
-  res.json(await orderService.requestReturn(getSingleParam(req.params.id)!, req.user!.userId, req.body.reason));
+  const order = await orderService.requestReturn(getSingleParam(req.params.id)!, req.user!.userId, req.body.reason);
+  await createNotification({
+    userId: req.user!.userId,
+    title: "Return requested",
+    message: `We have received your return request for order ${order.orderNumber}.`,
+    href: `/my-orders`,
+    kind: "ORDER"
+  });
+  res.json(order);
 };
 
 export const downloadMyInvoice = async (req: Request, res: Response) => {
@@ -78,7 +101,17 @@ export const adminOrders = async (req: Request, res: Response) => {
 };
 
 export const updateStatus = async (req: Request, res: Response) => {
-  res.json(await orderService.updateOrderStatus(getSingleParam(req.params.id)!, req.body));
+  const order = await orderService.updateOrderStatus(getSingleParam(req.params.id)!, req.body);
+  if (order.user?.id) {
+    await createNotification({
+      userId: order.user.id,
+      title: `Order ${order.status.toLowerCase()}`,
+      message: `Order ${order.orderNumber} is now ${order.status.toLowerCase()}.`,
+      href: `/track-order?orderNumber=${order.orderNumber}`,
+      kind: "ORDER"
+    });
+  }
+  res.json(order);
 };
 
 export const adminCoupons = async (req: Request, res: Response) => {

@@ -402,7 +402,7 @@ export const adminOrders = async (query?: {
       where,
       include: {
         user: {
-          select: { name: true, email: true, phone: true }
+          select: { id: true, name: true, email: true, phone: true }
         },
         items: true,
         payment: true,
@@ -450,7 +450,7 @@ export const updateOrderStatus = (id: string, payload: {
       payment: true,
       invoice: true,
       user: {
-        select: { name: true, email: true, phone: true }
+        select: { id: true, name: true, email: true, phone: true }
       }
     }
   });

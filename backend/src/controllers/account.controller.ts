@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import * as authService from "../services/auth.service.js";
+import * as notificationService from "../services/notification.service.js";
 import { getSingleParam } from "../utils/helpers.js";
 
 export const profile = async (req: Request, res: Response) => {
@@ -26,5 +27,19 @@ export const updateAddress = async (req: Request, res: Response) => {
 
 export const deleteAddress = async (req: Request, res: Response) => {
   await authService.deleteAddress(req.user!.userId, getSingleParam(req.params.id)!);
+  res.status(StatusCodes.NO_CONTENT).send();
+};
+
+export const notifications = async (req: Request, res: Response) => {
+  res.json(await notificationService.listNotifications(req.user!.userId));
+};
+
+export const readNotification = async (req: Request, res: Response) => {
+  await notificationService.markNotificationRead(req.user!.userId, getSingleParam(req.params.id)!);
+  res.status(StatusCodes.NO_CONTENT).send();
+};
+
+export const readAllNotifications = async (req: Request, res: Response) => {
+  await notificationService.markAllNotificationsRead(req.user!.userId);
   res.status(StatusCodes.NO_CONTENT).send();
 };

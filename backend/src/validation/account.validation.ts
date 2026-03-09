@@ -18,3 +18,7 @@ export const addressSchema = z.object({
   gstNumber: z.string().optional(),
   isDefault: z.boolean().optional()
 });
+
+export const markNotificationReadSchema = z.object({
+  isRead: z.boolean().default(true)
+});

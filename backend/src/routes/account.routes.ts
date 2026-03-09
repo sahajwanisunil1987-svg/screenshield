@@ -14,5 +14,8 @@ router.get("/account/addresses", accountController.listAddresses);
 router.post("/account/addresses", validate({ body: addressSchema }), accountController.createAddress);
 router.patch("/account/addresses/:id", validate({ params: idParamSchema, body: addressSchema.partial().extend({ isDefault: addressSchema.shape.isDefault }) }), accountController.updateAddress);
 router.delete("/account/addresses/:id", validate({ params: idParamSchema }), accountController.deleteAddress);
+router.get("/account/notifications", accountController.notifications);
+router.post("/account/notifications/read-all", accountController.readAllNotifications);
+router.post("/account/notifications/:id/read", validate({ params: idParamSchema }), accountController.readNotification);
 
 export default router;

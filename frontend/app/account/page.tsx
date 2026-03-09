@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageShell } from "@/components/layout/page-shell";
@@ -99,6 +100,7 @@ export default function AccountPage() {
   return (
     <PageShell>
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mb-6 flex justify-end"><Link href="/notifications" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-ink transition hover:bg-white">Notifications</Link></div>
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <form onSubmit={saveProfile} className="rounded-[32px] bg-white p-8 shadow-card">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate">Account profile</p>

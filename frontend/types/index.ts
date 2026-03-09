@@ -256,3 +256,14 @@ export type SearchSuggestion = {
   slug: string;
   searchTerm: string;
 };
+
+export type Notification = {
+  id: string;
+  title: string;
+  message: string;
+  href?: string | null;
+  kind: string;
+  isRead: boolean;
+  readAt?: string | null;
+  createdAt: string;
+};

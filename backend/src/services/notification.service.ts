@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { prisma } from "../lib/prisma.js";
 import { env } from "../config/env.js";
 
 const transporter = nodemailer.createTransport({
@@ -10,6 +11,56 @@ const transporter = nodemailer.createTransport({
     pass: env.SMTP_PASS
   }
 });
+
+export const createNotification = async (payload: {
+  userId: string;
+  title: string;
+  message: string;
+  href?: string;
+  kind?: string;
+}) =>
+  prisma.notification.create({
+    data: {
+      userId: payload.userId,
+      title: payload.title,
+      message: payload.message,
+      href: payload.href,
+      kind: payload.kind ?? "INFO"
+    }
+  });
+
+export const listNotifications = async (userId: string) => {
+  const [items, unreadCount] = await Promise.all([
+    prisma.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 50
+    }),
+    prisma.notification.count({
+      where: { userId, isRead: false }
+    })
+  ]);
+
+  return { items, unreadCount };
+};
+
+export const markNotificationRead = async (userId: string, notificationId: string) =>
+  prisma.notification.updateMany({
+    where: { id: notificationId, userId },
+    data: {
+      isRead: true,
+      readAt: new Date()
+    }
+  });
+
+export const markAllNotificationsRead = async (userId: string) =>
+  prisma.notification.updateMany({
+    where: { userId, isRead: false },
+    data: {
+      isRead: true,
+      readAt: new Date()
+    }
+  });
 
 export const sendOrderConfirmation = async (email: string, orderNumber: string) => {
   await transporter.sendMail({
