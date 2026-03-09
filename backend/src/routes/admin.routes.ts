@@ -8,13 +8,12 @@ import { inventoryUpdateSchema } from "../validation/order.validation.js";
 
 const router = Router();
 
-router.use(authenticate, requireAdmin);
-router.get("/admin/dashboard", validate({ query: adminDashboardSchema }), adminController.dashboard);
-router.get("/admin/inventory", validate({ query: adminInventoryListSchema }), adminController.inventory);
-router.patch("/admin/inventory/:id", validate({ params: idParamSchema, body: inventoryUpdateSchema }), adminController.updateInventory);
-router.get("/admin/users", validate({ query: adminUserListSchema }), adminController.users);
-router.get("/admin/users/:id", validate({ params: idParamSchema }), adminController.userDetail);
-router.get("/admin/invoices", validate({ query: adminInvoiceListSchema }), adminController.invoices);
-router.get("/admin/orders/:id/invoice", adminController.downloadInvoice);
+router.get("/admin/dashboard", authenticate, requireAdmin, validate({ query: adminDashboardSchema }), adminController.dashboard);
+router.get("/admin/inventory", authenticate, requireAdmin, validate({ query: adminInventoryListSchema }), adminController.inventory);
+router.patch("/admin/inventory/:id", authenticate, requireAdmin, validate({ params: idParamSchema, body: inventoryUpdateSchema }), adminController.updateInventory);
+router.get("/admin/users", authenticate, requireAdmin, validate({ query: adminUserListSchema }), adminController.users);
+router.get("/admin/users/:id", authenticate, requireAdmin, validate({ params: idParamSchema }), adminController.userDetail);
+router.get("/admin/invoices", authenticate, requireAdmin, validate({ query: adminInvoiceListSchema }), adminController.invoices);
+router.get("/admin/orders/:id/invoice", authenticate, requireAdmin, adminController.downloadInvoice);
 
 export default router;
