@@ -99,12 +99,12 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-6 grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
               {stats.map((stat) => (
-                <div key={stat.label} className="rounded-[28px] border border-white/10 bg-black/15 p-5">
+                <div key={stat.label} className="min-w-0 rounded-[28px] border border-white/10 bg-black/15 p-5">
                   <p className="text-sm text-white/60">{stat.label}</p>
-                  <p className={`mt-3 font-display text-4xl ${stat.accent}`}>{isLoading ? "..." : stat.value}</p>
-                  <p className="mt-2 text-xs text-white/45">{stat.detail}</p>
+                  <p className={`mt-3 break-words font-display text-[clamp(2.2rem,3vw,3.8rem)] leading-[0.92] ${stat.accent}`}>{isLoading ? "..." : stat.value}</p>
+                  <p className="mt-2 max-w-[16rem] text-xs leading-5 text-white/45">{stat.detail}</p>
                 </div>
               ))}
             </div>
