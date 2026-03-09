@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRight, CheckCircle2, LifeBuoy, PackageSearch, ShieldCheck, Truck } from "lucide-react";
+import { ArrowRight, CheckCircle2, CircleDotDashed, LifeBuoy, PackageSearch, ShieldCheck, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { formatDate, formatDateTime } from "@/lib/utils";
 
-const timeline = ["PENDING", "CONFIRMED", "PACKED", "SHIPPED", "DELIVERED"];
+const timeline = ["PENDING", "CONFIRMED", "PACKED", "SHIPPED", "DELIVERED"] as const;
 
 const statusDescriptions: Record<string, string> = {
   PENDING: "Your order is placed and waiting for processing confirmation.",
@@ -27,6 +27,53 @@ const paymentDescriptions: Record<string, string> = {
   PAID: "Payment has been confirmed successfully.",
   FAILED: "Payment attempt failed. Please contact support if the order needs help.",
   REFUNDED: "This order payment has been refunded."
+};
+
+
+const timelineLabels: Record<(typeof timeline)[number], string> = {
+  PENDING: "Placed",
+  CONFIRMED: "Confirmed",
+  PACKED: "Packed",
+  SHIPPED: "Shipped",
+  DELIVERED: "Delivered"
+};
+
+type TimelineStep = {
+  key: (typeof timeline)[number];
+  label: string;
+  description: string;
+  reached: boolean;
+  current: boolean;
+  timestamp?: string | null;
+};
+
+const buildTimeline = (result: TrackResult): TimelineStep[] => {
+  const statusIndex = timeline.indexOf(result.status as (typeof timeline)[number]);
+  const shippedAt = result.status === "SHIPPED" || result.status === "DELIVERED" ? result.updatedAt : null;
+  const deliveredAt = result.status === "DELIVERED" ? result.updatedAt : null;
+
+  return timeline.map((step, index) => {
+    let timestamp: string | null = null;
+
+    if (step === "PENDING") {
+      timestamp = result.createdAt;
+    } else if (step === "SHIPPED") {
+      timestamp = shippedAt;
+    } else if (step === "DELIVERED") {
+      timestamp = deliveredAt;
+    } else if (index <= statusIndex) {
+      timestamp = result.updatedAt;
+    }
+
+    return {
+      key: step,
+      label: timelineLabels[step],
+      description: statusDescriptions[step],
+      reached: statusIndex >= index,
+      current: result.status === step,
+      timestamp
+    };
+  });
 };
 
 type TrackResult = {
@@ -47,7 +94,8 @@ export default function TrackOrderPage() {
   const [orderNumber, setOrderNumber] = useState("");
   const [result, setResult] = useState<TrackResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const timelineIndex = result ? timeline.indexOf(result.status) : -1;
+  const timelineIndex = result ? timeline.indexOf(result.status as (typeof timeline)[number]) : -1;
+  const shipmentTimeline = result ? buildTimeline(result) : [];
 
   useEffect(() => {
     const preset = new URLSearchParams(window.location.search).get("orderNumber");
@@ -110,19 +158,46 @@ export default function TrackOrderPage() {
               </div>
               {result.adminNotes ? <div className="mt-4 rounded-2xl bg-white p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Operations note</p><p className="mt-2 font-semibold text-ink">{result.adminNotes}</p></div> : null}
               {result.cancelRequestReason ? <div className="mt-4 rounded-2xl bg-amber-50 p-4 text-amber-800"><p className="text-xs font-semibold uppercase tracking-[0.18em]">Cancellation request</p><p className="mt-2">{result.cancelRequestReason}</p></div> : null}
-              <div className="mt-6 grid gap-3 md:grid-cols-5">
-                {timeline.map((step) => {
-                  const reached = timeline.indexOf(result.status) >= timeline.indexOf(step);
-
-                  return (
-                    <div key={step} className={`rounded-2xl px-3 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] ${reached ? "bg-accent text-white" : "bg-white text-slate"}`}>
-                      <div className="flex flex-col items-center gap-2">
-                        {reached ? <CheckCircle2 className="h-4 w-4" /> : <ArrowRight className="h-4 w-4 opacity-40" />}
-                        <span>{step === "PENDING" ? "Placed" : step === "CONFIRMED" ? "Confirmed" : step === "PACKED" ? "Packed" : step === "SHIPPED" ? "Shipped" : "Delivered"}</span>
+              <div className="mt-6 rounded-[24px] bg-white p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Shipment timeline</p>
+                    <p className="mt-2 text-sm text-slate">Milestones become active as the operations team moves the order through fulfilment.</p>
+                  </div>
+                  {result.status === "CANCELLED" ? (
+                    <span className="rounded-full bg-amber-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-800">Cancelled</span>
+                  ) : null}
+                </div>
+                <div className="mt-5 grid gap-3 lg:grid-cols-5">
+                  {shipmentTimeline.map((step, index) => (
+                    <div
+                      key={step.key}
+                      className={`relative min-w-0 rounded-[24px] border p-4 ${
+                        step.current
+                          ? "border-accent/30 bg-accentSoft"
+                          : step.reached
+                            ? "border-emerald-200 bg-emerald-50"
+                            : "border-slate-200 bg-slate-50"
+                      }`}
+                    >
+                      {index < shipmentTimeline.length - 1 ? (
+                        <div className="absolute -right-2 top-8 hidden h-px w-4 bg-slate-300 lg:block" />
+                      ) : null}
+                      <div className="flex items-start gap-3">
+                        <div className={`mt-0.5 rounded-full p-2 ${step.current ? "bg-accent text-white" : step.reached ? "bg-emerald-500 text-white" : "bg-white text-slate-400"}`}>
+                          {step.reached ? <CheckCircle2 className="h-4 w-4" /> : <CircleDotDashed className="h-4 w-4" />}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">{step.label}</p>
+                          <p className="mt-2 text-sm font-medium text-ink">{step.description}</p>
+                          <p className="mt-3 text-xs text-slate">
+                            {step.timestamp ? formatDateTime(step.timestamp) : step.reached ? "Updated" : "Pending"}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
               <div className="mt-6 rounded-[24px] border border-white/60 bg-white p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Recommended next step</p>
