@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +15,9 @@ import { calculateOrderPricing } from "@/lib/order-pricing";
 import { formatCurrency } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 import { useCartStore } from "@/store/cart-store";
+
+const COD_MAX_ORDER_VALUE = 5000;
+const BLOCKED_COD_PINCODES = ["560001", "110001"];
 
 const schema = z.object({
   fullName: z.string().min(2),
@@ -40,7 +43,7 @@ export default function CheckoutPage() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount);
-  const { register, handleSubmit, watch, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, handleSubmit, watch, reset, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       email: user?.email ?? "",
@@ -48,6 +51,9 @@ export default function CheckoutPage() {
     }
   });
   const paymentMethod = watch("paymentMethod");
+  const postalCode = watch("postalCode");
+
+  const codAvailable = useMemo(() => total <= COD_MAX_ORDER_VALUE && !BLOCKED_COD_PINCODES.includes((postalCode ?? "").trim()), [postalCode, total]);
 
   useEffect(() => {
     if (!token) {
@@ -78,10 +84,14 @@ export default function CheckoutPage() {
           paymentMethod: current.paymentMethod ?? "COD"
         }));
       })
-      .catch(() => {
-        // Auth interceptor already handles hard auth failures.
-      });
+      .catch(() => {});
   }, [reset, setAuth, token]);
+
+  useEffect(() => {
+    if (!codAvailable && paymentMethod === "COD") {
+      setValue("paymentMethod", "RAZORPAY");
+    }
+  }, [codAvailable, paymentMethod, setValue]);
 
   const onSubmit = handleSubmit(async (values) => {
     if (!token) {
@@ -92,6 +102,11 @@ export default function CheckoutPage() {
 
     if (!items.length) {
       toast.error("Your cart is empty");
+      return;
+    }
+
+    if (values.paymentMethod === "COD" && !codAvailable) {
+      toast.error("Cash on Delivery is not available for this order. Please use Razorpay.");
       return;
     }
 
@@ -150,15 +165,20 @@ export default function CheckoutPage() {
                 },
                 authHeaders(token)
               );
-
               clear();
               clearCoupon();
-              toast.success("Payment verified");
+              toast.success("Payment verified. Order placed successfully.");
               router.push(`/order-success?orderNumber=${response.data.orderNumber}`);
             } catch (error) {
               toast.error(getApiErrorMessage(error, "Payment verification failed"));
             }
-          }
+          },
+          prefill: {
+            name: values.fullName,
+            email: values.email,
+            contact: values.phone
+          },
+          theme: { color: "#0f766e" }
         });
 
         razorpay.open();
@@ -205,8 +225,8 @@ export default function CheckoutPage() {
             <div className="rounded-[28px] bg-[#f5f8fb] p-4">
               <p className="text-sm font-semibold text-ink">Payment method</p>
               <div className="mt-3 flex gap-3">
-                <label className="flex items-center gap-2 text-sm text-slate">
-                  <input type="radio" value="COD" {...register("paymentMethod")} />
+                <label className={`flex items-center gap-2 text-sm ${codAvailable ? "text-slate" : "text-slate/40"}`}>
+                  <input type="radio" value="COD" {...register("paymentMethod")} disabled={!codAvailable} />
                   Cash on Delivery
                 </label>
                 <label className="flex items-center gap-2 text-sm text-slate">
@@ -214,6 +234,7 @@ export default function CheckoutPage() {
                   Razorpay
                 </label>
               </div>
+              {!codAvailable ? <p className="mt-3 text-sm text-amber-700">COD unavailable for this order because the amount exceeds Rs. {COD_MAX_ORDER_VALUE} or the pincode is restricted.</p> : <p className="mt-3 text-sm text-slate">COD available for this order.</p>}
             </div>
             <Button disabled={isSubmitting} className="w-full">
               {isSubmitting ? "Placing order..." : paymentMethod === "RAZORPAY" ? "Continue to Razorpay" : "Place order"}
@@ -221,22 +242,11 @@ export default function CheckoutPage() {
           </form>
           <div className="rounded-[32px] bg-white p-8 shadow-card">
             <h2 className="text-xl font-semibold text-ink">Summary</h2>
-            <p className="mt-2 text-sm text-slate">
-              Your default saved address is auto-filled here and refreshed after each successful order.
-            </p>
+            <p className="mt-2 text-sm text-slate">Your default saved address is auto-filled here and refreshed after each successful order.</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Delivery</p>
-                <p className="mt-2 font-semibold text-ink">{shipping === 0 ? "Free shipping unlocked" : "Standard dispatch"}</p>
-              </div>
-              <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Invoice</p>
-                <p className="mt-2 font-semibold text-ink">GST-ready order invoice</p>
-              </div>
-              <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Support</p>
-                <p className="mt-2 font-semibold text-ink">Warranty-backed assistance</p>
-              </div>
+              <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Delivery</p><p className="mt-2 font-semibold text-ink">{shipping === 0 ? "Free shipping unlocked" : "Standard dispatch"}</p></div>
+              <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Invoice</p><p className="mt-2 font-semibold text-ink">GST-ready order invoice</p></div>
+              <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Support</p><p className="mt-2 font-semibold text-ink">Warranty-backed assistance</p></div>
             </div>
             <div className="mt-6 space-y-4">
               {items.map((item) => (
@@ -247,28 +257,11 @@ export default function CheckoutPage() {
               ))}
             </div>
             <div className="mt-6 border-t border-slate-200 pt-4 text-sm">
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span>{formatCurrency(subtotal)}</span>
-              </div>
-              {couponDiscount > 0 ? (
-                <div className="mt-2 flex justify-between text-emerald-600">
-                  <span>Coupon ({couponCode})</span>
-                  <span>-{formatCurrency(couponDiscount)}</span>
-                </div>
-              ) : null}
-              <div className="mt-2 flex justify-between">
-                <span>Shipping</span>
-                <span>{shipping === 0 ? "Free" : formatCurrency(shipping)}</span>
-              </div>
-              <div className="mt-2 flex justify-between">
-                <span>GST (18%)</span>
-                <span>{formatCurrency(tax)}</span>
-              </div>
-              <div className="mt-2 flex justify-between font-semibold text-ink">
-                <span>Total</span>
-                <span>{formatCurrency(total)}</span>
-              </div>
+              <div className="flex justify-between"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
+              {couponDiscount > 0 ? <div className="mt-2 flex justify-between text-emerald-600"><span>Coupon ({couponCode})</span><span>-{formatCurrency(couponDiscount)}</span></div> : null}
+              <div className="mt-2 flex justify-between"><span>Shipping</span><span>{shipping === 0 ? "Free" : formatCurrency(shipping)}</span></div>
+              <div className="mt-2 flex justify-between"><span>GST</span><span>{formatCurrency(tax)}</span></div>
+              <div className="mt-4 flex justify-between font-semibold text-ink"><span>Total</span><span>{formatCurrency(total)}</span></div>
             </div>
           </div>
         </div>

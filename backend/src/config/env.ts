@@ -30,7 +30,9 @@ const envSchema = z.object({
   SMTP_PORT: z.coerce.number().default(587),
   SMTP_USER: z.string().default("noreply@example.com"),
   SMTP_PASS: z.string().default("password"),
-  WHATSAPP_WEBHOOK_URL: z.string().optional()
+  WHATSAPP_WEBHOOK_URL: z.string().optional(),
+  COD_DISABLED_PINCODES: z.string().optional(),
+  COD_MAX_ORDER_VALUE: z.coerce.number().default(5000)
 });
 
 export const env = envSchema.parse(process.env);
