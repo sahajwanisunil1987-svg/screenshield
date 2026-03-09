@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { PageShell } from "@/components/layout/page-shell";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -68,8 +69,20 @@ export default function MyOrdersPage() {
                   <div className="flex flex-wrap items-center gap-3">
                     <span>Payment: {order.paymentStatus}</span>
                     <span>Items: {order.items.length}</span>
+                    {order.invoice?.invoiceNumber ? <span>Invoice: {order.invoice.invoiceNumber}</span> : null}
                   </div>
                   <div className="flex flex-wrap items-center gap-4">
+                    {order.invoice?.invoiceNumber ? (
+                      <a
+                        href={`${process.env.NEXT_PUBLIC_API_BASE_URL}/orders/${order.id}/invoice`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 font-semibold text-slate underline"
+                      >
+                        <Download className="h-4 w-4" />
+                        Download invoice
+                      </a>
+                    ) : null}
                     <Link href={`/track-order?orderNumber=${order.orderNumber}`} className="font-semibold text-accent underline">
                       Track order
                     </Link>

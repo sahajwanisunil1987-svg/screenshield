@@ -19,6 +19,7 @@ const router = Router();
 router.post("/orders/create", authenticate, orderRateLimiter, validate({ body: createOrderSchema }), orderController.createOrder);
 router.get("/orders/my-orders", authenticate, orderController.myOrders);
 router.get("/orders/:id", authenticate, validate({ params: idParamSchema }), orderController.getOrder);
+router.get("/orders/:id/invoice", authenticate, validate({ params: idParamSchema }), orderController.downloadMyInvoice);
 router.get("/orders/track/:orderNumber", orderController.trackOrder);
 router.post("/coupons/validate", orderRateLimiter, validate({ body: couponValidationSchema }), orderController.validateCoupon);
 

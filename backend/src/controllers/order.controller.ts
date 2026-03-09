@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { prisma } from "../lib/prisma.js";
+import { generateInvoicePdfBuffer } from "../services/invoice.service.js";
 import { sendOrderConfirmation, sendWhatsappNotification } from "../services/notification.service.js";
 import * as orderService from "../services/order.service.js";
 import { getSingleParam } from "../utils/helpers.js";
@@ -32,6 +33,28 @@ export const getOrder = async (req: Request, res: Response) => {
       req.user!.role === "ADMIN"
     )
   );
+};
+
+export const downloadMyInvoice = async (req: Request, res: Response) => {
+  const orderId = getSingleParam(req.params.id)!;
+  const order = await orderService.getOrderById(orderId, req.user!.userId, false);
+
+  if (!order.invoice) {
+    return res.status(StatusCodes.NOT_FOUND).json({ message: "Invoice not found" });
+  }
+
+  const buffer = await generateInvoicePdfBuffer(orderId);
+  await prisma.invoice.update({
+    where: { orderId },
+    data: {
+      lastDownloadedAt: new Date(),
+      downloadCount: { increment: 1 }
+    }
+  });
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename=invoice-${order.orderNumber}.pdf`);
+  res.send(buffer);
 };
 
 export const trackOrder = async (req: Request, res: Response) => {
