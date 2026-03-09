@@ -65,7 +65,7 @@ The remaining work is now mostly launch hardening, operational safety, and produ
 The main remaining work is operational and production-hardening:
 
 - Confirm auth refresh persistence works correctly on Render after login
-- Verify Razorpay live payment flow and reconciliation behavior
+- Verify Razorpay live payment flow and reconciliation behavior with real gateway credentials
 - Confirm the new rate limiting and abuse protection thresholds in production
 - Add external monitoring and alerting around the new health and logging baseline
 - Finalize backups and rollback planning
@@ -151,3 +151,7 @@ That root-level script does not exist inside the `backend` folder.
 ## Recommended Next Step
 
 Use the launch checklist and [operations.md](/home/mistermobiletriveni/screen/screenshield/docs/operations.md) runbook to close the remaining production-hardening items before calling the project fully production-ready.
+
+## Current Reality
+
+The implementation is complete and the main remaining external blocker is live Razorpay verification. Until real production gateway credentials are available and tested, COD can be treated as the practical verified payment path.

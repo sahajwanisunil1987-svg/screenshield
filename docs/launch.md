@@ -41,6 +41,7 @@
 
 ## Payments
 
+- If live Razorpay credentials are not available yet, treat online payments as the final external verification blocker.
 - Configure `RAZORPAY_WEBHOOK_SECRET`
 - Point Razorpay webhook to `/api/payments/razorpay/webhook`
 - Verify Razorpay webhook or equivalent reconciliation strategy
@@ -130,3 +131,9 @@
 - Database schema fully in sync
 - Real environment variables set
 - Monitoring in place
+
+## Current Practical Status
+
+- Implementation: complete
+- Launch hardening: largely complete
+- Final external dependency blocker: live Razorpay credential and webhook verification
