@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Clock3, Search, TrendingUp } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -122,8 +122,7 @@ export function SearchAutocomplete({
     return () => window.clearTimeout(timeout);
   }, [brand, category, model, value]);
 
-  const submit = (event?: FormEvent) => {
-    event?.preventDefault();
+  const submit = () => {
     const query = value.trim();
     if (!query) {
       return;
@@ -148,10 +147,16 @@ export function SearchAutocomplete({
           {label}
         </label>
       ) : null}
-      <form onSubmit={submit} className="relative">
+      <div className="relative">
         <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate" />
         <input
           value={value}
+          onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              submit();
+            }
+          }}
           onFocus={() => setOpen(Boolean(suggestions.length || quickSuggestions.length))}
           onChange={(event) => {
             onChange(event.target.value);
@@ -166,7 +171,7 @@ export function SearchAutocomplete({
             inputClassName
           )}
         />
-      </form>
+      </div>
       {open ? (
         <div className={cn("absolute z-30 mt-2 w-full rounded-2xl border border-slate-200 bg-white p-2 shadow-card", dropdownClassName)}>
           {!value.trim() && quickSuggestions.length ? (
