@@ -82,7 +82,7 @@ export function Navbar() {
               <Truck className="h-4 w-4" />
               Track
             </Link>
-            {user ? (
+            {user?.role === "CUSTOMER" ? (
               <>
                 <Link href="/my-orders" className="hidden rounded-full px-4 py-2 hover:bg-white/10 lg:flex">
                   My Orders

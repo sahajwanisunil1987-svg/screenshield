@@ -41,9 +41,14 @@ export default function NotificationsPage() {
 
   const markRead = async (id: string) => {
     if (!token) return;
-    await api.post(`/account/notifications/${id}/read`, {}, authHeaders(token)).catch(() => null);
-    setItems((current) => current.map((item) => (item.id === id ? { ...item, isRead: true } : item)));
-    setUnreadCount((current) => Math.max(current - 1, 0));
+
+    try {
+      await api.post(`/account/notifications/${id}/read`, {}, authHeaders(token));
+      setItems((current) => current.map((item) => (item.id === id ? { ...item, isRead: true } : item)));
+      setUnreadCount((current) => Math.max(current - 1, 0));
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Unable to update notification"));
+    }
   };
 
   const markAll = async () => {
