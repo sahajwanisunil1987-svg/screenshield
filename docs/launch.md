@@ -13,6 +13,7 @@
   - Create order
   - Complete payment
   - Confirm payment status update
+  - Confirm mismatched or duplicate payment verification does not mark the wrong order paid
 - Verify COD flow end to end
 - Verify invoice generation and history
   - Open `/admin/invoices`

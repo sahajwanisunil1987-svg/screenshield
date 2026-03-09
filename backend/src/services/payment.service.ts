@@ -6,7 +6,7 @@ import { prisma } from "../lib/prisma.js";
 import { razorpay } from "../lib/razorpay.js";
 import { ApiError } from "../utils/api-error.js";
 
-export const createRazorpayOrder = async (orderId: string) => {
+const getOrderWithPayment = async (orderId: string) => {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { payment: true }
@@ -14,6 +14,24 @@ export const createRazorpayOrder = async (orderId: string) => {
 
   if (!order) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Order not found");
+  }
+
+  if (!order.payment) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Payment record not found for order");
+  }
+
+  return order;
+};
+
+export const createRazorpayOrder = async (orderId: string) => {
+  const order = await getOrderWithPayment(orderId);
+
+  if (order.payment.provider === "COD" || order.payment.status === PaymentStatus.COD) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "COD orders do not require Razorpay payment");
+  }
+
+  if (order.paymentStatus === PaymentStatus.PAID || order.payment.status === PaymentStatus.PAID) {
+    throw new ApiError(StatusCodes.CONFLICT, "Order is already marked as paid");
   }
 
   const createdOrder = await razorpay.orders.create({
@@ -38,6 +56,20 @@ export const verifyRazorpayPayment = async (payload: {
   razorpayPaymentId: string;
   razorpaySignature: string;
 }) => {
+  const order = await getOrderWithPayment(payload.orderId);
+
+  if (order.payment.provider === "COD" || order.payment.status === PaymentStatus.COD) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "COD orders cannot be verified through Razorpay");
+  }
+
+  if (order.paymentStatus === PaymentStatus.PAID || order.payment.status === PaymentStatus.PAID) {
+    return { verified: true, alreadyProcessed: true };
+  }
+
+  if (order.payment.providerOrderId && order.payment.providerOrderId !== payload.razorpayOrderId) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Razorpay order does not match the existing payment intent");
+  }
+
   const generatedSignature = crypto
     .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET as string)
     .update(`${payload.razorpayOrderId}|${payload.razorpayPaymentId}`)
@@ -63,7 +95,7 @@ export const verifyRazorpayPayment = async (payload: {
     }
   });
 
-  return { verified: true };
+  return { verified: true, alreadyProcessed: false };
 };
 
 export const verifyRazorpayWebhookSignature = (rawBody: Buffer, signature?: string) => {
