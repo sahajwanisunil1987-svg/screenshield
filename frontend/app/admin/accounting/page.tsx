@@ -17,6 +17,9 @@ type AccountingResponse = {
     discounts: number;
     shippingCollected: number;
     taxCollected: number;
+    costOfGoods: number;
+    grossProfit: number;
+    grossMarginPercent: number;
     netOrders: number;
     cancelledOrders: number;
     cancelledValue: number;
@@ -41,6 +44,27 @@ type AccountingResponse = {
     taxCollected: number;
     orders: number;
     refunds: number;
+    costOfGoods: number;
+    grossProfit: number;
+  }>;
+  topMarginProducts: Array<{
+    productId: string;
+    productName: string;
+    productSku: string;
+    revenue: number;
+    cost: number;
+    grossProfit: number;
+    units: number;
+    marginPercent: number;
+  }>;
+  lowMarginOrders: Array<{
+    id: string;
+    orderNumber: string;
+    customerName: string;
+    totalAmount: number;
+    estimatedCost: number;
+    grossProfit: number;
+    marginPercent: number;
   }>;
   reportOrders: Array<{
     id: string;
@@ -49,6 +73,9 @@ type AccountingResponse = {
     status: string;
     paymentStatus: string;
     totalAmount: number;
+    estimatedCost: number;
+    grossProfit: number;
+    marginPercent: number;
     discountAmount: number;
     taxAmount: number;
     shippingAmount: number;
@@ -93,14 +120,14 @@ export default function AdminAccountingPage() {
         accent: "text-emerald-200"
       },
       {
-        label: "GST Collected",
-        value: formatCurrency(data?.summary?.taxCollected ?? 0),
-        detail: "Tax component across orders in this range",
+        label: "Gross Profit",
+        value: formatCurrency(data?.summary?.grossProfit ?? 0),
+        detail: "Net sales minus estimated product cost",
         accent: "text-amber-200"
       },
       {
-        label: "Average Net Order",
-        value: formatCurrency(data?.summary?.averageNetOrderValue ?? 0),
+        label: "Margin %",
+        value: `${(data?.summary?.grossMarginPercent ?? 0).toFixed(1)}%`,
         detail: `${data?.summary?.netOrders ?? 0} net orders in the selected range`,
         accent: "text-rose-200"
       }
@@ -172,6 +199,11 @@ export default function AdminAccountingPage() {
         label: "Shipping Collected",
         value: formatCurrency(data?.summary?.shippingCollected ?? 0),
         detail: "Shipping charges collected from customers"
+      },
+      {
+        label: "Cost of Goods",
+        value: formatCurrency(data?.summary?.costOfGoods ?? 0),
+        detail: "Estimated cost based on latest recorded purchase rates"
       }
     ],
     [data]
@@ -302,6 +334,18 @@ export default function AdminAccountingPage() {
                       <p className="mt-1 text-sm font-semibold text-white">{formatCurrency(order.taxAmount)}</p>
                     </div>
                     <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
+                      <p className="uppercase tracking-[0.16em] text-white/35">Est. Cost</p>
+                      <p className="mt-1 text-sm font-semibold text-white">{formatCurrency(order.estimatedCost)}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
+                      <p className="uppercase tracking-[0.16em] text-white/35">Gross Profit</p>
+                      <p className="mt-1 text-sm font-semibold text-white">{formatCurrency(order.grossProfit)}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
+                      <p className="uppercase tracking-[0.16em] text-white/35">Margin %</p>
+                      <p className="mt-1 text-sm font-semibold text-white">{order.marginPercent.toFixed(1)}%</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 sm:col-span-2">
                       <p className="uppercase tracking-[0.16em] text-white/35">Customer</p>
                       <p className="mt-1 truncate text-sm font-semibold text-white">{order.customerEmail ?? "Email unavailable"}</p>
                     </div>
@@ -344,6 +388,79 @@ export default function AdminAccountingPage() {
                     <p className="mt-1 text-xs text-white/45">{card.detail}</p>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">Margin snapshot</p>
+              <div className="mt-4 grid gap-3">
+                <div className="rounded-[22px] border border-emerald-400/20 bg-emerald-500/10 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm text-emerald-100/80">Gross profit</p>
+                    <p className="text-base font-semibold text-white">{isLoading ? "..." : formatCurrency(data?.summary?.grossProfit ?? 0)}</p>
+                  </div>
+                  <p className="mt-1 text-xs text-white/45">After subtracting estimated product purchase cost.</p>
+                </div>
+                <div className="rounded-[22px] border border-cyan-400/20 bg-cyan-500/10 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm text-cyan-100/80">Margin rate</p>
+                    <p className="text-base font-semibold text-white">{isLoading ? "..." : `${(data?.summary?.grossMarginPercent ?? 0).toFixed(1)}%`}</p>
+                  </div>
+                  <p className="mt-1 text-xs text-white/45">Net sales margin based on latest purchase rates.</p>
+                </div>
+              </div>
+              <div className="mt-4 space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Top margin products</p>
+                {isLoading ? (
+                  Array.from({ length: 3 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-[20px] bg-white/5" />)
+                ) : data?.topMarginProducts?.length ? (
+                  data.topMarginProducts.slice(0, 3).map((item) => (
+                    <div key={item.productId} className="rounded-[20px] border border-white/10 bg-black/10 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-white">{item.productName}</p>
+                          <p className="mt-1 text-xs text-white/45">{item.productSku} · {item.units} units</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-emerald-200">{formatCurrency(item.grossProfit)}</p>
+                          <p className="mt-1 text-xs text-white/45">{item.marginPercent.toFixed(1)}% margin</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="rounded-[20px] border border-dashed border-white/10 bg-black/10 px-4 py-6 text-center text-sm text-white/50">
+                    Margin data will appear once purchases and sales overlap.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">Low margin watchlist</p>
+              <div className="mt-4 space-y-3">
+                {isLoading ? (
+                  Array.from({ length: 3 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-[20px] bg-white/5" />)
+                ) : data?.lowMarginOrders?.length ? (
+                  data.lowMarginOrders.slice(0, 4).map((order) => (
+                    <div key={order.id} className="rounded-[20px] border border-white/10 bg-black/10 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-white">{order.orderNumber}</p>
+                          <p className="mt-1 text-xs text-white/45">{order.customerName}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-amber-200">{order.marginPercent.toFixed(1)}%</p>
+                          <p className="mt-1 text-xs text-white/45">{formatCurrency(order.grossProfit)} profit</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="rounded-[20px] border border-dashed border-white/10 bg-black/10 px-4 py-6 text-center text-sm text-white/50">
+                    No low-margin net orders in this range.
+                  </p>
+                )}
               </div>
             </div>
 

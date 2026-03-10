@@ -247,6 +247,14 @@ export const accounting = async (req: Request, res: Response) => {
       taxAmount: true,
       totalAmount: true,
       returnRequestStatus: true,
+      items: {
+        select: {
+          productId: true,
+          quantity: true,
+          productName: true,
+          productSku: true
+        }
+      },
       user: {
         select: {
           name: true,
@@ -256,6 +264,36 @@ export const accounting = async (req: Request, res: Response) => {
     },
     orderBy: { createdAt: "desc" }
   });
+
+  const productIds = Array.from(new Set(orders.flatMap((order) => order.items.map((item) => item.productId))));
+  const purchaseEntries = productIds.length
+    ? await prisma.purchaseEntry.findMany({
+        where: { productId: { in: productIds } },
+        select: {
+          productId: true,
+          unitCost: true,
+          purchasedAt: true
+        },
+        orderBy: [{ productId: "asc" }, { purchasedAt: "desc" }]
+      })
+    : [];
+
+  const latestUnitCostByProduct = new Map<string, number>();
+  for (const entry of purchaseEntries) {
+    if (!latestUnitCostByProduct.has(entry.productId)) {
+      latestUnitCostByProduct.set(entry.productId, Number(entry.unitCost));
+    }
+  }
+
+  const marginByProduct = new Map<string, {
+    productId: string;
+    productName: string;
+    productSku: string;
+    revenue: number;
+    cost: number;
+    grossProfit: number;
+    units: number;
+  }>();
 
   const reportOrders = orders.map((order) => {
     const subtotal = Number(order.subtotal ?? 0);
@@ -268,6 +306,33 @@ export const accounting = async (req: Request, res: Response) => {
     const isNetOrder = !isCancelled && !isReturned;
     const isRefunded = order.paymentStatus === "REFUNDED";
     const isPrepaid = ["PAID", "PENDING", "REFUNDED", "FAILED"].includes(order.paymentStatus);
+
+    const estimatedCost = order.items.reduce((sum, item) => sum + (latestUnitCostByProduct.get(item.productId) ?? 0) * item.quantity, 0);
+    const grossProfit = isNetOrder ? totalAmount - estimatedCost : 0;
+    const marginPercent = isNetOrder && totalAmount > 0 ? (grossProfit / totalAmount) * 100 : 0;
+
+    if (isNetOrder) {
+      const totalUnits = Math.max(order.items.reduce((qty, current) => qty + current.quantity, 0), 1);
+      for (const item of order.items) {
+        const unitCost = latestUnitCostByProduct.get(item.productId) ?? 0;
+        const itemCost = unitCost * item.quantity;
+        const existing = marginByProduct.get(item.productId) ?? {
+          productId: item.productId,
+          productName: item.productName,
+          productSku: item.productSku,
+          revenue: 0,
+          cost: 0,
+          grossProfit: 0,
+          units: 0
+        };
+        const allocatedRevenue = totalAmount * (item.quantity / totalUnits);
+        existing.revenue += allocatedRevenue;
+        existing.cost += itemCost;
+        existing.grossProfit = existing.revenue - existing.cost;
+        existing.units += item.quantity;
+        marginByProduct.set(item.productId, existing);
+      }
+    }
 
     return {
       id: order.id,
@@ -282,6 +347,9 @@ export const accounting = async (req: Request, res: Response) => {
       shippingAmount,
       taxAmount,
       totalAmount,
+      estimatedCost,
+      grossProfit,
+      marginPercent,
       returnRequestStatus: order.returnRequestStatus,
       isCancelled,
       isReturned,
@@ -300,6 +368,8 @@ export const accounting = async (req: Request, res: Response) => {
     if (order.isNetOrder) {
       acc.netSales += order.totalAmount;
       acc.netOrders += 1;
+      acc.costOfGoods += order.estimatedCost;
+      acc.grossProfit += order.grossProfit;
     }
 
     if (order.isCancelled) {
@@ -344,7 +414,9 @@ export const accounting = async (req: Request, res: Response) => {
     codValue: 0,
     prepaidOrders: 0,
     prepaidValue: 0,
-    pendingPaymentValue: 0
+    pendingPaymentValue: 0,
+    costOfGoods: 0,
+    grossProfit: 0
   });
 
   const summaryWithDerived = {
@@ -352,7 +424,8 @@ export const accounting = async (req: Request, res: Response) => {
     taxableValue: Math.max(summary.netSales - summary.shippingCollected - summary.taxCollected, 0),
     cgstCollected: summary.taxCollected / 2,
     sgstCollected: summary.taxCollected / 2,
-    averageNetOrderValue: summary.netOrders ? summary.netSales / summary.netOrders : 0
+    averageNetOrderValue: summary.netOrders ? summary.netSales / summary.netOrders : 0,
+    grossMarginPercent: summary.netSales ? (summary.grossProfit / summary.netSales) * 100 : 0
   };
 
   const dailyBreakdownMap = new Map<string, {
@@ -363,6 +436,8 @@ export const accounting = async (req: Request, res: Response) => {
     taxCollected: number;
     orders: number;
     refunds: number;
+    costOfGoods: number;
+    grossProfit: number;
   }>();
 
   for (const order of reportOrders) {
@@ -374,22 +449,43 @@ export const accounting = async (req: Request, res: Response) => {
       netSales: 0,
       taxCollected: 0,
       orders: 0,
-      refunds: 0
+      refunds: 0,
+      costOfGoods: 0,
+      grossProfit: 0
     };
 
     existing.grossSales += order.subtotal;
     existing.taxCollected += order.taxAmount;
     existing.orders += 1;
-    if (order.isNetOrder) existing.netSales += order.totalAmount;
+    if (order.isNetOrder) {
+      existing.netSales += order.totalAmount;
+      existing.costOfGoods += order.estimatedCost;
+      existing.grossProfit += order.grossProfit;
+    }
     if (order.isCancelled || order.isReturned || order.isRefunded) existing.refunds += order.totalAmount;
     dailyBreakdownMap.set(dateKey, existing);
   }
+
+  const topMarginProducts = Array.from(marginByProduct.values())
+    .sort((left, right) => right.grossProfit - left.grossProfit)
+    .slice(0, 5)
+    .map((item) => ({
+      ...item,
+      marginPercent: item.revenue ? (item.grossProfit / item.revenue) * 100 : 0
+    }));
+
+  const lowMarginOrders = reportOrders
+    .filter((order) => order.isNetOrder && order.marginPercent <= 15)
+    .sort((left, right) => left.marginPercent - right.marginPercent)
+    .slice(0, 5);
 
   res.json({
     range,
     rangeStart,
     summary: summaryWithDerived,
     dailyBreakdown: Array.from(dailyBreakdownMap.values()).sort((a, b) => b.date.localeCompare(a.date)),
+    topMarginProducts,
+    lowMarginOrders,
     reportOrders
   });
 };
@@ -414,6 +510,12 @@ export const exportAccounting = async (req: Request, res: Response) => {
       taxAmount: true,
       totalAmount: true,
       returnRequestStatus: true,
+      items: {
+        select: {
+          productId: true,
+          quantity: true
+        }
+      },
       user: {
         select: {
           name: true,
@@ -423,6 +525,22 @@ export const exportAccounting = async (req: Request, res: Response) => {
     },
     orderBy: { createdAt: "desc" }
   });
+
+  const productIds = Array.from(new Set(orders.flatMap((order) => order.items.map((item) => item.productId))));
+  const purchaseEntries = productIds.length
+    ? await prisma.purchaseEntry.findMany({
+        where: { productId: { in: productIds } },
+        select: { productId: true, unitCost: true, purchasedAt: true },
+        orderBy: [{ productId: "asc" }, { purchasedAt: "desc" }]
+      })
+    : [];
+
+  const latestUnitCostByProduct = new Map<string, number>();
+  for (const entry of purchaseEntries) {
+    if (!latestUnitCostByProduct.has(entry.productId)) {
+      latestUnitCostByProduct.set(entry.productId, Number(entry.unitCost));
+    }
+  }
 
   const escape = (value: string | number | null | undefined) => {
     const stringValue = String(value ?? "");
@@ -443,10 +561,17 @@ export const exportAccounting = async (req: Request, res: Response) => {
       'Shipping',
       'GST',
       'Total',
+      'Estimated Cost',
+      'Gross Profit',
+      'Margin %',
       'Net Order'
     ],
     ...orders.map((order) => {
       const isNetOrder = order.status !== 'CANCELLED' && order.returnRequestStatus !== 'APPROVED';
+      const estimatedCost = order.items.reduce((sum, item) => sum + (latestUnitCostByProduct.get(item.productId) ?? 0) * item.quantity, 0);
+      const totalAmount = Number(order.totalAmount ?? 0);
+      const grossProfit = isNetOrder ? totalAmount - estimatedCost : 0;
+      const marginPercent = isNetOrder && totalAmount > 0 ? (grossProfit / totalAmount) * 100 : 0;
       return [
         order.orderNumber,
         order.createdAt.toISOString(),
@@ -459,7 +584,10 @@ export const exportAccounting = async (req: Request, res: Response) => {
         Number(order.discountAmount ?? 0).toFixed(2),
         Number(order.shippingAmount ?? 0).toFixed(2),
         Number(order.taxAmount ?? 0).toFixed(2),
-        Number(order.totalAmount ?? 0).toFixed(2),
+        totalAmount.toFixed(2),
+        estimatedCost.toFixed(2),
+        grossProfit.toFixed(2),
+        marginPercent.toFixed(2),
         isNetOrder ? 'YES' : 'NO'
       ];
     })
