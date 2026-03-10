@@ -47,7 +47,37 @@ type TimelineStep = {
   timestamp?: string | null;
 };
 
-const buildTimeline = (result: TrackResult): TimelineStep[] => {
+type CancelledTimelineStep = {
+  key: string;
+  label: string;
+  description: string;
+  reached: boolean;
+  current: boolean;
+  timestamp?: string | null;
+};
+
+const buildTimeline = (result: TrackResult): (TimelineStep | CancelledTimelineStep)[] => {
+  if (result.status === "CANCELLED") {
+    return [
+      {
+        key: "PENDING",
+        label: "Placed",
+        description: statusDescriptions.PENDING,
+        reached: true,
+        current: false,
+        timestamp: result.createdAt
+      },
+      {
+        key: "CANCELLED",
+        label: "Cancelled",
+        description: statusDescriptions.CANCELLED,
+        reached: true,
+        current: true,
+        timestamp: result.cancelRequestedAt ?? result.updatedAt
+      }
+    ];
+  }
+
   const statusIndex = timeline.indexOf(result.status as (typeof timeline)[number]);
   const shippedAt = result.status === "SHIPPED" || result.status === "DELIVERED" ? result.updatedAt : null;
   const deliveredAt = result.status === "DELIVERED" ? result.updatedAt : null;
@@ -169,7 +199,11 @@ export default function TrackOrderPage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Shipment timeline</p>
-                    <p className="mt-2 text-sm text-slate">Milestones become active as the operations team moves the order through fulfilment.</p>
+                    <p className="mt-2 text-sm text-slate">
+                      {result.status === "CANCELLED"
+                        ? "This order reached a terminal cancelled state before fulfilment was completed."
+                        : "Milestones become active as the operations team moves the order through fulfilment."}
+                    </p>
                   </div>
                   {result.status === "CANCELLED" ? (
                     <span className="rounded-full bg-amber-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-800">Cancelled</span>
@@ -209,13 +243,15 @@ export default function TrackOrderPage() {
               <div className="mt-6 rounded-[24px] border border-white/60 bg-white p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Recommended next step</p>
                 <p className="mt-2 text-sm font-semibold text-ink">
-                  {timelineIndex <= 0
-                    ? "Give the operations team a little time to confirm and queue the order."
-                    : timelineIndex <= 2
-                      ? "Your order is progressing normally. Check again after the next dispatch update."
-                      : timelineIndex === 3
-                        ? "The order is on the way. Keep the order number ready for delivery-related support."
-                        : "Order delivered. If anything looks wrong, contact support with your order number."}
+                  {result.status === "CANCELLED"
+                    ? "This order has been cancelled. Contact support if you need help with a replacement or a new order."
+                    : timelineIndex <= 0
+                      ? "Give the operations team a little time to confirm and queue the order."
+                      : timelineIndex <= 2
+                        ? "Your order is progressing normally. Check again after the next dispatch update."
+                        : timelineIndex === 3
+                          ? "The order is on the way. Keep the order number ready for delivery-related support."
+                          : "Order delivered. If anything looks wrong, contact support with your order number."}
                 </p>
                 <div className="mt-4 flex flex-wrap gap-3">
                   <Link href="/support"><Button variant="secondary"><LifeBuoy className="mr-2 h-4 w-4" />Contact support</Button></Link>
