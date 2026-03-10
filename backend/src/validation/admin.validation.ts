@@ -35,3 +35,8 @@ export const adminSupportTicketListSchema = z.object({
   kind: z.enum(["ALL", "ORDER_ISSUE", "RETURN_ISSUE", "PAYMENT_ISSUE", "PRODUCT_INQUIRY", "OTHER"]).default("ALL").optional(),
   ...paginationFields
 });
+
+
+export const adminAccountingSchema = z.object({
+  range: z.enum(["7d", "30d", "90d"]).default("30d").optional()
+});

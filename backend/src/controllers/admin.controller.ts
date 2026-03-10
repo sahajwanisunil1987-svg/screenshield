@@ -225,6 +225,131 @@ export const dashboard = async (req: Request, res: Response) => {
   });
 };
 
+
+export const accounting = async (req: Request, res: Response) => {
+  const range = String(req.query.range ?? "30d") as keyof typeof rangeDaysMap;
+  const days = rangeDaysMap[range] ?? 30;
+  const rangeStart = new Date();
+  rangeStart.setHours(0, 0, 0, 0);
+  rangeStart.setDate(rangeStart.getDate() - (days - 1));
+
+  const orders = await prisma.order.findMany({
+    where: { createdAt: { gte: rangeStart } },
+    select: {
+      id: true,
+      orderNumber: true,
+      createdAt: true,
+      status: true,
+      paymentStatus: true,
+      subtotal: true,
+      discountAmount: true,
+      shippingAmount: true,
+      taxAmount: true,
+      totalAmount: true,
+      returnRequestStatus: true,
+      user: {
+        select: {
+          name: true,
+          email: true
+        }
+      }
+    },
+    orderBy: { createdAt: "desc" }
+  });
+
+  const summary = orders.reduce((acc, order) => {
+    const subtotal = Number(order.subtotal ?? 0);
+    const discountAmount = Number(order.discountAmount ?? 0);
+    const shippingAmount = Number(order.shippingAmount ?? 0);
+    const taxAmount = Number(order.taxAmount ?? 0);
+    const totalAmount = Number(order.totalAmount ?? 0);
+    const isCancelled = order.status === "CANCELLED";
+    const isReturned = order.returnRequestStatus === "APPROVED";
+    const isNetOrder = !isCancelled && !isReturned;
+    const isRefunded = order.paymentStatus === "REFUNDED";
+    const isPrepaid = ["PAID", "PENDING", "REFUNDED", "FAILED"].includes(order.paymentStatus);
+
+    acc.grossSales += subtotal;
+    acc.discounts += discountAmount;
+    acc.shippingCollected += shippingAmount;
+    acc.taxCollected += taxAmount;
+
+    if (isNetOrder) {
+      acc.netSales += totalAmount;
+      acc.netOrders += 1;
+    }
+
+    if (isCancelled) {
+      acc.cancelledOrders += 1;
+      acc.cancelledValue += totalAmount;
+    }
+
+    if (isReturned) {
+      acc.returnedOrders += 1;
+      acc.returnedValue += totalAmount;
+    }
+
+    if (isRefunded) {
+      acc.refundedValue += totalAmount;
+    }
+
+    if (order.paymentStatus === "COD") {
+      acc.codOrders += 1;
+      if (isNetOrder) acc.codValue += totalAmount;
+    }
+
+    if (isPrepaid) {
+      acc.prepaidOrders += 1;
+      if (isNetOrder && order.paymentStatus === "PAID") acc.prepaidValue += totalAmount;
+      if (order.paymentStatus === "PENDING") acc.pendingPaymentValue += totalAmount;
+    }
+
+    return acc;
+  }, {
+    grossSales: 0,
+    netSales: 0,
+    discounts: 0,
+    shippingCollected: 0,
+    taxCollected: 0,
+    netOrders: 0,
+    cancelledOrders: 0,
+    cancelledValue: 0,
+    returnedOrders: 0,
+    returnedValue: 0,
+    refundedValue: 0,
+    codOrders: 0,
+    codValue: 0,
+    prepaidOrders: 0,
+    prepaidValue: 0,
+    pendingPaymentValue: 0
+  });
+
+  const recentFinancialOrders = orders.slice(0, 8).map((order) => ({
+    id: order.id,
+    orderNumber: order.orderNumber,
+    createdAt: order.createdAt,
+    status: order.status,
+    paymentStatus: order.paymentStatus,
+    totalAmount: Number(order.totalAmount ?? 0),
+    discountAmount: Number(order.discountAmount ?? 0),
+    taxAmount: Number(order.taxAmount ?? 0),
+    shippingAmount: Number(order.shippingAmount ?? 0),
+    customerName: order.user?.name ?? "Customer",
+    customerEmail: order.user?.email ?? null,
+    returnRequestStatus: order.returnRequestStatus
+  }));
+
+  res.json({
+    range,
+    rangeStart,
+    summary: {
+      ...summary,
+      averageNetOrderValue: summary.netOrders ? summary.netSales / summary.netOrders : 0
+    },
+    recentOrders: recentFinancialOrders
+  });
+};
+
 export const inventory = async (_req: Request, res: Response) => {
   const page = Number(_req.query.page ?? 1);
   const limit = Number(_req.query.limit ?? 12);
