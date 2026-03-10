@@ -69,7 +69,7 @@ export default async function HomePage() {
     <PageShell>
       <section className="bg-hero-grid text-white">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-          <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+          <div className="grid gap-8 lg:grid-cols-1 lg:items-end">
             <div className="max-w-3xl">
               <p className="text-sm font-semibold uppercase tracking-[0.3em] text-teal-200">Trusted workshop supply</p>
               <h1 className="mt-5 font-display text-5xl leading-tight sm:text-6xl">
@@ -78,23 +78,6 @@ export default async function HomePage() {
               <p className="mt-6 max-w-2xl text-lg text-white/75">
                 Verified compatible parts, clear pricing, secure checkout, and fast India-wide dispatch for repair shops and end customers.
               </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
-              <div className="rounded-[30px] border border-white/10 bg-white/10 p-5 backdrop-blur">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-200/90">Live catalog</p>
-                <p className="mt-3 font-display text-4xl">{featured.pagination.total}+</p>
-                <p className="mt-2 text-sm text-white/70">Featured workshop-demand products surfaced from the SpareKart catalog.</p>
-              </div>
-              <div className="rounded-[30px] border border-white/10 bg-white/10 p-5 backdrop-blur">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-200/90">Brand network</p>
-                <p className="mt-3 font-display text-4xl">{brands.length}</p>
-                <p className="mt-2 text-sm text-white/70">Mobile brands mapped into model-first discovery for quick parts lookup.</p>
-              </div>
-              <div className="rounded-[30px] border border-white/10 bg-white/10 p-5 backdrop-blur">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-200/90">Repair coverage</p>
-                <p className="mt-3 font-display text-4xl">{categories.length}</p>
-                <p className="mt-2 text-sm text-white/70">Core part types spanning screens, batteries, ports, cameras, and housing parts.</p>
-              </div>
             </div>
           </div>
           <div className="mt-10">
