@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bell, GitCompareArrows, Heart, LogOut, Moon, Package, ShoppingBag, ShieldCheck, Sun, Truck, User2 } from "lucide-react";
+import { Bell, GitCompareArrows, Heart, LogOut, Moon, Package, ShoppingBag, Sun, Truck, User2 } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 import { useCompareStore } from "@/store/compare-store";
 import { useWishlistStore } from "@/store/wishlist-store";
@@ -99,14 +99,6 @@ export function Navbar() {
             >
               <SearchSuggestionIcon />
             </button>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="rounded-full p-2 hover:bg-white/10"
-              aria-label="Toggle theme"
-            >
-              {themeHydrated && isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </button>
             <Link href="/track-order" className="inline-flex items-center gap-2 rounded-full p-2 hover:bg-white/10 sm:px-4 sm:py-2">
               <Truck className="h-5 w-5 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Track</span>
@@ -123,30 +115,6 @@ export function Navbar() {
                   {unreadNotifications > 0 ? <span className="absolute -right-1 -top-1 rounded-full bg-ember px-1.5 text-[10px] text-white">{unreadNotifications}</span> : null}
                 </Link>
               </>
-            ) : null}
-            {user?.role === "ADMIN" ? (
-              <Link href="/admin/orders" className="inline-flex items-center gap-2 rounded-full p-2 hover:bg-white/10 lg:px-4 lg:py-2">
-                <ShieldCheck className="h-5 w-5 lg:hidden" />
-                <span className="hidden lg:inline">Admin</span>
-              </Link>
-            ) : null}
-            <Link href={user ? "/account" : "/login"} className="inline-flex items-center gap-2 rounded-full p-2 hover:bg-white/10 sm:px-4 sm:py-2">
-              <User2 className="h-5 w-5 sm:hidden" />
-              <span className="hidden sm:inline">{user ? "Account" : "Login"}</span>
-            </Link>
-            {user ? (
-              <button
-                type="button"
-                onClick={async () => {
-                  await api.post("/auth/logout").catch(() => null);
-                  clearAuth();
-                  router.replace("/");
-                }}
-                className="rounded-full p-2 hover:bg-white/10"
-                aria-label="Logout"
-              >
-                <LogOut className="h-5 w-5" />
-              </button>
             ) : null}
             <Link href="/wishlist" className="relative rounded-full p-2 hover:bg-white/10">
               <Heart className="h-5 w-5" />
@@ -166,6 +134,32 @@ export function Navbar() {
                 {cartCount}
               </span>
             </Link>
+            <Link href={user ? "/account" : "/login"} className="inline-flex items-center gap-2 rounded-full p-2 hover:bg-white/10 sm:px-4 sm:py-2">
+              <User2 className="h-5 w-5 sm:hidden" />
+              <span className="hidden sm:inline">{user ? "Account" : "Login"}</span>
+            </Link>
+            {user ? (
+              <button
+                type="button"
+                onClick={async () => {
+                  await api.post("/auth/logout").catch(() => null);
+                  clearAuth();
+                  router.replace("/");
+                }}
+                className="rounded-full p-2 hover:bg-white/10"
+                aria-label="Logout"
+              >
+                <LogOut className="h-5 w-5" />
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="rounded-full p-2 hover:bg-white/10"
+              aria-label="Toggle theme"
+            >
+              {themeHydrated && isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
           </nav>
         </div>
         {mobileSearchOpen ? (
