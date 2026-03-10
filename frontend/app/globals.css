@@ -15,6 +15,106 @@
   --shadow-card-strong: 0 30px 90px rgba(8, 17, 31, 0.12);
 }
 
+
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --color-ink: #edf4fb;
+  --color-accent: #2dd4bf;
+  --color-accent-soft: rgba(45, 212, 191, 0.16);
+  --color-ember-soft: rgba(251, 146, 60, 0.16);
+  --color-slate: #a9b8cb;
+  --color-panel: #0f1728;
+  --color-page: #06101d;
+  --shadow-card: 0 24px 60px rgba(2, 6, 23, 0.45);
+  --shadow-card-strong: 0 30px 90px rgba(2, 6, 23, 0.62);
+}
+
+html[data-theme="dark"] body {
+  background:
+    radial-gradient(circle at top left, rgba(45, 212, 191, 0.12), transparent 22%),
+    radial-gradient(circle at top right, rgba(249, 115, 22, 0.12), transparent 18%),
+    linear-gradient(180deg, rgba(3, 7, 18, 0.35), rgba(3, 7, 18, 0)),
+    var(--color-page);
+  color: var(--color-ink);
+}
+
+html[data-theme="dark"] .bg-page-wash {
+  background:
+    radial-gradient(circle at 15% 0%, rgba(45, 212, 191, 0.11), transparent 22%),
+    radial-gradient(circle at 85% 5%, rgba(249, 115, 22, 0.1), transparent 18%),
+    radial-gradient(circle at 50% 35%, rgba(15, 23, 42, 0.45), transparent 28%),
+    var(--color-page);
+}
+
+html[data-theme="dark"] .theme-surface {
+  background: linear-gradient(180deg, rgba(15, 23, 40, 0.92), rgba(14, 21, 34, 0.94));
+}
+
+html[data-theme="dark"] .theme-surface-strong {
+  background: linear-gradient(180deg, rgba(15, 23, 40, 0.98), rgba(10, 15, 26, 0.96));
+}
+
+html[data-theme="dark"] .bg-panel,
+html[data-theme="dark"] .bg-white,
+html[data-theme="dark"] .bg-white\/80,
+html[data-theme="dark"] .bg-white\/90,
+html[data-theme="dark"] .bg-white\/92,
+html[data-theme="dark"] .bg-white\/98,
+html[data-theme="dark"] .bg-slate-50,
+html[data-theme="dark"] .bg-slate-100,
+html[data-theme="dark"] .bg-\[\#f5f8fb\],
+html[data-theme="dark"] .bg-\[\#f7fafb\],
+html[data-theme="dark"] .bg-\[\#fff1dc\],
+html[data-theme="dark"] .bg-\[\#e2f7ef\],
+html[data-theme="dark"] .bg-amber-50,
+html[data-theme="dark"] .bg-emerald-50,
+html[data-theme="dark"] .bg-rose-50 {
+  background-color: rgba(15, 23, 40, 0.9) !important;
+  color: var(--color-ink);
+}
+
+html[data-theme="dark"] .border-slate-100,
+html[data-theme="dark"] .border-slate-200,
+html[data-theme="dark"] .border-slate-200\/80,
+html[data-theme="dark"] .border-white\/70 {
+  border-color: rgba(148, 163, 184, 0.18) !important;
+}
+
+html[data-theme="dark"] .text-ink {
+  color: var(--color-ink) !important;
+}
+
+html[data-theme="dark"] .text-slate,
+html[data-theme="dark"] .text-slate-300,
+html[data-theme="dark"] .text-slate-500,
+html[data-theme="dark"] .text-slate-600 {
+  color: var(--color-slate) !important;
+}
+
+html[data-theme="dark"] .text-emerald-700,
+html[data-theme="dark"] .text-amber-700,
+html[data-theme="dark"] .text-rose-700,
+html[data-theme="dark"] .text-emerald-600 {
+  color: var(--color-ink) !important;
+}
+
+html[data-theme="dark"] .shadow-card,
+html[data-theme="dark"] .shadow-sm {
+  box-shadow: var(--shadow-card) !important;
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  color: var(--color-ink);
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: rgba(169, 184, 203, 0.6);
+}
+
 html {
   scroll-behavior: smooth;
 }
