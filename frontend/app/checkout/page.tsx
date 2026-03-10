@@ -229,12 +229,12 @@ export default function CheckoutPage() {
             <Input placeholder="GST Number (optional)" {...register("gstNumber")} />
             <div className="rounded-[28px] bg-[#f5f8fb] p-4">
               <p className="text-sm font-semibold text-ink">Payment method</p>
-              <div className="mt-3 flex gap-3">
-                <label className={`flex items-center gap-2 text-sm ${codAvailable ? "text-slate" : "text-slate/40"}`}>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <label className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${codAvailable ? "border-slate-200 bg-white text-slate" : "border-slate-100 bg-slate-50 text-slate/40"}`}>
                   <input type="radio" value="COD" {...register("paymentMethod")} disabled={!codAvailable} />
                   Cash on Delivery
                 </label>
-                <label className="flex items-center gap-2 text-sm text-slate">
+                <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate">
                   <input type="radio" value="RAZORPAY" {...register("paymentMethod")} />
                   Razorpay
                 </label>

@@ -35,12 +35,12 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
             />
           )}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-ink/70 to-transparent px-5 py-4 text-xs font-semibold uppercase tracking-[0.24em] text-white/90">
-            <span>Hover to zoom</span>
+            <span>Tap to preview</span>
             <span>{gallery.findIndex((item) => item.url === activeItem.url) + 1}/{gallery.length}</span>
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
         {gallery.map((item, index) => {
           const isActive = item.url === activeItem.url;
 

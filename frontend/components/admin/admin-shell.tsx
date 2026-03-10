@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ReactNode } from "react";
 import { LogOut, Moon, Sun } from "lucide-react";
 import { useAuthStore } from "@/store/auth-store";
@@ -24,9 +24,16 @@ const links = [
 ];
 
 export function AdminShell({ title, children }: { title: string; children: ReactNode }) {
+  const pathname = usePathname();
   const router = useRouter();
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const { isDark, toggleTheme, theme } = useAdminTheme();
+
+  const logout = async () => {
+    await api.post("/auth/logout").catch(() => null);
+    clearAuth();
+    router.replace("/admin/login");
+  };
 
   return (
     <div
@@ -37,8 +44,54 @@ export function AdminShell({ title, children }: { title: string; children: React
           : "bg-[radial-gradient(circle_at_top_left,rgba(15,118,110,0.12),transparent_22%),radial-gradient(circle_at_top_right,rgba(249,115,22,0.12),transparent_18%),linear-gradient(180deg,#f9fbfd,#edf3f8)] text-ink"
       }`}
     >
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 lg:grid-cols-[260px_1fr]">
-        <aside className="rounded-[30px] border border-white/10 bg-white/5 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.28)] backdrop-blur">
+      <div className="border-b border-white/10 bg-white/5 backdrop-blur lg:hidden">
+        <div className="mx-auto max-w-7xl px-4 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-teal-200/90">Control Room</p>
+              <h1 className="mt-1 font-display text-xl">SpareKart Admin</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+              >
+                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                {isDark ? "Light" : "Dark"}
+              </button>
+              <button
+                type="button"
+                onClick={logout}
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white/85 transition hover:bg-white/10 hover:text-white"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </button>
+            </div>
+          </div>
+          <p className="mt-3 text-xs font-semibold uppercase tracking-[0.3em] text-teal-200/80">{title}</p>
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            {links.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition ${
+                    isActive ? "bg-white text-ink" : "border border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-6 lg:grid-cols-[260px_1fr] lg:py-8">
+        <aside className="hidden rounded-[30px] border border-white/10 bg-white/5 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.28)] backdrop-blur lg:block">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-teal-200/90">Control Room</p>
@@ -54,23 +107,24 @@ export function AdminShell({ title, children }: { title: string; children: React
             </button>
           </div>
           <nav className="mt-8 space-y-2">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="block rounded-2xl px-4 py-3 text-sm text-white/80 transition hover:bg-white/10 hover:text-white"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {links.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`block rounded-2xl px-4 py-3 text-sm transition ${
+                    isActive ? "bg-white text-ink" : "text-white/80 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
           <button
             type="button"
-            onClick={async () => {
-              await api.post("/auth/logout").catch(() => null);
-              clearAuth();
-              router.replace("/admin/login");
-            }}
+            onClick={logout}
             className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/85 transition hover:bg-white/10 hover:text-white"
           >
             <LogOut className="h-4 w-4" />
@@ -78,7 +132,7 @@ export function AdminShell({ title, children }: { title: string; children: React
           </button>
         </aside>
         <section className="space-y-6">
-          <header>
+          <header className="hidden lg:block">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-teal-200/80">Operations</p>
             <h2 className="mt-2 font-display text-4xl">{title}</h2>
           </header>
