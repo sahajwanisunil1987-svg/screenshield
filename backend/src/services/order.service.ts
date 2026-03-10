@@ -409,11 +409,13 @@ export const reviewCancelRequest = async (orderId: string, action: "APPROVE" | "
   if (action === "APPROVE") {
     return updateOrderStatus(orderId, {
       status: OrderStatus.CANCELLED,
-      paymentStatus: order.paymentStatus,
+      paymentStatus: order.paymentStatus === PaymentStatus.PAID ? PaymentStatus.REFUNDED : order.paymentStatus,
       shippingCourier: order.shippingCourier ?? undefined,
       shippingAwb: order.shippingAwb ?? undefined,
       estimatedDeliveryAt: order.estimatedDeliveryAt?.toISOString(),
-      adminNotes: note ?? order.adminNotes ?? undefined
+      adminNotes: note ?? order.adminNotes ?? undefined,
+      refundAmount: order.paymentStatus === PaymentStatus.PAID ? Number(order.totalAmount) : 0,
+      refundReason: note ?? order.cancelRequestReason ?? order.adminNotes ?? undefined
     }).then((updated) =>
       prisma.order.update({
         where: { id: orderId },
@@ -513,7 +515,10 @@ export const reviewReturnRequest = async (orderId: string, action: "APPROVE" | "
         returnRequestStatus: RequestStatus.APPROVED,
         returnDecisionAt: new Date(),
         returnDecisionNote: note ?? null,
-        returnedAt: new Date()
+        returnedAt: new Date(),
+        refundAmount: order.paymentStatus === PaymentStatus.PAID ? decimal(Number(order.totalAmount)) : order.refundAmount,
+        refundReason: order.paymentStatus === PaymentStatus.PAID ? (note ?? order.returnRequestReason ?? order.adminNotes ?? "Approved return") : order.refundReason,
+        refundedAt: order.paymentStatus === PaymentStatus.PAID ? (order.refundedAt ?? new Date()) : order.refundedAt
       },
       include: {
         items: true,
@@ -640,6 +645,8 @@ export const updateOrderStatus = async (id: string, payload: {
   shippingAwb?: string;
   estimatedDeliveryAt?: string;
   adminNotes?: string;
+  refundAmount?: number;
+  refundReason?: string;
 }) =>
   prisma.$transaction(async (tx) => {
     const existingOrder = await tx.order.findUnique({
@@ -675,6 +682,22 @@ export const updateOrderStatus = async (id: string, payload: {
       }
     }
 
+    const nextPaymentStatus = payload.paymentStatus ?? existingOrder.paymentStatus;
+    const willBeRefunded = nextPaymentStatus === PaymentStatus.REFUNDED;
+    const fallbackRefundReason = payload.status === OrderStatus.CANCELLED
+      ? (payload.refundReason || payload.adminNotes || existingOrder.cancelRequestReason || existingOrder.cancelDecisionNote || existingOrder.adminNotes || "Order cancelled")
+      : (payload.refundReason || payload.adminNotes || existingOrder.returnRequestReason || existingOrder.returnDecisionNote || existingOrder.adminNotes || "Order refunded");
+    const refundAmount = willBeRefunded
+      ? decimal(payload.refundAmount ?? Number(existingOrder.totalAmount))
+      : existingOrder.refundAmount;
+
+    if (willBeRefunded) {
+      await tx.payment.updateMany({
+        where: { orderId: id },
+        data: { status: PaymentStatus.REFUNDED }
+      });
+    }
+
     return tx.order.update({
       where: { id },
       data: {
@@ -684,7 +707,10 @@ export const updateOrderStatus = async (id: string, payload: {
         shippingAwb: payload.shippingAwb || null,
         estimatedDeliveryAt: payload.estimatedDeliveryAt ? new Date(payload.estimatedDeliveryAt) : null,
         adminNotes: payload.adminNotes || null,
-        ...(payload.status === OrderStatus.CANCELLED ? { cancelledAt: existingOrder.cancelledAt ?? new Date() } : {})
+        ...(payload.status === OrderStatus.CANCELLED ? { cancelledAt: existingOrder.cancelledAt ?? new Date() } : {}),
+        refundAmount,
+        refundReason: willBeRefunded ? fallbackRefundReason : existingOrder.refundReason,
+        refundedAt: willBeRefunded ? existingOrder.refundedAt ?? new Date() : existingOrder.refundedAt
       },
       include: {
         items: true,

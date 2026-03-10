@@ -246,7 +246,14 @@ export const accounting = async (req: Request, res: Response) => {
       shippingAmount: true,
       taxAmount: true,
       totalAmount: true,
+      refundAmount: true,
+      refundReason: true,
+      refundedAt: true,
+      cancelRequestReason: true,
+      cancelRequestStatus: true,
+      returnRequestReason: true,
       returnRequestStatus: true,
+      returnDecisionNote: true,
       items: {
         select: {
           productId: true,
@@ -294,6 +301,27 @@ export const accounting = async (req: Request, res: Response) => {
     grossProfit: number;
     units: number;
   }>();
+  const returnByProduct = new Map<string, {
+    productId: string;
+    productName: string;
+    productSku: string;
+    requests: number;
+    approvedReturns: number;
+    refundedAmount: number;
+  }>();
+  const reasonBuckets = {
+    cancellation: new Map<string, { reason: string; count: number; refundAmount: number }>(),
+    return: new Map<string, { reason: string; count: number; refundAmount: number }>(),
+    refund: new Map<string, { reason: string; count: number; refundAmount: number }>()
+  };
+
+  const addReason = (bucket: Map<string, { reason: string; count: number; refundAmount: number }>, reason: string | null | undefined, refundAmount: number) => {
+    const normalized = (reason ?? "Unspecified").trim() || "Unspecified";
+    const existing = bucket.get(normalized) ?? { reason: normalized, count: 0, refundAmount: 0 };
+    existing.count += 1;
+    existing.refundAmount += refundAmount;
+    bucket.set(normalized, existing);
+  };
 
   const reportOrders = orders.map((order) => {
     const subtotal = Number(order.subtotal ?? 0);
@@ -301,6 +329,7 @@ export const accounting = async (req: Request, res: Response) => {
     const shippingAmount = Number(order.shippingAmount ?? 0);
     const taxAmount = Number(order.taxAmount ?? 0);
     const totalAmount = Number(order.totalAmount ?? 0);
+    const refundAmount = Number(order.refundAmount ?? 0);
     const isCancelled = order.status === "CANCELLED";
     const isReturned = order.returnRequestStatus === "APPROVED";
     const isNetOrder = !isCancelled && !isReturned;
@@ -334,6 +363,39 @@ export const accounting = async (req: Request, res: Response) => {
       }
     }
 
+    if (order.returnRequestReason || order.returnRequestStatus) {
+      addReason(reasonBuckets.return, order.returnRequestReason ?? order.returnDecisionNote, refundAmount);
+    }
+
+    if (order.cancelRequestReason || order.cancelRequestStatus) {
+      addReason(reasonBuckets.cancellation, order.cancelRequestReason, refundAmount);
+    }
+
+    if (isRefunded || refundAmount > 0) {
+      addReason(reasonBuckets.refund, order.refundReason ?? order.returnRequestReason ?? order.cancelRequestReason, refundAmount || totalAmount);
+    }
+
+    if (order.returnRequestStatus) {
+      for (const item of order.items) {
+        const existing = returnByProduct.get(item.productId) ?? {
+          productId: item.productId,
+          productName: item.productName,
+          productSku: item.productSku,
+          requests: 0,
+          approvedReturns: 0,
+          refundedAmount: 0
+        };
+        if (order.returnRequestStatus === "PENDING" || order.returnRequestStatus === "APPROVED") {
+          existing.requests += item.quantity;
+        }
+        if (order.returnRequestStatus === "APPROVED") {
+          existing.approvedReturns += item.quantity;
+          existing.refundedAmount += refundAmount || totalAmount;
+        }
+        returnByProduct.set(item.productId, existing);
+      }
+    }
+
     return {
       id: order.id,
       orderNumber: order.orderNumber,
@@ -347,10 +409,15 @@ export const accounting = async (req: Request, res: Response) => {
       shippingAmount,
       taxAmount,
       totalAmount,
+      refundAmount,
+      refundReason: order.refundReason,
       estimatedCost,
       grossProfit,
       marginPercent,
+      cancelRequestStatus: order.cancelRequestStatus,
+      cancelRequestReason: order.cancelRequestReason,
       returnRequestStatus: order.returnRequestStatus,
+      returnRequestReason: order.returnRequestReason,
       isCancelled,
       isReturned,
       isNetOrder,
@@ -375,15 +442,18 @@ export const accounting = async (req: Request, res: Response) => {
     if (order.isCancelled) {
       acc.cancelledOrders += 1;
       acc.cancelledValue += order.totalAmount;
+      acc.cancellationRefunds += order.refundAmount;
     }
 
     if (order.isReturned) {
       acc.returnedOrders += 1;
       acc.returnedValue += order.totalAmount;
+      acc.returnRefunds += order.refundAmount;
     }
 
     if (order.isRefunded) {
       acc.refundedValue += order.totalAmount;
+      acc.refundOutflow += order.refundAmount || order.totalAmount;
     }
 
     if (order.paymentStatus === "COD") {
@@ -410,6 +480,9 @@ export const accounting = async (req: Request, res: Response) => {
     returnedOrders: 0,
     returnedValue: 0,
     refundedValue: 0,
+    refundOutflow: 0,
+    cancellationRefunds: 0,
+    returnRefunds: 0,
     codOrders: 0,
     codValue: 0,
     prepaidOrders: 0,
@@ -441,7 +514,7 @@ export const accounting = async (req: Request, res: Response) => {
   }>();
 
   for (const order of reportOrders) {
-    const dateKey = order.createdAt.toISOString().slice(0, 10);
+    const dateKey = new Date(order.createdAt).toISOString().slice(0, 10);
     const existing = dailyBreakdownMap.get(dateKey) ?? {
       date: dateKey,
       label: new Date(order.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" }),
@@ -462,7 +535,7 @@ export const accounting = async (req: Request, res: Response) => {
       existing.costOfGoods += order.estimatedCost;
       existing.grossProfit += order.grossProfit;
     }
-    if (order.isCancelled || order.isReturned || order.isRefunded) existing.refunds += order.totalAmount;
+    if (order.isCancelled || order.isReturned || order.isRefunded) existing.refunds += order.refundAmount || order.totalAmount;
     dailyBreakdownMap.set(dateKey, existing);
   }
 
@@ -479,12 +552,24 @@ export const accounting = async (req: Request, res: Response) => {
     .sort((left, right) => left.marginPercent - right.marginPercent)
     .slice(0, 5);
 
+  const topReturnProducts = Array.from(returnByProduct.values())
+    .sort((left, right) => right.approvedReturns - left.approvedReturns || right.requests - left.requests)
+    .slice(0, 5);
+
+  const reasonAnalytics = {
+    cancellation: Array.from(reasonBuckets.cancellation.values()).sort((a, b) => b.count - a.count || b.refundAmount - a.refundAmount).slice(0, 5),
+    return: Array.from(reasonBuckets.return.values()).sort((a, b) => b.count - a.count || b.refundAmount - a.refundAmount).slice(0, 5),
+    refund: Array.from(reasonBuckets.refund.values()).sort((a, b) => b.refundAmount - a.refundAmount || b.count - a.count).slice(0, 5)
+  };
+
   res.json({
     range,
     rangeStart,
     summary: summaryWithDerived,
     dailyBreakdown: Array.from(dailyBreakdownMap.values()).sort((a, b) => b.date.localeCompare(a.date)),
     topMarginProducts,
+    topReturnProducts,
+    reasonAnalytics,
     lowMarginOrders,
     reportOrders
   });
@@ -509,6 +594,8 @@ export const exportAccounting = async (req: Request, res: Response) => {
       shippingAmount: true,
       taxAmount: true,
       totalAmount: true,
+      refundAmount: true,
+      refundReason: true,
       returnRequestStatus: true,
       items: {
         select: {
@@ -564,6 +651,8 @@ export const exportAccounting = async (req: Request, res: Response) => {
       'Estimated Cost',
       'Gross Profit',
       'Margin %',
+      'Refund Amount',
+      'Refund Reason',
       'Net Order'
     ],
     ...orders.map((order) => {
@@ -572,6 +661,7 @@ export const exportAccounting = async (req: Request, res: Response) => {
       const totalAmount = Number(order.totalAmount ?? 0);
       const grossProfit = isNetOrder ? totalAmount - estimatedCost : 0;
       const marginPercent = isNetOrder && totalAmount > 0 ? (grossProfit / totalAmount) * 100 : 0;
+      const refundAmount = Number(order.refundAmount ?? 0);
       return [
         order.orderNumber,
         order.createdAt.toISOString(),
@@ -588,6 +678,8 @@ export const exportAccounting = async (req: Request, res: Response) => {
         estimatedCost.toFixed(2),
         grossProfit.toFixed(2),
         marginPercent.toFixed(2),
+        refundAmount.toFixed(2),
+        order.refundReason ?? '',
         isNetOrder ? 'YES' : 'NO'
       ];
     })
