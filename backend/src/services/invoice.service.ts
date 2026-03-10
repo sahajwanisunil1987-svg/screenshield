@@ -3,17 +3,35 @@ import { env } from "../config/env.js";
 import { prisma } from "../lib/prisma.js";
 
 const formatCurrency = (value: number) => `INR ${value.toFixed(2)}`;
+const formatDate = (value: Date | string) => new Date(value).toLocaleDateString("en-IN", { dateStyle: "medium" });
 
-const drawLabelValue = (doc: PDFKit.PDFDocument, label: string, value: string, x: number, y: number) => {
+const drawLabelValue = (doc: PDFKit.PDFDocument, label: string, value: string, x: number, y: number, width = 220) => {
   doc.font("Helvetica-Bold").fontSize(9).fillColor("#5b6474").text(label, x, y);
-  doc.font("Helvetica").fontSize(10).fillColor("#08111f").text(value, x, y + 12, {
-    width: 220
-  });
+  doc.font("Helvetica").fontSize(10).fillColor("#08111f").text(value, x, y + 12, { width });
 };
 
 const drawSectionCard = (doc: PDFKit.PDFDocument, x: number, y: number, width: number, height: number, title: string) => {
   doc.roundedRect(x, y, width, height, 12).fillAndStroke("#f5f8fb", "#d6dee8");
   doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(11).text(title, x + 14, y + 12);
+};
+
+const drawAddressLines = (doc: PDFKit.PDFDocument, lines: string[], x: number, y: number, width: number) => {
+  doc.font("Helvetica").fontSize(10).fillColor("#08111f");
+  doc.text(lines.join("\n"), x, y, { width, lineGap: 2 });
+};
+
+const drawStatusBadge = (
+  doc: PDFKit.PDFDocument,
+  label: string,
+  value: string,
+  x: number,
+  y: number,
+  fillColor: string,
+  textColor = "#ffffff"
+) => {
+  doc.roundedRect(x, y, 120, 34, 10).fill(fillColor);
+  doc.font("Helvetica-Bold").fontSize(8).fillColor("#dbe7f3").text(label.toUpperCase(), x + 12, y + 7);
+  doc.font("Helvetica-Bold").fontSize(11).fillColor(textColor).text(value, x + 12, y + 18);
 };
 
 export const generateInvoicePdfBuffer = async (orderId: string) => {
@@ -36,6 +54,16 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
   doc.on("data", (chunk) => buffers.push(chunk as Buffer));
 
   const address = (order.addressSnapshot ?? {}) as Record<string, string | undefined>;
+  const shippingLines = [
+    address.fullName ?? order.invoice.billingName,
+    address.line1,
+    address.line2,
+    address.landmark,
+    [address.city, address.state, address.postalCode ?? address.pincode].filter(Boolean).join(", "),
+    address.country ?? "India",
+    address.phone,
+    address.email
+  ].filter(Boolean) as string[];
   const billingLines = [
     order.invoice.billingName,
     address.line1,
@@ -47,9 +75,15 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
     order.invoice.billingEmail ?? address.email
   ].filter(Boolean) as string[];
 
-  const gstRate = Number(order.taxAmount) > 0 && Number(order.subtotal) > 0 ? (Number(order.taxAmount) / Number(order.subtotal)) * 100 : 0;
-  const cgst = Number(order.taxAmount) / 2;
-  const sgst = Number(order.taxAmount) / 2;
+  const subtotal = Number(order.subtotal);
+  const discount = Number(order.discountAmount);
+  const shipping = Number(order.shippingAmount);
+  const tax = Number(order.taxAmount);
+  const total = Number(order.totalAmount);
+  const taxableValue = subtotal - discount;
+  const gstRate = tax > 0 && subtotal > 0 ? (tax / subtotal) * 100 : 0;
+  const cgst = tax / 2;
+  const sgst = tax / 2;
 
   doc.roundedRect(40, 34, 515, 86, 18).fill("#08111f");
   doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(24).text(`${env.COMPANY_NAME} Tax Invoice`, 58, 54);
@@ -62,39 +96,43 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
   doc.font("Helvetica").fontSize(10).fillColor("#ffffff").text(`${env.COMPANY_PHONE} · ${env.COMPANY_EMAIL}`, 390, 102, {
     width: 140
   });
-
-  drawSectionCard(doc, 40, 138, 250, 130, "Invoice Summary");
-  drawSectionCard(doc, 305, 138, 250, 130, "Bill To / Ship To");
-
-  drawLabelValue(doc, "Invoice No", order.invoice.invoiceNumber, 54, 166);
-  drawLabelValue(doc, "Order No", order.orderNumber, 54, 204);
-  drawLabelValue(
-    doc,
-    "Invoice Date",
-    new Date(order.invoice.createdAt).toLocaleDateString("en-IN", { dateStyle: "medium" }),
-    170,
-    166
-  );
-  drawLabelValue(
+  drawStatusBadge(
     doc,
     "Payment",
-    order.payment?.provider ? `${order.payment.provider} / ${order.payment.status}` : order.paymentStatus,
-    170,
-    204
+    order.paymentStatus,
+    420,
+    132,
+    order.paymentStatus === "PAID" ? "#0f766e" : order.paymentStatus === "COD" ? "#92400e" : "#334155"
   );
-  drawLabelValue(doc, "Customer", order.user.name, 319, 166);
-  drawLabelValue(doc, "GSTIN", order.gstNumber || order.invoice.gstin || "Not provided", 319, 204);
+  drawStatusBadge(
+    doc,
+    "Order",
+    order.status,
+    290,
+    132,
+    order.status === "DELIVERED" ? "#166534" : order.status === "CANCELLED" ? "#991b1b" : "#1d4ed8"
+  );
 
-  doc.font("Helvetica").fontSize(10).fillColor("#08111f");
-  doc.text(billingLines.join("\n"), 319, 182, { width: 210, lineGap: 2 });
+  drawSectionCard(doc, 40, 180, 165, 132, "Invoice Summary");
+  drawSectionCard(doc, 215, 180, 165, 132, "Bill To");
+  drawSectionCard(doc, 390, 180, 165, 132, "Ship To");
 
-  const tableTop = 292;
+  drawLabelValue(doc, "Invoice No", order.invoice.invoiceNumber, 54, 208, 135);
+  drawLabelValue(doc, "Order No", order.orderNumber, 54, 246, 135);
+  drawLabelValue(doc, "Invoice Date", formatDate(order.invoice.createdAt), 54, 284, 135);
+  drawAddressLines(doc, billingLines, 229, 208, 137);
+  drawAddressLines(doc, shippingLines, 404, 208, 137);
+  drawLabelValue(doc, "Supply Type", "Domestic taxable supply", 229, 284, 137);
+  drawLabelValue(doc, "Buyer GSTIN", order.gstNumber || order.invoice.gstin || "Not provided", 404, 284, 137);
+
+  const tableTop = 336;
   const columns = {
     item: 54,
-    sku: 250,
-    qty: 355,
-    rate: 405,
-    amount: 475
+    sku: 210,
+    qty: 305,
+    rate: 345,
+    taxable: 410,
+    amount: 490
   };
 
   doc.roundedRect(40, tableTop - 12, 515, 28, 10).fill("#e9eef5");
@@ -103,47 +141,65 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
   doc.text("SKU", columns.sku, tableTop - 3);
   doc.text("Qty", columns.qty, tableTop - 3);
   doc.text("Rate", columns.rate, tableTop - 3);
+  doc.text("Taxable", columns.taxable, tableTop - 3);
   doc.text("Amount", columns.amount, tableTop - 3);
 
   let y = tableTop + 24;
   order.items.forEach((item, index) => {
     const rowHeight = 34;
+    const itemTaxableValue = gstRate > 0 ? Number(item.totalPrice) / (1 + gstRate / 100) : Number(item.totalPrice);
+
     doc.roundedRect(40, y - 8, 515, rowHeight, 8).fill(index % 2 === 0 ? "#ffffff" : "#f9fbfd");
-    doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(10).text(item.productName, columns.item, y, { width: 180 });
-    doc.font("Helvetica").fontSize(9).fillColor("#5b6474").text(item.productSku, columns.sku, y + 1, { width: 90 });
+    doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(10).text(item.productName, columns.item, y, { width: 145 });
+    doc.font("Helvetica").fontSize(9).fillColor("#5b6474").text(item.productSku, columns.sku, y + 1, { width: 80 });
     doc.fillColor("#08111f").fontSize(10).text(String(item.quantity), columns.qty, y + 1);
-    doc.text(formatCurrency(Number(item.unitPrice)), columns.rate, y + 1);
-    doc.text(formatCurrency(Number(item.totalPrice)), columns.amount, y + 1);
+    doc.text(formatCurrency(Number(item.unitPrice)), columns.rate, y + 1, { width: 54 });
+    doc.text(formatCurrency(itemTaxableValue), columns.taxable, y + 1, { width: 64 });
+    doc.text(formatCurrency(Number(item.totalPrice)), columns.amount, y + 1, { width: 55 });
     y += rowHeight + 6;
   });
 
   const summaryTop = y + 14;
-  drawSectionCard(doc, 305, summaryTop, 250, 156, "Tax Summary");
-  drawLabelValue(doc, "Subtotal", formatCurrency(Number(order.subtotal)), 319, summaryTop + 28);
-  drawLabelValue(doc, "Discount", formatCurrency(Number(order.discountAmount)), 319, summaryTop + 56);
-  drawLabelValue(doc, "Shipping", formatCurrency(Number(order.shippingAmount)), 319, summaryTop + 84);
-  drawLabelValue(doc, `CGST (${(gstRate / 2).toFixed(1)}%)`, formatCurrency(cgst), 319, summaryTop + 112);
-  drawLabelValue(doc, `SGST (${(gstRate / 2).toFixed(1)}%)`, formatCurrency(sgst), 435, summaryTop + 112);
+  drawSectionCard(doc, 305, summaryTop, 250, 178, "Tax Summary");
+  drawLabelValue(doc, "Taxable Value", formatCurrency(taxableValue), 319, summaryTop + 28, 200);
+  drawLabelValue(doc, "Shipping", formatCurrency(shipping), 319, summaryTop + 56, 200);
+  drawLabelValue(doc, `CGST (${(gstRate / 2).toFixed(1)}%)`, formatCurrency(cgst), 319, summaryTop + 84, 200);
+  drawLabelValue(doc, `SGST (${(gstRate / 2).toFixed(1)}%)`, formatCurrency(sgst), 319, summaryTop + 112, 200);
+  drawLabelValue(doc, "Amount Payable", formatCurrency(total), 319, summaryTop + 140, 200);
 
-  doc.roundedRect(40, summaryTop, 250, 156, 12).fillAndStroke("#f5f8fb", "#d6dee8");
+  doc.roundedRect(40, summaryTop, 250, 178, 12).fillAndStroke("#f5f8fb", "#d6dee8");
   doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(11).text("Invoice Notes", 54, summaryTop + 14);
   doc.font("Helvetica").fontSize(10).fillColor("#5b6474");
   doc.text("Supply type: Domestic taxable supply", 54, summaryTop + 38);
   doc.text("Currency: INR", 54, summaryTop + 56);
-  doc.text(`Payment status: ${order.paymentStatus}`, 54, summaryTop + 74);
-  doc.text(`Order status: ${order.status}`, 54, summaryTop + 92);
-  doc.text(`GST charged on order: ${gstRate.toFixed(1)}%`, 54, summaryTop + 110);
+  doc.text(`Payment mode: ${order.payment?.provider ?? order.paymentStatus}`, 54, summaryTop + 74);
+  doc.text(`Payment status: ${order.paymentStatus}`, 54, summaryTop + 92);
+  doc.text(`Order placed on: ${formatDate(order.createdAt)}`, 54, summaryTop + 110);
+  doc.text(`GST charged on order: ${gstRate.toFixed(1)}%`, 54, summaryTop + 128);
   if (order.notes) {
-    doc.text(`Notes: ${order.notes}`, 54, summaryTop + 128, { width: 210 });
+    doc.text(`Notes: ${order.notes}`, 54, summaryTop + 146, { width: 210 });
   }
 
-  doc.roundedRect(305, summaryTop + 156, 250, 44, 12).fill("#08111f");
-  doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(12).text("Grand Total", 319, summaryTop + 170);
-  doc.fontSize(16).text(formatCurrency(Number(order.totalAmount)), 445, summaryTop + 168, { width: 90, align: "right" });
+  doc.roundedRect(40, summaryTop + 194, 515, 78, 12).fillAndStroke("#ffffff", "#d6dee8");
+  doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(11).text("Declaration", 54, summaryTop + 208);
+  doc.font("Helvetica").fontSize(9).fillColor("#5b6474").text(
+    `We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct. This invoice is generated by ${env.COMPANY_LEGAL_NAME}.`,
+    54,
+    summaryTop + 226,
+    { width: 340, lineGap: 2 }
+  );
+  doc.font("Helvetica-Bold").fontSize(10).fillColor("#08111f").text(`For ${env.COMPANY_LEGAL_NAME}`, 412, summaryTop + 212, {
+    width: 120,
+    align: "right"
+  });
+  doc.font("Helvetica").fontSize(9).fillColor("#5b6474").text("Authorised Signatory", 412, summaryTop + 248, {
+    width: 120,
+    align: "right"
+  });
 
   doc.fillColor("#5b6474").font("Helvetica").fontSize(9);
   doc.text(
-    `This is a computer-generated GST invoice issued by ${env.COMPANY_LEGAL_NAME}. For support, contact ${env.COMPANY_EMAIL}.`,
+    `This is a computer-generated GST invoice issued by ${env.COMPANY_LEGAL_NAME}. For billing support contact ${env.COMPANY_EMAIL} or ${env.COMPANY_PHONE}.`,
     40,
     760,
     {
