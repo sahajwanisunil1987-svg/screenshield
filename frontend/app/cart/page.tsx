@@ -25,7 +25,7 @@ export default function CartPage() {
     <PageShell>
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <h1 className="font-display text-4xl text-ink">Your cart</h1>
-        <div className="mt-6 grid gap-4 rounded-[32px] border border-slate-200/80 bg-panel p-5 shadow-card lg:grid-cols-[1.4fr_0.8fr_0.8fr]">
+        <div className="theme-surface mt-6 grid gap-4 rounded-[32px] border border-slate-200/80 p-5 lg:grid-cols-[1.4fr_0.8fr_0.8fr]">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Checkout readiness</p>
             <p className="mt-3 text-sm text-slate">
@@ -47,7 +47,7 @@ export default function CartPage() {
           <div className="space-y-4">
             {!hasHydrated ? (
               Array.from({ length: 2 }).map((_, index) => (
-                <div key={index} className="grid gap-4 rounded-[28px] bg-white p-5 shadow-card md:grid-cols-[110px_1fr_auto]">
+                <div key={index} className="theme-surface grid gap-4 rounded-[28px] p-5 md:grid-cols-[110px_1fr_auto]">
                   <div className="h-28 rounded-2xl bg-slate-100" />
                   <div className="space-y-3">
                     <div className="h-5 w-2/3 rounded-full bg-slate-100" />
@@ -62,7 +62,7 @@ export default function CartPage() {
               ))
             ) : items.length ? (
               items.map((item) => (
-                <div key={item.product.id} className="grid gap-4 rounded-[28px] bg-white p-5 shadow-card sm:grid-cols-[110px_1fr] xl:grid-cols-[110px_1fr_auto]">
+                <div key={item.product.id} className="theme-surface grid gap-4 rounded-[28px] p-5 sm:grid-cols-[110px_1fr] xl:grid-cols-[110px_1fr_auto]">
                   <div className="relative h-28 overflow-hidden rounded-2xl bg-slate-100">
                     <Image src={item.product.images[0]?.url ?? "https://placehold.co/300x300"} alt={item.product.name} fill className="object-cover" />
                   </div>
@@ -126,7 +126,7 @@ export default function CartPage() {
               </div>
             )}
           </div>
-          <div className="rounded-[32px] bg-white p-6 shadow-card">
+          <div className="theme-surface rounded-[32px] p-6">
             <h2 className="text-xl font-semibold text-ink">Order summary</h2>
             <div className="mt-5 grid gap-3 rounded-[24px] bg-[#f5f8fb] p-4 text-sm text-slate">
               <div className="flex items-start gap-3">

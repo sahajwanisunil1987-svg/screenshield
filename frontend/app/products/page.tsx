@@ -96,7 +96,7 @@ export default async function ProductsPage({
           title="Filtered spare parts catalog"
           description="Query-param driven listing for SSR-friendly catalog results across brand, model, and part type."
         />
-        <div className="mt-6 grid gap-4 rounded-[32px] border border-slate-200/80 bg-panel p-5 shadow-card lg:grid-cols-[1.6fr_0.9fr_0.9fr]">
+        <div className="theme-surface mt-6 grid gap-4 rounded-[32px] border border-slate-200/80 p-5 lg:grid-cols-[1.6fr_0.9fr_0.9fr]">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Search context</p>
             <p className="mt-3 text-base text-slate">{heroSummary}</p>
@@ -128,7 +128,7 @@ export default async function ProductsPage({
                 <Link
                   key={`${filter.key}-${filter.label}`}
                   href={buildFilterRemovalHref(filter.key)}
-                  className="rounded-full bg-accentSoft px-4 py-2 text-sm font-semibold text-ink transition hover:bg-[#cfeee6]"
+                  className="rounded-full bg-accentSoft px-4 py-2 text-sm font-semibold text-ink transition hover:bg-[#cfeee6] dark:text-white"
                 >
                   {filter.label} ×
                 </Link>

@@ -66,9 +66,9 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid gap-4 rounded-[32px] bg-white p-6 shadow-card md:grid-cols-3">
+        <div className="theme-surface grid gap-4 rounded-[32px] p-6 md:grid-cols-3">
           {trustBadges.map((item) => (
-            <div key={item.title} className="rounded-[22px] bg-[#f5f8fb] p-5">
+            <div key={item.title} className="rounded-[22px] bg-[#f5f8fb] p-5 dark:bg-transparent">
               <item.icon className="h-7 w-7 text-accent" />
               <h3 className="mt-4 font-semibold text-ink">{item.title}</h3>
               <p className="mt-2 text-sm text-slate">{item.detail}</p>
