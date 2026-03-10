@@ -136,8 +136,14 @@ export const adminOrders = async (req: Request, res: Response) => {
 };
 
 export const updateStatus = async (req: Request, res: Response) => {
-  const order = await orderService.updateOrderStatus(getSingleParam(req.params.id)!, req.body);
-  if (order.user?.id) {
+  const orderId = getSingleParam(req.params.id)!;
+  const previousOrder = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { status: true }
+  });
+
+  const order = await orderService.updateOrderStatus(orderId, req.body);
+  if (order.user?.id && previousOrder?.status !== order.status) {
     await createNotification({
       userId: order.user.id,
       title: `Order ${order.status.toLowerCase()}`,
