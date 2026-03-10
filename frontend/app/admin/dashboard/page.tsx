@@ -33,27 +33,27 @@ export default function AdminDashboardPage() {
   const stats = useMemo(
     () => [
       {
-        label: "Total Orders",
+        label: "Net Orders",
         value: data?.stats?.totalOrders ?? 0,
-        detail: `Orders in the last ${range.replace("d", "")} days`,
+        detail: `Valid orders in the last ${range.replace("d", "")} days`,
         accent: "text-cyan-200"
       },
       {
-        label: "Revenue",
+        label: "Net Revenue",
         value: formatCurrency(data?.stats?.totalRevenue ?? 0),
-        detail: "Gross order value in range",
+        detail: "Cancelled and approved-return orders excluded",
         accent: "text-emerald-200"
       },
       {
-        label: "New Customers",
-        value: data?.stats?.newCustomers ?? 0,
-        detail: "Customers registered in range",
-        accent: "text-fuchsia-200"
+        label: "Pending Approvals",
+        value: (data?.stats?.pendingCancelApprovals ?? 0) + (data?.stats?.pendingReturnApprovals ?? 0),
+        detail: "Cancellation and return requests awaiting review",
+        accent: "text-rose-200"
       },
       {
-        label: "AOV",
-        value: formatCurrency(data?.stats?.averageOrderValue ?? 0),
-        detail: "Average order value in range",
+        label: "Dispatch Queue",
+        value: (data?.stats?.awaitingPacking ?? 0) + (data?.stats?.awaitingShipment ?? 0),
+        detail: "Orders waiting for packing or shipment",
         accent: "text-amber-200"
       }
     ],
@@ -98,6 +98,11 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
+            <div className="mt-3 flex flex-wrap gap-2 text-xs text-white/55">
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">Net sales view</span>
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">Cancelled and approved returns are excluded</span>
+            </div>
+
             <div className="mt-6 grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
               {stats.map((stat) => (
                 <div key={stat.label} className="min-w-0 rounded-[28px] border border-white/10 bg-black/15 p-5">
@@ -112,15 +117,33 @@ export default function AdminDashboardPage() {
           <div className="rounded-[32px] border border-white/10 bg-white/5 p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">Today&apos;s focus</p>
             <div className="mt-4 space-y-3">
-              <div className="rounded-[24px] border border-white/10 bg-black/10 p-4">
-                <p className="text-sm text-white/60">Low-stock alerts</p>
-                <p className="mt-2 text-2xl font-semibold text-white">{isLoading ? "..." : data?.stats?.lowStockCount ?? 0}</p>
-                <p className="mt-1 text-xs text-white/45">{lowStockCriticalCount} items are in the critical band</p>
-              </div>
-              <div className="rounded-[24px] border border-white/10 bg-black/10 p-4">
-                <p className="text-sm text-white/60">Recent fulfilment</p>
-                <p className="mt-2 text-2xl font-semibold text-white">{isLoading ? "..." : fulfilledCount}</p>
-                <p className="mt-1 text-xs text-white/45">Shipped or delivered net orders in the selected range</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-[24px] border border-rose-400/20 bg-rose-500/10 p-4">
+                  <p className="text-sm text-rose-100/80">Pending approvals</p>
+                  <p className="mt-2 text-2xl font-semibold text-white">
+                    {isLoading ? "..." : (data?.stats?.pendingCancelApprovals ?? 0) + (data?.stats?.pendingReturnApprovals ?? 0)}
+                  </p>
+                  <p className="mt-1 text-xs text-white/55">
+                    {data?.stats?.pendingCancelApprovals ?? 0} cancel and {data?.stats?.pendingReturnApprovals ?? 0} return requests
+                  </p>
+                </div>
+                <div className="rounded-[24px] border border-amber-400/20 bg-amber-500/10 p-4">
+                  <p className="text-sm text-amber-100/80">Dispatch queue</p>
+                  <p className="mt-2 text-2xl font-semibold text-white">{isLoading ? "..." : (data?.stats?.awaitingPacking ?? 0) + (data?.stats?.awaitingShipment ?? 0)}</p>
+                  <p className="mt-1 text-xs text-white/55">
+                    {data?.stats?.awaitingPacking ?? 0} awaiting packing, {data?.stats?.awaitingShipment ?? 0} awaiting shipment
+                  </p>
+                </div>
+                <div className="rounded-[24px] border border-white/10 bg-black/10 p-4">
+                  <p className="text-sm text-white/60">Low-stock alerts</p>
+                  <p className="mt-2 text-2xl font-semibold text-white">{isLoading ? "..." : data?.stats?.lowStockCount ?? 0}</p>
+                  <p className="mt-1 text-xs text-white/45">{lowStockCriticalCount} items are in the critical band</p>
+                </div>
+                <div className="rounded-[24px] border border-emerald-400/20 bg-emerald-500/10 p-4">
+                  <p className="text-sm text-emerald-100/80">Fulfilment pulse</p>
+                  <p className="mt-2 text-2xl font-semibold text-white">{isLoading ? "..." : fulfilledCount}</p>
+                  <p className="mt-1 text-xs text-white/55">{data?.stats?.deliveredToday ?? 0} delivered today in production</p>
+                </div>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Link
@@ -135,12 +158,24 @@ export default function AdminDashboardPage() {
                 >
                   Update inventory
                 </Link>
+                <Link
+                  href="/admin/orders"
+                  className="rounded-[22px] border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white transition hover:bg-white/10"
+                >
+                  Review returns
+                </Link>
+                <Link
+                  href="/admin/products/new"
+                  className="rounded-[22px] border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white transition hover:bg-white/10"
+                >
+                  Create product
+                </Link>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-semibold">Revenue trend</h3>
@@ -202,7 +237,7 @@ export default function AdminDashboardPage() {
                 ))
               ) : (
                 <p className="rounded-[24px] border border-dashed border-white/10 bg-black/10 px-4 py-8 text-center text-white/50">
-                  No recent orders available yet.
+                  No recent orders yet. As soon as orders start moving, this panel will surface the latest operational activity.
                 </p>
               )}
             </div>
@@ -243,7 +278,7 @@ export default function AdminDashboardPage() {
                 })
               ) : (
                 <p className="rounded-[24px] border border-dashed border-white/10 bg-black/10 px-4 py-8 text-center text-white/50">
-                  No product sales data yet.
+                  No net product sales in this range yet. Completed sales will surface here automatically.
                 </p>
               )}
             </div>
@@ -277,7 +312,7 @@ export default function AdminDashboardPage() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-white/45">No sales data in this range.</p>
+                      <p className="text-white/45">No net sales data in this range.</p>
                     )}
                   </div>
                 </div>

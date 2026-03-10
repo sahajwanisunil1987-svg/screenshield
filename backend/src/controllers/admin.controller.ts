@@ -23,7 +23,25 @@ export const dashboard = async (req: Request, res: Response) => {
     OR: [{ returnRequestStatus: null }, { returnRequestStatus: { not: "APPROVED" } }]
   };
 
-  const [totalOrders, totalProducts, lowStock, recentOrders, revenueAgg, topProducts, users, rangedOrders, rangedCustomers] = await Promise.all([
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const [
+    totalOrders,
+    totalProducts,
+    lowStock,
+    recentOrders,
+    revenueAgg,
+    topProducts,
+    users,
+    rangedOrders,
+    rangedCustomers,
+    pendingCancelApprovals,
+    pendingReturnApprovals,
+    awaitingPacking,
+    awaitingShipment,
+    deliveredToday
+  ] = await Promise.all([
     prisma.order.count({
       where: netSalesWhere
     }),
@@ -88,6 +106,32 @@ export const dashboard = async (req: Request, res: Response) => {
       where: {
         role: "CUSTOMER",
         createdAt: { gte: rangeStart }
+      }
+    }),
+    prisma.order.count({
+      where: {
+        cancelRequestStatus: "PENDING"
+      }
+    }),
+    prisma.order.count({
+      where: {
+        returnRequestStatus: "PENDING"
+      }
+    }),
+    prisma.order.count({
+      where: {
+        status: "CONFIRMED"
+      }
+    }),
+    prisma.order.count({
+      where: {
+        status: "PACKED"
+      }
+    }),
+    prisma.order.count({
+      where: {
+        status: "DELIVERED",
+        updatedAt: { gte: todayStart }
       }
     })
   ]);
@@ -161,6 +205,11 @@ export const dashboard = async (req: Request, res: Response) => {
       lowStockCount: lowStock.length,
       newCustomers: rangedCustomers,
       fulfilledOrders,
+      pendingCancelApprovals,
+      pendingReturnApprovals,
+      awaitingPacking,
+      awaitingShipment,
+      deliveredToday,
       averageOrderValue: totalOrders ? Number(revenueAgg._sum.totalAmount ?? 0) / totalOrders : 0
     },
     lowStock,
