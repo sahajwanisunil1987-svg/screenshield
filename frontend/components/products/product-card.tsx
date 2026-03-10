@@ -107,7 +107,7 @@ export function ProductCard({ product }: { product: Product }) {
             <span className="text-sm text-slate line-through">{formatCurrency(product.comparePrice)}</span>
           ) : null}
         </div>
-        <div className="grid gap-2 rounded-[24px] bg-white/80 p-4 shadow-sm sm:grid-cols-2">
+        <div className="grid gap-2 rounded-[24px] bg-white/80 p-4 shadow-sm">
           <div className="flex items-start gap-3">
             <ShieldCheck className="mt-0.5 h-4 w-4 text-accent" />
             <div>
@@ -126,7 +126,7 @@ export function ProductCard({ product }: { product: Product }) {
             </div>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <Button
             className="flex-1"
             disabled={stock <= 0}
@@ -140,7 +140,7 @@ export function ProductCard({ product }: { product: Product }) {
           </Button>
           <Link
             href={`/products/${product.slug}`}
-            className="inline-flex items-center rounded-full border border-slate-200 px-4 py-3 text-sm font-semibold text-ink transition hover:border-accent/30 hover:bg-accentSoft"
+            className="inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-3 text-sm font-semibold text-ink transition hover:border-accent/30 hover:bg-accentSoft"
           >
             View
           </Link>

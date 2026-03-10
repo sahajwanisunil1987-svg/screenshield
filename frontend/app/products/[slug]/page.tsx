@@ -135,7 +135,7 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
                   Compare at <span className="line-through">{formatCurrency(product.comparePrice)}</span>
                 </p>
               ) : null}
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <div className="mt-5 grid gap-3">
                 {trustPoints.map((item) => (
                   <div key={item.title} className="rounded-[22px] bg-white/8 p-4">
                     <item.icon className="h-5 w-5 text-teal-200" />
@@ -144,7 +144,7 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
                 ))}
               </div>
             </div>
-            <div className="grid gap-3 rounded-[28px] bg-[#f5f8fb] p-5 text-sm text-slate sm:grid-cols-2">
+            <div className="grid gap-3 rounded-[28px] bg-[#f5f8fb] p-5 text-sm text-slate">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">SKU</p>
                 <p className="mt-2 font-semibold text-ink">{product.sku}</p>
@@ -164,7 +164,7 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
             </div>
             <div className="rounded-[28px] border border-slate-200 p-5">
               <h2 className="text-lg font-semibold text-ink">Compatibility</h2>
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="mt-4 grid gap-3">
                 <div className="rounded-2xl bg-[#f5f8fb] p-4">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate">Brand</p>
                   <p className="mt-2 font-semibold text-ink">{product.brand.name}</p>
@@ -201,7 +201,7 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
             </div>
             <div>
               <h2 className="text-lg font-semibold text-ink">Specifications</h2>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="mt-4 grid gap-3">
                 {Object.entries(product.specifications).map(([key, value]) => (
                   <div key={key} className="rounded-2xl border border-slate-200 p-4">
                     <p className="text-xs uppercase tracking-[0.2em] text-slate">{key}</p>
@@ -220,7 +220,7 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
         />
         <section className="mt-14">
           <h2 className="font-display text-3xl text-ink">Related products</h2>
-          <div className="mt-6 grid gap-6 lg:grid-cols-4">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {payload.relatedProducts.map((item) => (
               <ProductCard key={item.id} product={item} />
             ))}

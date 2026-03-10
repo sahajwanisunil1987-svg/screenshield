@@ -21,7 +21,7 @@ export function ProductActions({ product }: { product: Product }) {
 
   return (
     <div className="space-y-4 rounded-[28px] border border-slate-200 bg-[#f7fafb] p-4">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3">
         <Button
           className="justify-center gap-2"
           onClick={() => {
@@ -76,7 +76,7 @@ export function ProductActions({ product }: { product: Product }) {
         <GitCompareArrows className={`h-4 w-4 ${compareHydrated && hasCompared(product.id) ? "text-accent" : "text-slate"}`} />
         {compareHydrated && hasCompared(product.id) ? "Remove from Compare" : "Add to Compare"}
       </button>
-      <div className="grid gap-3 text-xs text-slate sm:grid-cols-3">
+      <div className="grid gap-3 text-xs text-slate">
         <div className="rounded-2xl bg-white px-4 py-3">Secure payment flow</div>
         <div className="rounded-2xl bg-white px-4 py-3">Repair-shop friendly fitment</div>
         <div className="rounded-2xl bg-white px-4 py-3">Backed by warranty support</div>

@@ -62,7 +62,7 @@ export default function CartPage() {
               ))
             ) : items.length ? (
               items.map((item) => (
-                <div key={item.product.id} className="grid gap-4 rounded-[28px] bg-white p-5 shadow-card md:grid-cols-[110px_1fr_auto]">
+                <div key={item.product.id} className="grid gap-4 rounded-[28px] bg-white p-5 shadow-card sm:grid-cols-[110px_1fr] xl:grid-cols-[110px_1fr_auto]">
                   <div className="relative h-28 overflow-hidden rounded-2xl bg-slate-100">
                     <Image src={item.product.images[0]?.url ?? "https://placehold.co/300x300"} alt={item.product.name} fill className="object-cover" />
                   </div>
@@ -80,7 +80,7 @@ export default function CartPage() {
                       </p>
                     ) : null}
                   </div>
-                  <div className="flex flex-col items-end gap-3">
+                  <div className="flex flex-row flex-wrap items-center justify-between gap-3 sm:col-span-2 xl:col-span-1 xl:flex-col xl:items-end">
                     <div className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-[#f5f8fb] px-3 py-2">
                       <button
                         type="button"
@@ -168,7 +168,7 @@ export default function CartPage() {
                 <span>{hasHydrated ? formatCurrency(total) : "..."}</span>
               </div>
             </div>
-            <div className="mt-6 flex gap-3">
+            <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto]">
               <input
                 value={couponInput}
                 onChange={(event) => setCouponInput(event.target.value.toUpperCase())}
