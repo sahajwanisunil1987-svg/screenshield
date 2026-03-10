@@ -3,9 +3,11 @@ import "server-only";
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api";
 
 export async function fetchApi<T>(path: string, init?: RequestInit): Promise<T> {
+  const nextOptions = init?.cache === "no-store" ? undefined : { revalidate: 60, ...(init?.next ?? {}) };
+
   const response = await fetch(`${baseUrl}${path}`, {
     ...init,
-    next: { revalidate: 60, ...(init?.next ?? {}) },
+    ...(nextOptions ? { next: nextOptions } : {}),
     headers: {
       "Content-Type": "application/json",
       ...(init?.headers ?? {})

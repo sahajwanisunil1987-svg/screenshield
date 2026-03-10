@@ -22,7 +22,7 @@ export default async function ModelsPage() {
         <SectionHeading eyebrow="Models" title="Supported mobile models" description="Filter directly by phone model to reach compatible spare parts faster." />
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {models.map((model) => (
-            <a key={model.id} href={`/products?model=${model.slug}`} className="rounded-[28px] bg-white p-6 shadow-card">
+            <a key={model.id} href={model.brand?.slug ? `/brands/${model.brand.slug}/models/${model.slug}` : `/models/${model.slug}`} className="rounded-[28px] bg-white p-6 shadow-card">
               <h3 className="font-semibold text-ink">{model.name}</h3>
               <p className="mt-2 text-sm text-slate">{model.brand?.name ?? "Mapped model"}</p>
             </a>

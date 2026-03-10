@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -10,7 +11,13 @@ import { useWishlistStore } from "@/store/wishlist-store";
 import { useAuthStore } from "@/store/auth-store";
 import { api, authHeaders } from "@/lib/api";
 import { SearchSuggestion } from "@/types";
-import { SearchAutocomplete } from "@/components/ui/search-autocomplete";
+const SearchAutocomplete = dynamic(
+  () => import("@/components/ui/search-autocomplete").then((module) => module.SearchAutocomplete),
+  {
+    ssr: false,
+    loading: () => <div className="h-[50px] w-full rounded-2xl border border-white/10 bg-white/5" />
+  }
+);
 
 export function Navbar() {
   const router = useRouter();
@@ -58,12 +65,9 @@ export function Navbar() {
           <Link href="/" className="font-display text-2xl tracking-tight">
             SpareKart
           </Link>
-          <form
+          <div
             className="hidden flex-1 items-center gap-3 md:flex"
-            onSubmit={(event) => {
-              event.preventDefault();
-              onSearch();
-            }}
+            role="search"
           >
             <div className="flex-1">
               <SearchAutocomplete
@@ -77,12 +81,13 @@ export function Navbar() {
               />
             </div>
             <button
-              type="submit"
+              type="button"
+              onClick={onSearch}
               className="rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent/90"
             >
               Search
             </button>
-          </form>
+          </div>
           <nav className="ml-auto flex items-center gap-3 text-sm">
             <button
               type="button"
@@ -150,13 +155,9 @@ export function Navbar() {
           </nav>
         </div>
         {mobileSearchOpen ? (
-          <form
+          <div
             className="mt-4 flex items-center gap-3 md:hidden"
-            onSubmit={(event) => {
-              event.preventDefault();
-              onSearch();
-              setMobileSearchOpen(false);
-            }}
+            role="search"
           >
             <div className="flex-1">
               <SearchAutocomplete
@@ -176,12 +177,16 @@ export function Navbar() {
               />
             </div>
             <button
-              type="submit"
+              type="button"
+              onClick={() => {
+                onSearch();
+                setMobileSearchOpen(false);
+              }}
               className="rounded-full bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent/90"
             >
               Go
             </button>
-          </form>
+          </div>
         ) : null}
         <div className="mt-4 grid grid-cols-3 gap-2 md:hidden">
           <Link
