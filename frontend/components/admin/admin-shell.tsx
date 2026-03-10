@@ -23,7 +23,7 @@ const links = [
   { href: "/admin/users", label: "Users" }
 ];
 
-const mobileLinks = links.filter((link) => ["/admin/products", "/admin/orders"].includes(link.href));
+const mobileLinks = links;
 
 export function AdminShell({ title, children }: { title: string; children: ReactNode }) {
   const pathname = usePathname();
