@@ -130,3 +130,92 @@ h6 {
 .admin-theme[data-admin-theme="light"] input[type="checkbox"] {
   accent-color: var(--color-accent);
 }
+
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --color-ink: #edf4ff;
+  --color-accent: #22b3a8;
+  --color-accent-soft: #153c39;
+  --color-ember-soft: #3a261a;
+  --color-slate: #a9b8cc;
+  --color-panel: #101a2b;
+  --color-page: #07111f;
+  --shadow-card: 0 24px 60px rgba(0, 0, 0, 0.35);
+  --shadow-card-strong: 0 30px 90px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="dark"] body:not(.admin-theme) {
+  background:
+    radial-gradient(circle at top left, rgba(34, 179, 168, 0.12), transparent 20%),
+    radial-gradient(circle at top right, rgba(249, 115, 22, 0.08), transparent 18%),
+    linear-gradient(180deg, rgba(3, 8, 17, 0.35), rgba(3, 8, 17, 0)),
+    var(--color-page);
+  color: var(--color-ink);
+}
+
+html[data-theme="dark"] .bg-page-wash {
+  background:
+    radial-gradient(circle at 15% 0%, rgba(34, 179, 168, 0.12), transparent 22%),
+    radial-gradient(circle at 85% 5%, rgba(249, 115, 22, 0.08), transparent 18%),
+    radial-gradient(circle at 50% 35%, rgba(11, 23, 41, 0.72), transparent 28%),
+    var(--color-page);
+}
+
+html[data-theme="dark"] .theme-surface {
+  background: linear-gradient(180deg, rgba(16, 26, 43, 0.96), rgba(12, 21, 36, 0.96));
+  box-shadow: var(--shadow-card);
+}
+
+html[data-theme="dark"] .theme-surface-strong {
+  background: linear-gradient(180deg, rgba(14, 24, 40, 0.98), rgba(10, 18, 31, 0.98));
+  box-shadow: var(--shadow-card-strong);
+}
+
+html[data-theme="dark"] .bg-white,
+html[data-theme="dark"] .bg-white\/90,
+html[data-theme="dark"] .bg-white\/92,
+html[data-theme="dark"] .bg-white\/98,
+html[data-theme="dark"] .bg-slate-50,
+html[data-theme="dark"] .bg-slate-100,
+html[data-theme="dark"] .bg-panel {
+  background-color: #101a2b !important;
+}
+
+html[data-theme="dark"] .border-slate-100,
+html[data-theme="dark"] .border-slate-200,
+html[data-theme="dark"] .border-slate-200\/80,
+html[data-theme="dark"] .border-white\/70 {
+  border-color: rgba(148, 163, 184, 0.18) !important;
+}
+
+html[data-theme="dark"] .text-ink,
+html[data-theme="dark"] .text-slate-900,
+html[data-theme="dark"] .text-slate-800 {
+  color: #edf4ff !important;
+}
+
+html[data-theme="dark"] .text-slate,
+html[data-theme="dark"] .text-slate-600,
+html[data-theme="dark"] .text-slate-500,
+html[data-theme="dark"] .text-slate-400 {
+  color: #a9b8cc !important;
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  color: #edf4ff;
+  background-color: #101a2b;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: rgba(169, 184, 204, 0.7);
+}
+
+html[data-theme="dark"] .shadow-card,
+html[data-theme="dark"] .shadow-sm {
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28) !important;
+}

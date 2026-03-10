@@ -4,13 +4,14 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bell, GitCompareArrows, Heart, LogOut, Package, ShoppingBag, ShieldCheck, Truck, User2 } from "lucide-react";
+import { Bell, GitCompareArrows, Heart, LogOut, Moon, Package, ShoppingBag, ShieldCheck, Sun, Truck, User2 } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 import { useCompareStore } from "@/store/compare-store";
 import { useWishlistStore } from "@/store/wishlist-store";
 import { useAuthStore } from "@/store/auth-store";
 import { api, authHeaders } from "@/lib/api";
 import { SearchSuggestion } from "@/types";
+import { useTheme } from "@/hooks/use-theme";
 const SearchAutocomplete = dynamic(
   () => import("@/components/ui/search-autocomplete").then((module) => module.SearchAutocomplete),
   {
@@ -36,6 +37,7 @@ export function Navbar() {
   const compareCount = compareHydrated ? compareItems.length : 0;
   const wishlistCount = wishlistHydrated ? wishlist.length : 0;
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const { hydrated: themeHydrated, isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
     if (user?.role !== "CUSTOMER" || !token) {
@@ -96,6 +98,14 @@ export function Navbar() {
               aria-label="Toggle search"
             >
               <SearchSuggestionIcon />
+            </button>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="rounded-full p-2 hover:bg-white/10"
+              aria-label="Toggle theme"
+            >
+              {themeHydrated && isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
             <Link href="/track-order" className="inline-flex items-center gap-2 rounded-full p-2 hover:bg-white/10 sm:px-4 sm:py-2">
               <Truck className="h-5 w-5 sm:h-4 sm:w-4" />
