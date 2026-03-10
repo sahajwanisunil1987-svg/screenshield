@@ -298,3 +298,21 @@ export type Notification = {
   readAt?: string | null;
   createdAt: string;
 };
+
+
+export type SupportTicket = {
+  id: string;
+  userId?: string | null;
+  name: string;
+  email: string;
+  phone?: string | null;
+  subject: string;
+  message: string;
+  orderNumber?: string | null;
+  kind: "ORDER_ISSUE" | "RETURN_ISSUE" | "PAYMENT_ISSUE" | "PRODUCT_INQUIRY" | "OTHER";
+  status: "NEW" | "IN_PROGRESS" | "RESOLVED";
+  adminNotes?: string | null;
+  resolvedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};

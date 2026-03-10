@@ -103,3 +103,13 @@ export const sendPasswordResetEmail = async (email: string, resetUrl: string) =>
     html: `<p>Reset your password by clicking <a href="${resetUrl}">this link</a>.</p>`
   });
 };
+
+
+export const sendSupportTicketAcknowledgement = async (email: string, ticketId: string) => {
+  await transporter.sendMail({
+    from: env.SMTP_USER,
+    to: email,
+    subject: `SpareKart support request ${ticketId}`,
+    html: `<p>We have received your support request.</p><p>Reference ID: <strong>${ticketId}</strong></p><p>Our team will review it shortly.</p>`
+  });
+};
