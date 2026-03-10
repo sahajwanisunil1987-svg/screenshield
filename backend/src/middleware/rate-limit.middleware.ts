@@ -33,6 +33,10 @@ setInterval(cleanupExpiredBuckets, 60_000).unref();
 
 export const createRateLimiter = ({ keyPrefix, message, max, windowMs }: RateLimitOptions) => {
   return (req: Request, res: Response, next: NextFunction) => {
+    if (process.env.NODE_ENV === "development") {
+      return next();
+    }
+
     const now = Date.now();
     const key = getClientKey(req, keyPrefix);
     const current = buckets.get(key);

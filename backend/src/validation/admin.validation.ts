@@ -27,3 +27,11 @@ export const adminInventoryListSchema = z.object({
   stock: z.enum(["ALL", "CRITICAL", "LOW", "HEALTHY"]).default("ALL").optional(),
   ...paginationFields
 });
+
+
+export const adminSupportTicketListSchema = z.object({
+  search: z.string().optional(),
+  status: z.enum(["ALL", "NEW", "IN_PROGRESS", "RESOLVED"]).default("ALL").optional(),
+  kind: z.enum(["ALL", "ORDER_ISSUE", "RETURN_ISSUE", "PAYMENT_ISSUE", "PRODUCT_INQUIRY", "OTHER"]).default("ALL").optional(),
+  ...paginationFields
+});

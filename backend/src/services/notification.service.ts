@@ -12,6 +12,39 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+const hasConfiguredSmtp = () => {
+  const placeholderHosts = new Set(["smtp.example.com", "example.com", "localhost"]);
+  const placeholderUsers = new Set(["noreply@example.com", "example@example.com"]);
+  const placeholderPasswords = new Set(["password", "changeme", "example"]);
+
+  return !(
+    placeholderHosts.has(env.SMTP_HOST) ||
+    placeholderUsers.has(env.SMTP_USER) ||
+    placeholderPasswords.has(env.SMTP_PASS)
+  );
+};
+
+const sendMailOrLog = async (payload: { to: string; subject: string; html: string; debugUrl?: string }) => {
+  if (!hasConfiguredSmtp() && env.NODE_ENV !== "production") {
+    console.info(JSON.stringify({
+      ts: new Date().toISOString(),
+      level: "info",
+      message: "SMTP not configured in development. Email skipped.",
+      to: payload.to,
+      subject: payload.subject,
+      debugUrl: payload.debugUrl ?? null
+    }));
+    return;
+  }
+
+  await transporter.sendMail({
+    from: env.SMTP_USER,
+    to: payload.to,
+    subject: payload.subject,
+    html: payload.html
+  });
+};
+
 export const createNotification = async (payload: {
   userId: string;
   title: string;
@@ -63,8 +96,7 @@ export const markAllNotificationsRead = async (userId: string) =>
   });
 
 export const sendOrderConfirmation = async (email: string, orderNumber: string) => {
-  await transporter.sendMail({
-    from: env.SMTP_USER,
+  await sendMailOrLog({
     to: email,
     subject: `SpareKart Order ${orderNumber}`,
     html: `<p>Your order <strong>${orderNumber}</strong> has been placed successfully.</p>`
@@ -87,27 +119,26 @@ export const sendWhatsappNotification = async (payload: unknown) => {
 
 
 export const sendVerificationEmail = async (email: string, verifyUrl: string) => {
-  await transporter.sendMail({
-    from: env.SMTP_USER,
+  await sendMailOrLog({
     to: email,
     subject: "Verify your SpareKart account",
-    html: `<p>Verify your account by clicking <a href="${verifyUrl}">this link</a>.</p>`
+    html: `<p>Verify your account by clicking <a href="${verifyUrl}">this link</a>.</p>`,
+    debugUrl: verifyUrl
   });
 };
 
 export const sendPasswordResetEmail = async (email: string, resetUrl: string) => {
-  await transporter.sendMail({
-    from: env.SMTP_USER,
+  await sendMailOrLog({
     to: email,
     subject: "Reset your SpareKart password",
-    html: `<p>Reset your password by clicking <a href="${resetUrl}">this link</a>.</p>`
+    html: `<p>Reset your password by clicking <a href="${resetUrl}">this link</a>.</p>`,
+    debugUrl: resetUrl
   });
 };
 
 
 export const sendSupportTicketAcknowledgement = async (email: string, ticketId: string) => {
-  await transporter.sendMail({
-    from: env.SMTP_USER,
+  await sendMailOrLog({
     to: email,
     subject: `SpareKart support request ${ticketId}`,
     html: `<p>We have received your support request.</p><p>Reference ID: <strong>${ticketId}</strong></p><p>Our team will review it shortly.</p>`

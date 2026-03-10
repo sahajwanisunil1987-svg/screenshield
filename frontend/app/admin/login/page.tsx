@@ -2,7 +2,7 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,14 +22,9 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
   const { theme, isDark, toggleTheme } = useAdminTheme();
-  const [mounted, setMounted] = useState(false);
   const { register, handleSubmit } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema)
   });
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   return (
     <div
@@ -90,46 +85,36 @@ export default function AdminLoginPage() {
             </div>
           </div>
         <div className="mt-8 space-y-4">
-          {!mounted ? (
-            <>
-              <div className={`h-12 rounded-2xl ${isDark ? "bg-white/10" : "bg-slate-100"}`} />
-              <div className={`h-12 rounded-2xl ${isDark ? "bg-white/10" : "bg-slate-100"}`} />
-              <div className={`h-12 rounded-full ${isDark ? "bg-white/10" : "bg-slate-100"}`} />
-            </>
-          ) : (
-            <>
-              <Input
-                placeholder="Admin email"
-                autoComplete="email"
-                className={
-                  isDark
-                    ? "border-white/10 bg-white/10 text-white placeholder:text-white/35 focus:border-cyan-300 focus:ring-cyan-300/10"
-                    : "border-slate-200 bg-slate-50 text-ink placeholder:text-slate focus:border-accent focus:ring-accent/10"
-                }
-                {...register("email")}
-              />
-              <Input
-                type="password"
-                placeholder="Password"
-                autoComplete="current-password"
-                className={
-                  isDark
-                    ? "border-white/10 bg-white/10 text-white placeholder:text-white/35 focus:border-cyan-300 focus:ring-cyan-300/10"
-                    : "border-slate-200 bg-slate-50 text-ink placeholder:text-slate focus:border-accent focus:ring-accent/10"
-                }
-                {...register("password")}
-              />
-              <Button
-                className={`w-full ${
-                  isDark
-                    ? "bg-accent text-white shadow-[0_18px_40px_rgba(15,118,110,0.26)] hover:bg-teal-700"
-                    : "bg-ink text-white shadow-[0_18px_40px_rgba(8,17,31,0.18)] hover:bg-slate-900"
-                }`}
-              >
-                Sign in
-              </Button>
-            </>
-          )}
+          <Input
+            placeholder="Admin email"
+            autoComplete="email"
+            className={
+              isDark
+                ? "border-white/10 bg-white/10 text-white placeholder:text-white/35 focus:border-cyan-300 focus:ring-cyan-300/10"
+                : "border-slate-200 bg-slate-50 text-ink placeholder:text-slate focus:border-accent focus:ring-accent/10"
+            }
+            {...register("email")}
+          />
+          <Input
+            type="password"
+            placeholder="Password"
+            autoComplete="current-password"
+            className={
+              isDark
+                ? "border-white/10 bg-white/10 text-white placeholder:text-white/35 focus:border-cyan-300 focus:ring-cyan-300/10"
+                : "border-slate-200 bg-slate-50 text-ink placeholder:text-slate focus:border-accent focus:ring-accent/10"
+            }
+            {...register("password")}
+          />
+          <Button
+            className={`w-full ${
+              isDark
+                ? "bg-accent text-white shadow-[0_18px_40px_rgba(15,118,110,0.26)] hover:bg-teal-700"
+                : "bg-ink text-white shadow-[0_18px_40px_rgba(8,17,31,0.18)] hover:bg-slate-900"
+            }`}
+          >
+            Sign in
+          </Button>
         </div>
       </form>
     </div>

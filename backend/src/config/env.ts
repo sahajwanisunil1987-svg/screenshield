@@ -1,7 +1,32 @@
 import dotenv from "dotenv";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { z } from "zod";
 
-dotenv.config();
+const currentFile = fileURLToPath(import.meta.url);
+const currentDir = path.dirname(currentFile);
+
+const resolveBackendFile = (filename: string) => {
+  const candidates = [
+    path.resolve(currentDir, "../../", filename),
+    path.resolve(currentDir, "../../../backend", filename),
+    path.resolve(currentDir, "../../../", filename)
+  ];
+
+  return candidates.find((candidate) => fs.existsSync(candidate));
+};
+
+const exampleEnvPath = resolveBackendFile(".env.example");
+const localEnvPath = resolveBackendFile(".env");
+
+if (exampleEnvPath) {
+  dotenv.config({ path: exampleEnvPath });
+}
+
+if (localEnvPath) {
+  dotenv.config({ path: localEnvPath, override: true });
+}
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
