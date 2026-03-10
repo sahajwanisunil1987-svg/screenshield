@@ -51,12 +51,12 @@ export default async function HomePage() {
       <section className="bg-hero-grid text-white">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
           <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-teal-200">Find parts faster</p>
-            <h1 className="mt-4 font-display text-4xl leading-tight sm:text-5xl">
-              Brand to model to part, without the noise.
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-teal-200">Mobile spare parts made easy</p>
+            <h1 className="mt-4 font-display text-3xl leading-tight sm:text-4xl">
+              Find the right spare part in three quick steps.
             </h1>
-            <p className="mt-4 max-w-2xl text-base text-white/72 sm:text-lg">
-              Select the mobile brand, choose the model, then open the exact spare part you need.
+            <p className="mt-4 max-w-2xl text-sm text-white/72 sm:text-base">
+              Choose the brand, pick the model, then open batteries, displays, charging parts, cameras, and more.
             </p>
           </div>
           <div className="mt-8 max-w-5xl">
