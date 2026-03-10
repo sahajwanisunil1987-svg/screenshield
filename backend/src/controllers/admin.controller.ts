@@ -347,13 +347,49 @@ export const accounting = async (req: Request, res: Response) => {
     pendingPaymentValue: 0
   });
 
+  const summaryWithDerived = {
+    ...summary,
+    taxableValue: Math.max(summary.netSales - summary.shippingCollected - summary.taxCollected, 0),
+    cgstCollected: summary.taxCollected / 2,
+    sgstCollected: summary.taxCollected / 2,
+    averageNetOrderValue: summary.netOrders ? summary.netSales / summary.netOrders : 0
+  };
+
+  const dailyBreakdownMap = new Map<string, {
+    date: string;
+    label: string;
+    grossSales: number;
+    netSales: number;
+    taxCollected: number;
+    orders: number;
+    refunds: number;
+  }>();
+
+  for (const order of reportOrders) {
+    const dateKey = order.createdAt.toISOString().slice(0, 10);
+    const existing = dailyBreakdownMap.get(dateKey) ?? {
+      date: dateKey,
+      label: new Date(order.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" }),
+      grossSales: 0,
+      netSales: 0,
+      taxCollected: 0,
+      orders: 0,
+      refunds: 0
+    };
+
+    existing.grossSales += order.subtotal;
+    existing.taxCollected += order.taxAmount;
+    existing.orders += 1;
+    if (order.isNetOrder) existing.netSales += order.totalAmount;
+    if (order.isCancelled || order.isReturned || order.isRefunded) existing.refunds += order.totalAmount;
+    dailyBreakdownMap.set(dateKey, existing);
+  }
+
   res.json({
     range,
     rangeStart,
-    summary: {
-      ...summary,
-      averageNetOrderValue: summary.netOrders ? summary.netSales / summary.netOrders : 0
-    },
+    summary: summaryWithDerived,
+    dailyBreakdown: Array.from(dailyBreakdownMap.values()).sort((a, b) => b.date.localeCompare(a.date)),
     reportOrders
   });
 };

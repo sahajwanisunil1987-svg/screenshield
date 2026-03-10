@@ -28,8 +28,20 @@ type AccountingResponse = {
     prepaidOrders: number;
     prepaidValue: number;
     pendingPaymentValue: number;
+    taxableValue: number;
+    cgstCollected: number;
+    sgstCollected: number;
     averageNetOrderValue: number;
   };
+  dailyBreakdown: Array<{
+    date: string;
+    label: string;
+    grossSales: number;
+    netSales: number;
+    taxCollected: number;
+    orders: number;
+    refunds: number;
+  }>;
   reportOrders: Array<{
     id: string;
     orderNumber: string;
@@ -120,6 +132,24 @@ export default function AdminAccountingPage() {
       setIsExporting(false);
     }
   };
+
+  const gstCards = useMemo(
+    () => [
+      { label: "Taxable Value", value: formatCurrency(data?.summary?.taxableValue ?? 0), detail: "Net value before GST in this range" },
+      { label: "CGST", value: formatCurrency(data?.summary?.cgstCollected ?? 0), detail: "Half of GST collected on orders" },
+      { label: "SGST", value: formatCurrency(data?.summary?.sgstCollected ?? 0), detail: "Half of GST collected on orders" }
+    ],
+    [data]
+  );
+
+  const impactCards = useMemo(
+    () => [
+      { label: "Cancelled", value: `${data?.summary?.cancelledOrders ?? 0}`, detail: `${formatCurrency(data?.summary?.cancelledValue ?? 0)} cancelled order value` },
+      { label: "Returned", value: `${data?.summary?.returnedOrders ?? 0}`, detail: `${formatCurrency(data?.summary?.returnedValue ?? 0)} approved returns` },
+      { label: "Refunded", value: formatCurrency(data?.summary?.refundedValue ?? 0), detail: "Refunded amount already impacting cash flow" }
+    ],
+    [data]
+  );
 
   const riskCards = useMemo(
     () => [
@@ -226,7 +256,8 @@ export default function AdminAccountingPage() {
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+        <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="font-semibold text-white">Accounting report</h3>
@@ -282,6 +313,72 @@ export default function AdminAccountingPage() {
                 No orders were created in this range, so there is no accounting report to export yet.
               </p>
             )}
+          </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">GST summary</p>
+              <div className="mt-4 grid gap-3">
+                {gstCards.map((card) => (
+                  <div key={card.label} className="rounded-[22px] border border-white/10 bg-black/10 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm text-white/70">{card.label}</p>
+                      <p className="text-base font-semibold text-white">{isLoading ? "..." : card.value}</p>
+                    </div>
+                    <p className="mt-1 text-xs text-white/45">{card.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">Impact summary</p>
+              <div className="mt-4 grid gap-3">
+                {impactCards.map((card) => (
+                  <div key={card.label} className="rounded-[22px] border border-white/10 bg-black/10 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm text-white/70">{card.label}</p>
+                      <p className="text-base font-semibold text-white">{isLoading ? "..." : card.value}</p>
+                    </div>
+                    <p className="mt-1 text-xs text-white/45">{card.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-semibold text-white">Daily breakdown</h3>
+                  <p className="mt-1 text-sm text-white/50">Gross vs net sales with refund drag by day.</p>
+                </div>
+              </div>
+              <div className="mt-4 space-y-3">
+                {isLoading ? (
+                  Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-[20px] bg-white/5" />)
+                ) : data?.dailyBreakdown?.length ? (
+                  data.dailyBreakdown.slice(0, 7).map((entry) => (
+                    <div key={entry.date} className="rounded-[20px] border border-white/10 bg-black/10 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-white">{entry.label}</p>
+                          <p className="mt-1 text-xs text-white/45">{entry.orders} orders • {formatCurrency(entry.taxCollected)} GST</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-emerald-200">{formatCurrency(entry.netSales)}</p>
+                          <p className="mt-1 text-xs text-white/45">Gross {formatCurrency(entry.grossSales)} · Refund drag {formatCurrency(entry.refunds)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="rounded-[20px] border border-dashed border-white/10 bg-black/10 px-4 py-6 text-center text-sm text-white/50">
+                    No daily data available for this range yet.
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </AdminShell>
