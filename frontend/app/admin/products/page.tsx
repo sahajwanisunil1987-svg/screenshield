@@ -10,6 +10,31 @@ import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
 import { PaginatedResponse, Product } from "@/types";
 
+const readinessState = (product: Product) => {
+  const stock = product.inventory?.stock ?? product.stock;
+  const hasImages = (product.images?.length ?? 0) > 0;
+  const hasVideo = Boolean(product.videoUrl);
+  const lowStockLimit = product.inventory?.lowStockLimit ?? 5;
+
+  if (!product.isActive) {
+    return { label: "Inactive", chip: "bg-white/10 text-white/75" };
+  }
+
+  if (!hasImages) {
+    return { label: "Needs media", chip: "bg-rose-500/15 text-rose-200" };
+  }
+
+  if (stock <= lowStockLimit) {
+    return { label: "Low stock", chip: "bg-amber-500/15 text-amber-200" };
+  }
+
+  if (!hasVideo) {
+    return { label: "Image ready", chip: "bg-cyan-500/15 text-cyan-200" };
+  }
+
+  return { label: "Ready", chip: "bg-emerald-500/15 text-emerald-200" };
+};
+
 export default function AdminProductsPage() {
   const token = useAuthStore((state) => state.token);
   const [data, setData] = useState<Product[]>([]);
@@ -17,6 +42,7 @@ export default function AdminProductsPage() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
   const [featureFilter, setFeatureFilter] = useState<"ALL" | "FEATURED" | "STANDARD">("ALL");
+  const [opsFilter, setOpsFilter] = useState<"ALL" | "LOW_STOCK" | "MISSING_MEDIA" | "INACTIVE">("ALL");
   const [page, setPage] = useState(1);
 
   const load = () => {
@@ -58,9 +84,53 @@ export default function AdminProductsPage() {
     [pagination.page, pagination.pages]
   );
 
+
+  const visibleProducts = useMemo(() => {
+    return data.filter((product) => {
+      const stock = product.inventory?.stock ?? product.stock;
+      const lowStockLimit = product.inventory?.lowStockLimit ?? 5;
+      const hasMedia = (product.images?.length ?? 0) > 0;
+
+      if (opsFilter === "LOW_STOCK") return stock <= lowStockLimit;
+      if (opsFilter === "MISSING_MEDIA") return !hasMedia;
+      if (opsFilter === "INACTIVE") return !product.isActive;
+      return true;
+    });
+  }, [data, opsFilter]);
+
+  const summary = useMemo(() => ({
+    lowStock: data.filter((product) => (product.inventory?.stock ?? product.stock) <= (product.inventory?.lowStockLimit ?? 5)).length,
+    missingMedia: data.filter((product) => (product.images?.length ?? 0) === 0).length,
+    inactive: data.filter((product) => !product.isActive).length,
+    ready: data.filter((product) => readinessState(product).label === "Ready").length
+  }), [data]);
+
   return (
     <AdminGuard>
       <AdminShell title="Products">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-[28px] border border-emerald-400/20 bg-emerald-500/10 p-5 text-white">
+            <p className="text-sm text-white/65">Ready products</p>
+            <p className="mt-3 font-display text-4xl text-emerald-100">{summary.ready}</p>
+            <p className="mt-2 text-xs text-white/50">Active catalog items with media and safe stock.</p>
+          </div>
+          <div className="rounded-[28px] border border-amber-400/20 bg-amber-500/10 p-5 text-white">
+            <p className="text-sm text-white/65">Low stock</p>
+            <p className="mt-3 font-display text-4xl text-amber-100">{summary.lowStock}</p>
+            <p className="mt-2 text-xs text-white/50">Products nearing their low-stock threshold.</p>
+          </div>
+          <div className="rounded-[28px] border border-rose-400/20 bg-rose-500/10 p-5 text-white">
+            <p className="text-sm text-white/65">Missing media</p>
+            <p className="mt-3 font-display text-4xl text-rose-100">{summary.missingMedia}</p>
+            <p className="mt-2 text-xs text-white/50">Catalog items that still need at least one image.</p>
+          </div>
+          <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 text-white">
+            <p className="text-sm text-white/65">Inactive</p>
+            <p className="mt-3 font-display text-4xl text-white">{summary.inactive}</p>
+            <p className="mt-2 text-xs text-white/50">Products currently hidden from the storefront.</p>
+          </div>
+        </div>
+
         <div className="flex flex-col gap-4 rounded-[28px] border border-white/10 bg-white/5 p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -72,6 +142,26 @@ export default function AdminProductsPage() {
             <Link href="/admin/products/new">
               <Button>New product</Button>
             </Link>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: "ALL", label: "All products" },
+              { key: "LOW_STOCK", label: "Low stock" },
+              { key: "MISSING_MEDIA", label: "Missing media" },
+              { key: "INACTIVE", label: "Inactive" }
+            ].map((entry) => (
+              <button
+                key={entry.key}
+                type="button"
+                onClick={() => setOpsFilter(entry.key as typeof opsFilter)}
+                className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
+                  opsFilter === entry.key ? "bg-white text-ink" : "border border-white/10 text-white/70 hover:bg-white/10"
+                }`}
+              >
+                {entry.label}
+              </button>
+            ))}
           </div>
 
           <div className="grid gap-3 lg:grid-cols-[1.5fr_repeat(2,minmax(0,220px))]">
@@ -103,26 +193,38 @@ export default function AdminProductsPage() {
         </div>
         <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
           <div className="space-y-4">
-            {data.map((product) => (
-              <div key={product.id} className="flex items-center justify-between gap-4 border-b border-white/10 pb-4 text-sm">
-                <div>
-                  <p className="font-semibold">{product.name}</p>
-                  <p className="text-white/60">
-                    {product.sku} · {product.brand.name} · Stock {product.inventory?.stock ?? product.stock}
-                  </p>
-                  <div className="mt-2 flex gap-2 text-xs">
-                    <span className="rounded-full bg-white/10 px-2 py-1">{product.isActive ? "Active" : "Inactive"}</span>
-                    <span className="rounded-full bg-teal-500/20 px-2 py-1 text-teal-100">
-                      {product.isFeatured ? "Featured" : "Standard"}
+            {visibleProducts.map((product) => (
+              <div key={product.id} className="flex flex-col gap-4 border-b border-white/10 pb-4 text-sm xl:flex-row xl:items-center xl:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-white">{product.name}</p>
+                    <span className={`rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${readinessState(product).chip}`}>
+                      {readinessState(product).label}
                     </span>
+                    <span className="rounded-full bg-white/10 px-2 py-1 text-[11px] uppercase tracking-[0.14em] text-white/75">{product.isActive ? "Active" : "Inactive"}</span>
+                    <span className="rounded-full bg-teal-500/20 px-2 py-1 text-[11px] uppercase tracking-[0.14em] text-teal-100">{product.isFeatured ? "Featured" : "Standard"}</span>
+                  </div>
+                  <p className="mt-2 text-white/60">
+                    {product.sku} · {product.brand.name} · {product.model.name} · {product.category.name}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-3 text-xs text-white/50">
+                    <span>Stock {product.inventory?.stock ?? product.stock}</span>
+                    <span>{product.images?.length ?? 0} image(s)</span>
+                    <span>{product.videoUrl ? "Video added" : "No video"}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <Link href={`/admin/products/edit/${product.id}`} className="text-accent">
+                <div className="flex flex-wrap items-center gap-3 xl:justify-end">
+                  <Link href={`/products/${product.slug}`} className="rounded-full border border-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white/80 transition hover:bg-white/10">
+                    Open live
+                  </Link>
+                  <Link href={`/admin/inventory?search=${encodeURIComponent(product.sku)}`} className="rounded-full border border-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white/80 transition hover:bg-white/10">
+                    Inventory
+                  </Link>
+                  <Link href={`/admin/products/edit/${product.id}`} className="rounded-full border border-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-200 transition hover:bg-white/10">
                     Edit
                   </Link>
                   <button
-                    className="text-red-300"
+                    className="rounded-full border border-rose-400/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-rose-200 transition hover:bg-rose-500/10"
                     onClick={async () => {
                       try {
                         await api.delete(`/admin/products/${product.id}`, authHeaders(token));
@@ -138,7 +240,7 @@ export default function AdminProductsPage() {
                 </div>
               </div>
             ))}
-            {!data.length ? (
+            {!visibleProducts.length ? (
               <div className="rounded-[24px] border border-dashed border-white/10 bg-black/10 px-6 py-10 text-center text-sm text-white/55">
                 No products match the current search and filters.
               </div>
