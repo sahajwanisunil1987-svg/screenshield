@@ -17,11 +17,15 @@ export const dashboard = async (req: Request, res: Response) => {
   rangeStart.setHours(0, 0, 0, 0);
   rangeStart.setDate(rangeStart.getDate() - (days - 1));
 
+  const netSalesWhere: Prisma.OrderWhereInput = {
+    createdAt: { gte: rangeStart },
+    status: { not: "CANCELLED" },
+    OR: [{ returnRequestStatus: null }, { returnRequestStatus: { not: "APPROVED" } }]
+  };
+
   const [totalOrders, totalProducts, lowStock, recentOrders, revenueAgg, topProducts, users, rangedOrders, rangedCustomers] = await Promise.all([
     prisma.order.count({
-      where: {
-        createdAt: { gte: rangeStart }
-      }
+      where: netSalesWhere
     }),
     prisma.product.count(),
     prisma.inventory.findMany({
@@ -33,6 +37,9 @@ export const dashboard = async (req: Request, res: Response) => {
       }
     }),
     prisma.order.findMany({
+      where: {
+        createdAt: { gte: rangeStart }
+      },
       take: 5,
       include: {
         user: { select: { name: true } }
@@ -40,18 +47,14 @@ export const dashboard = async (req: Request, res: Response) => {
       orderBy: { createdAt: "desc" }
     }),
     prisma.order.aggregate({
-      where: {
-        createdAt: { gte: rangeStart }
-      },
+      where: netSalesWhere,
       _sum: {
         totalAmount: true
       }
     }),
     prisma.orderItem.findMany({
       where: {
-        order: {
-          createdAt: { gte: rangeStart }
-        }
+        order: netSalesWhere
       },
       include: {
         product: {
@@ -71,9 +74,7 @@ export const dashboard = async (req: Request, res: Response) => {
       take: 20
     }),
     prisma.order.findMany({
-      where: {
-        createdAt: { gte: rangeStart }
-      },
+      where: netSalesWhere,
       select: {
         id: true,
         totalAmount: true,
@@ -148,6 +149,8 @@ export const dashboard = async (req: Request, res: Response) => {
     .slice(0, 5)
     .map(([name, quantity]) => ({ name, quantity }));
 
+  const fulfilledOrders = rangedOrders.filter((order) => ["SHIPPED", "DELIVERED"].includes(order.status)).length;
+
   res.json({
     range,
     rangeStart,
@@ -157,6 +160,7 @@ export const dashboard = async (req: Request, res: Response) => {
       totalRevenue: Number(revenueAgg._sum.totalAmount ?? 0),
       lowStockCount: lowStock.length,
       newCustomers: rangedCustomers,
+      fulfilledOrders,
       averageOrderValue: totalOrders ? Number(revenueAgg._sum.totalAmount ?? 0) / totalOrders : 0
     },
     lowStock,

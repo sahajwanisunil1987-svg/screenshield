@@ -62,8 +62,7 @@ export default function AdminDashboardPage() {
 
   const topSellerMax = Math.max(...(data?.topProducts?.map((product: any) => Number(product.quantity ?? 0)) ?? [1]));
   const lowStockCriticalCount = data?.lowStock?.filter((item: any) => item.stock <= Math.max(1, Math.floor(item.lowStockLimit / 2))).length ?? 0;
-  const fulfilledCount =
-    data?.recentOrders?.filter((order: any) => ["DELIVERED", "SHIPPED"].includes(order.status)).length ?? 0;
+  const fulfilledCount = data?.stats?.fulfilledOrders ?? 0;
   const trendMax = Math.max(...(data?.trend?.map((point: any) => Number(point.revenue ?? 0)) ?? [1]));
 
   return (
@@ -121,7 +120,7 @@ export default function AdminDashboardPage() {
               <div className="rounded-[24px] border border-white/10 bg-black/10 p-4">
                 <p className="text-sm text-white/60">Recent fulfilment</p>
                 <p className="mt-2 text-2xl font-semibold text-white">{isLoading ? "..." : fulfilledCount}</p>
-                <p className="mt-1 text-xs text-white/45">Recent orders already shipped or delivered</p>
+                <p className="mt-1 text-xs text-white/45">Shipped or delivered net orders in the selected range</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Link

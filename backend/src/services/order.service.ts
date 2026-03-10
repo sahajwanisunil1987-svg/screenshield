@@ -467,20 +467,61 @@ export const reviewReturnRequest = async (orderId: string, action: "APPROVE" | "
     throw new ApiError(StatusCodes.BAD_REQUEST, "There is no pending return request for this order");
   }
 
-  return prisma.order.update({
-    where: { id: orderId },
-    data: {
-      returnRequestStatus: action === "APPROVE" ? RequestStatus.APPROVED : RequestStatus.REJECTED,
-      returnDecisionAt: new Date(),
-      returnDecisionNote: note ?? null,
-      ...(action === "APPROVE" ? { returnedAt: new Date() } : {})
-    },
-    include: {
-      items: true,
-      payment: true,
-      invoice: true,
-      user: { select: { id: true, name: true, email: true, phone: true } }
+  if (action === "REJECT") {
+    return prisma.order.update({
+      where: { id: orderId },
+      data: {
+        returnRequestStatus: RequestStatus.REJECTED,
+        returnDecisionAt: new Date(),
+        returnDecisionNote: note ?? null
+      },
+      include: {
+        items: true,
+        payment: true,
+        invoice: true,
+        user: { select: { id: true, name: true, email: true, phone: true } }
+      }
+    });
+  }
+
+  return prisma.$transaction(async (tx) => {
+    for (const item of order.items) {
+      const inventoryUpdate = await tx.inventory.updateMany({
+        where: { productId: item.productId },
+        data: { stock: { increment: item.quantity } }
+      });
+
+      if (inventoryUpdate.count === 0) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { increment: item.quantity } }
+        });
+      }
     }
+
+    if (order.paymentStatus === PaymentStatus.PAID) {
+      await tx.payment.updateMany({
+        where: { orderId },
+        data: { status: PaymentStatus.REFUNDED }
+      });
+    }
+
+    return tx.order.update({
+      where: { id: orderId },
+      data: {
+        paymentStatus: order.paymentStatus === PaymentStatus.PAID ? PaymentStatus.REFUNDED : order.paymentStatus,
+        returnRequestStatus: RequestStatus.APPROVED,
+        returnDecisionAt: new Date(),
+        returnDecisionNote: note ?? null,
+        returnedAt: new Date()
+      },
+      include: {
+        items: true,
+        payment: true,
+        invoice: true,
+        user: { select: { id: true, name: true, email: true, phone: true } }
+      }
+    });
   });
 };
 
