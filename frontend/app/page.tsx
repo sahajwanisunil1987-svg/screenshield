@@ -3,11 +3,10 @@ import Link from "next/link";
 import nextDynamic from "next/dynamic";
 import { ShieldCheck, Truck, Wallet } from "lucide-react";
 import { PageShell } from "@/components/layout/page-shell";
-import { ProductCard } from "@/components/products/product-card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { fetchApi } from "@/lib/server-api";
 import { buildMetadata } from "@/lib/seo";
-import { Brand, Category, MobileModel, ProductListResponse } from "@/types";
+import { Brand, Category, MobileModel } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -47,11 +46,10 @@ const popularRepairFlows = [
 ];
 
 export default async function HomePage() {
-  const [brands, categories, models, featured] = await Promise.all([
+  const [brands, categories, models] = await Promise.all([
     fetchApi<Brand[]>("/brands", { cache: "no-store" }),
     fetchApi<Category[]>("/categories", { cache: "no-store" }),
-    fetchApi<MobileModel[]>("/models", { cache: "no-store" }),
-    fetchApi<ProductListResponse>("/products?featured=true&limit=4", { cache: "no-store" })
+    fetchApi<MobileModel[]>("/models", { cache: "no-store" })
   ]);
 
   return (
@@ -85,26 +83,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="Popular Brands"
-          title="Start from the mobile brand"
-          description="Open the brand catalog, choose the model, then jump into the right repair part without hunting through unrelated products."
-        />
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-          {brands.map((brand) => (
-            <Link
-              key={brand.id}
-              href={`/brands/${brand.slug}`}
-              className="rounded-[24px] border border-slate-200 bg-white p-5 text-center shadow-card transition hover:-translate-y-1 hover:border-accent/20"
-            >
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate">Brand</p>
-              <p className="mt-2 font-display text-xl text-ink">{brand.name}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid gap-4 rounded-[32px] bg-white p-6 shadow-card md:grid-cols-3">
           {trustBadges.map((item) => (
@@ -117,18 +95,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:pb-16">
-        <SectionHeading
-          eyebrow="Featured"
-          title="Fast-moving spare parts"
-          description="A short featured strip for high-demand parts. Keep browsing focused, then switch to brand and model for exact compatibility."
-        />
-        <div className="mt-10 grid gap-6 lg:grid-cols-4">
-          {featured.items.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      </section>
     </PageShell>
   );
 }
