@@ -39,8 +39,8 @@ export default function CartPage() {
           </div>
           <div className="rounded-[24px] bg-white/80 p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Current total</p>
-            <p className="mt-2 text-2xl font-semibold text-ink">{hasHydrated ? formatCurrency(total) : "..."}</p>
-            <p className="mt-1 text-sm text-slate">Includes shipping and GST</p>
+            <p className="mt-2 text-2xl font-semibold text-ink">{hasHydrated ? (items.length ? formatCurrency(total) : formatCurrency(0)) : "..."}</p>
+            <p className="mt-1 text-sm text-slate">{hasHydrated && items.length ? "Includes shipping and GST" : "Add items to see shipping and GST"}</p>
           </div>
         </div>
         <div className="mt-10 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
