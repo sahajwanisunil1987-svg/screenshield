@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AdminGuard } from "@/components/admin/admin-guard";
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -40,6 +40,7 @@ export default function AdminOrdersPage() {
   const [opsView, setOpsView] = useState<(typeof opsViews)[number]["key"]>("ALL");
   const [page, setPage] = useState(1);
   const [drafts, setDrafts] = useState<Record<string, OpsDraft>>({});
+  const deferredQuery = useDeferredValue(query);
 
   const load = () => {
     if (!token) return;
@@ -47,7 +48,7 @@ export default function AdminOrdersPage() {
       .get<PaginatedResponse<AdminOrder>>("/admin/orders", {
         ...authHeaders(token),
         params: {
-          search: query || undefined,
+          search: deferredQuery || undefined,
           status: statusFilter,
           paymentStatus: paymentFilter,
           opsView,
@@ -78,11 +79,11 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     load();
-  }, [opsView, page, paymentFilter, query, statusFilter, token]);
+  }, [deferredQuery, opsView, page, paymentFilter, statusFilter, token]);
 
   useEffect(() => {
     setPage(1);
-  }, [opsView, paymentFilter, query, statusFilter]);
+  }, [deferredQuery, opsView, paymentFilter, statusFilter]);
 
   const pageNumbers = useMemo(() =>
     Array.from({ length: pagination.pages }, (_, index) => index + 1).filter((entry) =>
@@ -189,27 +190,27 @@ export default function AdminOrdersPage() {
             <div className="rounded-[22px] border border-amber-400/20 bg-amber-500/10 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100/80">Cancel approvals</p>
               <p className="mt-2 text-2xl font-semibold text-white">{opsSummary.pendingCancel}</p>
-              <p className="mt-1 text-xs text-white/55">Pending in current result set</p>
+              <p className="mt-1 text-xs text-white/55">Visible on this page</p>
             </div>
             <div className="rounded-[22px] border border-sky-400/20 bg-sky-500/10 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-100/80">Return approvals</p>
               <p className="mt-2 text-2xl font-semibold text-white">{opsSummary.pendingReturn}</p>
-              <p className="mt-1 text-xs text-white/55">Pending in current result set</p>
+              <p className="mt-1 text-xs text-white/55">Visible on this page</p>
             </div>
             <div className="rounded-[22px] border border-amber-400/20 bg-amber-500/10 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100/80">Awaiting packing</p>
               <p className="mt-2 text-2xl font-semibold text-white">{opsSummary.awaitingPacking}</p>
-              <p className="mt-1 text-xs text-white/55">Confirmed orders not packed yet</p>
+              <p className="mt-1 text-xs text-white/55">Visible confirmed orders on this page</p>
             </div>
             <div className="rounded-[22px] border border-fuchsia-400/20 bg-fuchsia-500/10 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-100/80">Awaiting shipment</p>
               <p className="mt-2 text-2xl font-semibold text-white">{opsSummary.awaitingShipment}</p>
-              <p className="mt-1 text-xs text-white/55">Packed orders not shipped yet</p>
+              <p className="mt-1 text-xs text-white/55">Visible packed orders on this page</p>
             </div>
             <div className="rounded-[22px] border border-rose-400/20 bg-rose-500/10 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-rose-100/80">Shipment issues</p>
               <p className="mt-2 text-2xl font-semibold text-white">{opsSummary.shipmentIssues}</p>
-              <p className="mt-1 text-xs text-white/55">Missing courier, AWB, or ETA</p>
+              <p className="mt-1 text-xs text-white/55">Visible orders missing courier, AWB, or ETA</p>
             </div>
           </div>
           <div className="grid gap-3 xl:grid-cols-[1.5fr_repeat(2,minmax(0,220px))]">
