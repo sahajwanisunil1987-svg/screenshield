@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import nextDynamic from "next/dynamic";
 import { ShieldCheck, Truck, Wallet } from "lucide-react";
 import { PageShell } from "@/components/layout/page-shell";
@@ -39,11 +38,6 @@ const trustBadges = [
   { icon: Truck, title: "Fast dispatch", detail: "Quick-moving spare part catalog built for urgent repairs." }
 ];
 
-const popularRepairFlows = [
-  { label: "Vivo batteries", href: "/brands/vivo/models/vivo-y21" },
-  { label: "iPhone displays", href: "/brands/apple/models/iphone-13" },
-  { label: "Samsung charging parts", href: "/products?brand=samsung&category=charging-port" }
-];
 
 export default async function HomePage() {
   const [brands, categories, models] = await Promise.all([
@@ -56,29 +50,17 @@ export default async function HomePage() {
     <PageShell>
       <section className="bg-hero-grid text-white">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
-          <div className="max-w-4xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-teal-200">Mobile spare parts</p>
-            <h1 className="mt-5 font-display text-5xl leading-tight sm:text-6xl">
-              Choose the brand, pick the model, then find the exact part.
+          <div className="max-w-3xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-teal-200">Find parts faster</p>
+            <h1 className="mt-4 font-display text-4xl leading-tight sm:text-5xl">
+              Brand to model to part, without the noise.
             </h1>
-            <p className="mt-6 max-w-3xl text-lg text-white/75">
-              SpareKart keeps parts discovery simple for repair shops and customers. Start with the mobile brand, select the model, and move straight into batteries, displays, charging parts, cameras, and more.
+            <p className="mt-4 max-w-2xl text-base text-white/72 sm:text-lg">
+              Select the mobile brand, choose the model, then open the exact spare part you need.
             </p>
           </div>
-          <div className="mt-10 max-w-6xl">
+          <div className="mt-8 max-w-5xl">
             <HeroSearch brands={brands} models={models} categories={categories} />
-          </div>
-          <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-white/75">
-            <span className="font-semibold text-white">Popular flows</span>
-            {popularRepairFlows.map((flow) => (
-              <Link
-                key={flow.label}
-                href={flow.href}
-                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 font-semibold transition hover:bg-white/10 hover:text-white"
-              >
-                {flow.label}
-              </Link>
-            ))}
           </div>
         </div>
       </section>
