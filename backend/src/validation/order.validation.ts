@@ -75,6 +75,10 @@ export const adminOrderListSchema = z.object({
     .enum(["ALL", "PENDING", "PAID", "FAILED", "REFUNDED", "COD"])
     .default("ALL")
     .optional(),
+  opsView: z
+    .enum(["ALL", "PENDING_CANCEL", "PENDING_RETURN", "AWAITING_PACKING", "AWAITING_SHIPMENT", "MISSING_SHIPMENT_FIELDS"])
+    .default("ALL")
+    .optional(),
   page: z.coerce.number().int().min(1).default(1).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(8).optional()
 });

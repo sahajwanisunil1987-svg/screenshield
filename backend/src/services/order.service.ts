@@ -562,15 +562,36 @@ export const adminOrders = async (query?: {
   search?: string;
   status?: "ALL" | OrderStatus;
   paymentStatus?: "ALL" | PaymentStatus;
+  opsView?: "ALL" | "PENDING_CANCEL" | "PENDING_RETURN" | "AWAITING_PACKING" | "AWAITING_SHIPMENT" | "MISSING_SHIPMENT_FIELDS";
   page?: number;
   limit?: number;
 }) => {
   const page = query?.page ?? 1;
   const limit = query?.limit ?? 8;
 
+  const opsViewWhere: Prisma.OrderWhereInput =
+    query?.opsView === "PENDING_CANCEL"
+      ? { cancelRequestStatus: RequestStatus.PENDING }
+      : query?.opsView === "PENDING_RETURN"
+        ? { returnRequestStatus: RequestStatus.PENDING }
+        : query?.opsView === "AWAITING_PACKING"
+          ? { status: OrderStatus.CONFIRMED }
+          : query?.opsView === "AWAITING_SHIPMENT"
+            ? { status: OrderStatus.PACKED }
+            : query?.opsView === "MISSING_SHIPMENT_FIELDS"
+              ? {
+                  OR: [
+                    { status: OrderStatus.SHIPPED, shippingCourier: null },
+                    { status: OrderStatus.SHIPPED, shippingAwb: null },
+                    { status: OrderStatus.PACKED, estimatedDeliveryAt: null }
+                  ]
+                }
+              : {};
+
   const where: Prisma.OrderWhereInput = {
     ...(query?.status && query.status !== "ALL" ? { status: query.status } : {}),
     ...(query?.paymentStatus && query.paymentStatus !== "ALL" ? { paymentStatus: query.paymentStatus } : {}),
+    ...opsViewWhere,
     ...(query?.search
       ? {
           OR: [

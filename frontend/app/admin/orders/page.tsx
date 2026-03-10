@@ -11,6 +11,14 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 
 const orderStatuses = ["PENDING", "CONFIRMED", "PACKED", "SHIPPED", "DELIVERED", "CANCELLED"];
 const paymentStatuses = ["PENDING", "PAID", "FAILED", "REFUNDED", "COD"];
+const opsViews = [
+  { key: "ALL", label: "All orders" },
+  { key: "PENDING_CANCEL", label: "Cancel approvals" },
+  { key: "PENDING_RETURN", label: "Return approvals" },
+  { key: "AWAITING_PACKING", label: "Awaiting packing" },
+  { key: "AWAITING_SHIPMENT", label: "Awaiting shipment" },
+  { key: "MISSING_SHIPMENT_FIELDS", label: "Shipment issues" }
+] as const;
 
 type OpsDraft = {
   status: string;
@@ -28,6 +36,7 @@ export default function AdminOrdersPage() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [paymentFilter, setPaymentFilter] = useState("ALL");
+  const [opsView, setOpsView] = useState<(typeof opsViews)[number]["key"]>("ALL");
   const [page, setPage] = useState(1);
   const [drafts, setDrafts] = useState<Record<string, OpsDraft>>({});
 
@@ -40,6 +49,7 @@ export default function AdminOrdersPage() {
           search: query || undefined,
           status: statusFilter,
           paymentStatus: paymentFilter,
+          opsView,
           page,
           limit: 8
         }
@@ -67,16 +77,29 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     load();
-  }, [page, paymentFilter, query, statusFilter, token]);
+  }, [opsView, page, paymentFilter, query, statusFilter, token]);
 
   useEffect(() => {
     setPage(1);
-  }, [paymentFilter, query, statusFilter]);
+  }, [opsView, paymentFilter, query, statusFilter]);
 
   const pageNumbers = useMemo(() =>
     Array.from({ length: pagination.pages }, (_, index) => index + 1).filter((entry) =>
       entry === 1 || entry === pagination.pages || Math.abs(entry - pagination.page) <= 1
     ), [pagination.page, pagination.pages]);
+
+
+  const opsSummary = useMemo(() => ({
+    pendingCancel: orders.filter((order) => order.cancelRequestStatus === "PENDING").length,
+    pendingReturn: orders.filter((order) => order.returnRequestStatus === "PENDING").length,
+    awaitingPacking: orders.filter((order) => order.status === "CONFIRMED").length,
+    awaitingShipment: orders.filter((order) => order.status === "PACKED").length,
+    shipmentIssues: orders.filter(
+      (order) =>
+        (order.status === "SHIPPED" && (!order.shippingCourier || !order.shippingAwb)) ||
+        (order.status === "PACKED" && !order.estimatedDeliveryAt)
+    ).length
+  }), [orders]);
 
   const setDraftField = (id: string, key: keyof OpsDraft, value: string) => {
     setDrafts((current) => ({
@@ -147,6 +170,47 @@ export default function AdminOrdersPage() {
             </div>
             <button type="button" onClick={load} className="text-sm text-white/60 underline">Refresh list</button>
           </div>
+          <div className="flex flex-wrap gap-2">
+            {opsViews.map((entry) => (
+              <button
+                key={entry.key}
+                type="button"
+                onClick={() => setOpsView(entry.key)}
+                className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
+                  opsView === entry.key ? "bg-white text-ink" : "border border-white/10 text-white/70 hover:bg-white/10"
+                }`}
+              >
+                {entry.label}
+              </button>
+            ))}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="rounded-[22px] border border-amber-400/20 bg-amber-500/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100/80">Cancel approvals</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{opsSummary.pendingCancel}</p>
+              <p className="mt-1 text-xs text-white/55">Pending in current result set</p>
+            </div>
+            <div className="rounded-[22px] border border-sky-400/20 bg-sky-500/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-100/80">Return approvals</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{opsSummary.pendingReturn}</p>
+              <p className="mt-1 text-xs text-white/55">Pending in current result set</p>
+            </div>
+            <div className="rounded-[22px] border border-amber-400/20 bg-amber-500/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100/80">Awaiting packing</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{opsSummary.awaitingPacking}</p>
+              <p className="mt-1 text-xs text-white/55">Confirmed orders not packed yet</p>
+            </div>
+            <div className="rounded-[22px] border border-fuchsia-400/20 bg-fuchsia-500/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-100/80">Awaiting shipment</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{opsSummary.awaitingShipment}</p>
+              <p className="mt-1 text-xs text-white/55">Packed orders not shipped yet</p>
+            </div>
+            <div className="rounded-[22px] border border-rose-400/20 bg-rose-500/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-rose-100/80">Shipment issues</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{opsSummary.shipmentIssues}</p>
+              <p className="mt-1 text-xs text-white/55">Missing courier, AWB, or ETA</p>
+            </div>
+          </div>
           <div className="grid gap-3 xl:grid-cols-[1.5fr_repeat(2,minmax(0,220px))]">
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by order number, customer, email, or phone" className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40" />
             <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink">
@@ -176,6 +240,8 @@ export default function AdminOrdersPage() {
                       {order.returnRequestStatus === "PENDING" ? <span className="rounded-full bg-sky-500/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-200">Return requested</span> : null}
                       {order.returnRequestStatus === "APPROVED" ? <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200">Return approved</span> : null}
                       {order.returnRequestStatus === "REJECTED" ? <span className="rounded-full bg-rose-500/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-200">Return declined</span> : null}
+                      {order.status === "SHIPPED" && (!order.shippingCourier || !order.shippingAwb) ? <span className="rounded-full bg-rose-500/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-200">Shipment details missing</span> : null}
+                      {order.status === "PACKED" && !order.estimatedDeliveryAt ? <span className="rounded-full bg-amber-500/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-200">ETA missing</span> : null}
                     </div>
                     <p className="text-white/60">Placed {formatDate(order.createdAt)} · {order.user.name} · {order.user.email}</p>
                   </div>
@@ -200,6 +266,8 @@ export default function AdminOrdersPage() {
                     {order.cancelRequestReason ? <div className="rounded-2xl bg-amber-50/10 p-3 text-amber-100"><p className="text-xs uppercase tracking-[0.16em] text-amber-200/80">Cancel reason</p><p className="mt-2">{order.cancelRequestReason}</p></div> : null}
                     {order.cancelDecisionNote ? <div className="rounded-2xl bg-rose-50/10 p-3 text-rose-100"><p className="text-xs uppercase tracking-[0.16em] text-rose-200/80">Cancel decision</p><p className="mt-2">{order.cancelDecisionNote}</p></div> : null}
                     {order.returnRequestReason ? <div className="rounded-2xl bg-sky-50/10 p-3 text-sky-100"><p className="text-xs uppercase tracking-[0.16em] text-sky-200/80">Return reason</p><p className="mt-2">{order.returnRequestReason}</p></div> : null}
+                    {order.status === "SHIPPED" && (!order.shippingCourier || !order.shippingAwb) ? <div className="rounded-2xl bg-rose-50/10 p-3 text-rose-100"><p className="text-xs uppercase tracking-[0.16em] text-rose-200/80">Shipment warning</p><p className="mt-2">This order is marked shipped, but courier or AWB details are still missing.</p></div> : null}
+                    {order.status === "PACKED" && !order.estimatedDeliveryAt ? <div className="rounded-2xl bg-amber-50/10 p-3 text-amber-100"><p className="text-xs uppercase tracking-[0.16em] text-amber-200/80">ETA warning</p><p className="mt-2">Set an estimated delivery date before shipment so tracking remains clear for the customer.</p></div> : null}
                     {order.returnDecisionNote ? <div className="rounded-2xl bg-rose-50/10 p-3 text-rose-100"><p className="text-xs uppercase tracking-[0.16em] text-rose-200/80">Return decision</p><p className="mt-2">{order.returnDecisionNote}</p></div> : null}
                     <div className="grid gap-3 md:grid-cols-2">
                       {order.items.map((item) => (
