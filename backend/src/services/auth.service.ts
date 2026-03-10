@@ -66,7 +66,13 @@ export const registerUser = async (payload: {
   });
 
   const siteUrl = env.SITE_URL || env.FRONTEND_URL;
-  await sendVerificationEmail(user.email, `${siteUrl}/verify-email?token=${verifyToken}`);
+
+  try {
+    await sendVerificationEmail(user.email, `${siteUrl}/verify-email?token=${verifyToken}`);
+  } catch (_error) {
+    await prisma.user.delete({ where: { id: user.id } });
+    throw new ApiError(StatusCodes.BAD_GATEWAY, "Unable to send verification email. Please try again.");
+  }
 
   const profile = await getAuthUserById(user.id);
   return issueAuthPayload({ ...user, emailVerified: profile.emailVerified });
