@@ -172,13 +172,13 @@ export default function AdminOrdersPage() {
             </div>
             <button type="button" onClick={load} className="text-sm text-white/60 underline">Refresh list</button>
           </div>
-          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible sm:px-0">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2">
             {opsViews.map((entry) => (
               <button
                 key={entry.key}
                 type="button"
                 onClick={() => setOpsView(entry.key)}
-                className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
+                className={`rounded-2xl px-3 py-2 text-center text-[12px] font-semibold uppercase tracking-[0.12em] transition ${
                   opsView === entry.key ? "bg-white text-ink" : "border border-white/10 text-white/70 hover:bg-white/10"
                 }`}
               >
@@ -186,7 +186,7 @@ export default function AdminOrdersPage() {
               </button>
             ))}
           </div>
-          <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <div className="rounded-[22px] border border-amber-400/20 bg-amber-500/10 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100/80">Cancel approvals</p>
               <p className="mt-2 text-2xl font-semibold text-white">{opsSummary.pendingCancel}</p>
@@ -229,7 +229,7 @@ export default function AdminOrdersPage() {
           {orders.map((order) => {
             const draft = drafts[order.id];
             return (
-              <div key={order.id} className="space-y-5 rounded-[28px] border border-white/10 bg-white/5 p-5 text-sm">
+              <div key={order.id} className="space-y-5 rounded-[28px] border border-white/10 bg-white/5 p-5 text-base">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-3">

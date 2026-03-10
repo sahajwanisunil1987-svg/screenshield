@@ -108,7 +108,7 @@ export default function AdminProductsPage() {
   return (
     <AdminGuard>
       <AdminShell title="Products">
-        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-[28px] border border-emerald-400/20 bg-emerald-500/10 p-5 text-white">
             <p className="text-sm text-white/65">Ready products</p>
             <p className="mt-3 font-display text-4xl text-emerald-100">{summary.ready}</p>
@@ -144,7 +144,7 @@ export default function AdminProductsPage() {
             </Link>
           </div>
 
-          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible sm:px-0">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2">
             {[
               { key: "ALL", label: "All products" },
               { key: "LOW_STOCK", label: "Low stock" },
@@ -155,7 +155,7 @@ export default function AdminProductsPage() {
                 key={entry.key}
                 type="button"
                 onClick={() => setOpsFilter(entry.key as typeof opsFilter)}
-                className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
+                className={`rounded-2xl px-3 py-2 text-center text-[12px] font-semibold uppercase tracking-[0.12em] transition ${
                   opsFilter === entry.key ? "bg-white text-ink" : "border border-white/10 text-white/70 hover:bg-white/10"
                 }`}
               >
@@ -194,7 +194,7 @@ export default function AdminProductsPage() {
         <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
           <div className="space-y-4">
             {visibleProducts.map((product) => (
-              <div key={product.id} className="flex flex-col gap-4 border-b border-white/10 pb-4 text-sm xl:flex-row xl:items-center xl:justify-between">
+              <div key={product.id} className="flex flex-col gap-4 border-b border-white/10 pb-4 text-base xl:flex-row xl:items-center xl:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-semibold text-white">{product.name}</p>

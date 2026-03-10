@@ -72,15 +72,15 @@ export function AdminShell({ title, children }: { title: string; children: React
               </button>
             </div>
           </div>
-          <p className="mt-3 text-xs font-semibold uppercase tracking-[0.3em] text-teal-200/80">{title}</p>
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          <p className="mt-3 text-xs font-semibold uppercase tracking-[0.24em] text-teal-200/80">{title}</p>
+          <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
             {mobileLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition ${
+                  className={`rounded-2xl px-3 py-2 text-center text-[13px] font-semibold transition ${
                     isActive ? "bg-white text-ink" : "border border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
                   }`}
                 >
