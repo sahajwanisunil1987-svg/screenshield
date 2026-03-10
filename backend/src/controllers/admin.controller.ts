@@ -471,6 +471,165 @@ export const exportAccounting = async (req: Request, res: Response) => {
   res.status(200).send(csv);
 };
 
+export const purchases = async (req: Request, res: Response) => {
+  const range = String(req.query.range ?? "30d") as keyof typeof rangeDaysMap;
+  const days = rangeDaysMap[range] ?? 30;
+  const page = Number(req.query.page ?? 1);
+  const limit = Number(req.query.limit ?? 12);
+  const vendorId = typeof req.query.vendorId === "string" ? req.query.vendorId : undefined;
+  const rangeStart = new Date();
+  rangeStart.setHours(0, 0, 0, 0);
+  rangeStart.setDate(rangeStart.getDate() - (days - 1));
+
+  const where = {
+    purchasedAt: { gte: rangeStart },
+    ...(vendorId ? { vendorId } : {})
+  };
+
+  const [vendors, entries, total, aggregate] = await Promise.all([
+    prisma.vendor.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+    prisma.purchaseEntry.findMany({
+      where,
+      include: {
+        vendor: true,
+        product: {
+          include: {
+            brand: true,
+            model: true,
+            category: true,
+            inventory: true
+          }
+        }
+      },
+      orderBy: { purchasedAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit
+    }),
+    prisma.purchaseEntry.count({ where }),
+    prisma.purchaseEntry.aggregate({ where, _sum: { totalCost: true, quantity: true } })
+  ]);
+
+  res.json({
+    range,
+    vendors,
+    items: entries.map((entry) => ({
+      id: entry.id,
+      quantity: entry.quantity,
+      unitCost: Number(entry.unitCost),
+      totalCost: Number(entry.totalCost),
+      invoiceRef: entry.invoiceRef,
+      notes: entry.notes,
+      purchasedAt: entry.purchasedAt,
+      vendor: entry.vendor,
+      product: entry.product
+    })),
+    summary: {
+      totalSpend: Number(aggregate._sum.totalCost ?? 0),
+      totalUnits: Number(aggregate._sum.quantity ?? 0),
+      activeVendors: vendors.length,
+      averageUnitCost: Number(aggregate._sum.quantity ?? 0)
+        ? Number(aggregate._sum.totalCost ?? 0) / Number(aggregate._sum.quantity ?? 0)
+        : 0
+    },
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.max(1, Math.ceil(total / limit))
+    }
+  });
+};
+
+export const createVendor = async (req: Request, res: Response) => {
+  const vendor = await prisma.vendor.create({
+    data: {
+      name: req.body.name,
+      contactName: req.body.contactName || null,
+      email: req.body.email || null,
+      phone: req.body.phone || null,
+      gstin: req.body.gstin || null,
+      address: req.body.address || null,
+      isActive: req.body.isActive ?? true
+    }
+  });
+
+  res.status(201).json(vendor);
+};
+
+export const createPurchase = async (req: Request, res: Response) => {
+  const quantity = Number(req.body.quantity);
+  const unitCost = new Prisma.Decimal(req.body.unitCost);
+  const totalCost = unitCost.mul(quantity);
+  const purchasedAt = req.body.purchasedAt ? new Date(req.body.purchasedAt) : new Date();
+
+  const purchase = await prisma.$transaction(async (tx) => {
+    const product = await tx.product.findUnique({
+      where: { id: req.body.productId },
+      include: { inventory: true }
+    });
+
+    if (!product) {
+      throw new Error("Product not found");
+    }
+
+    const entry = await tx.purchaseEntry.create({
+      data: {
+        vendorId: req.body.vendorId,
+        productId: req.body.productId,
+        quantity,
+        unitCost,
+        totalCost,
+        invoiceRef: req.body.invoiceRef || null,
+        notes: req.body.notes || null,
+        purchasedAt
+      },
+      include: {
+        vendor: true,
+        product: {
+          include: {
+            brand: true,
+            model: true,
+            category: true,
+            inventory: true
+          }
+        }
+      }
+    });
+
+    if (product.inventory) {
+      await tx.inventory.update({
+        where: { productId: req.body.productId },
+        data: {
+          stock: { increment: quantity },
+          lastRestockedAt: purchasedAt
+        }
+      });
+    } else {
+      await tx.inventory.create({
+        data: {
+          productId: req.body.productId,
+          stock: quantity,
+          lowStockLimit: 5,
+          lastRestockedAt: purchasedAt
+        }
+      });
+    }
+
+    await tx.product.update({
+      where: { id: req.body.productId },
+      data: { stock: { increment: quantity } }
+    });
+
+    return entry;
+  });
+
+  res.status(201).json({
+    ...purchase,
+    unitCost: Number(purchase.unitCost),
+    totalCost: Number(purchase.totalCost)
+  });
+};
+
 export const inventory = async (_req: Request, res: Response) => {
   const page = Number(_req.query.page ?? 1);
   const limit = Number(_req.query.limit ?? 12);

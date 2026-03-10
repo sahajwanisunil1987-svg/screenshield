@@ -316,3 +316,27 @@ export type SupportTicket = {
   createdAt: string;
   updatedAt: string;
 };
+
+
+export type Vendor = {
+  id: string;
+  name: string;
+  contactName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  gstin?: string | null;
+  address?: string | null;
+  isActive: boolean;
+};
+
+export type PurchaseEntry = {
+  id: string;
+  quantity: number;
+  unitCost: number;
+  totalCost: number;
+  invoiceRef?: string | null;
+  notes?: string | null;
+  purchasedAt: string;
+  vendor: Vendor;
+  product: Product;
+};

@@ -133,6 +133,7 @@ model Product {
   orderItems         OrderItem[]
   wishlistItems      WishlistItem[]
   compatibilityModels ProductCompatibility[]
+  purchaseEntries    PurchaseEntry[]
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 
@@ -327,6 +328,41 @@ model Inventory {
   createdAt       DateTime @default(now())
 
   @@index([stock, lowStockLimit])
+}
+
+model Vendor {
+  id          String          @id @default(cuid())
+  name        String          @unique
+  contactName String?
+  email       String?
+  phone       String?
+  gstin       String?
+  address     String?
+  isActive    Boolean         @default(true)
+  purchases   PurchaseEntry[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([isActive, name])
+}
+
+model PurchaseEntry {
+  id          String    @id @default(cuid())
+  vendorId    String
+  productId   String
+  quantity    Int
+  unitCost    Decimal   @db.Decimal(10, 2)
+  totalCost   Decimal   @db.Decimal(10, 2)
+  invoiceRef  String?
+  notes       String?
+  purchasedAt DateTime  @default(now())
+  vendor      Vendor    @relation(fields: [vendorId], references: [id])
+  product     Product   @relation(fields: [productId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([vendorId, purchasedAt])
+  @@index([productId, purchasedAt])
 }
 
 model Payment {
