@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import nextDynamic from "next/dynamic";
+import Link from "next/link";
 import { PageShell } from "@/components/layout/page-shell";
 import { fetchApi } from "@/lib/server-api";
 import { buildMetadata } from "@/lib/seo";
@@ -57,7 +58,38 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      <section className="bg-page-wash">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-teal-700/80">Brands</p>
+              <h2 className="mt-3 font-display text-3xl text-ink sm:text-4xl">Start from the brand</h2>
+              <p className="mt-3 max-w-2xl text-sm text-slate sm:text-base">
+                Open the brand catalog first, choose the model next, then jump straight into the right spare part.
+              </p>
+            </div>
+            <Link
+              href="/brands"
+              className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              View all brands
+            </Link>
+          </div>
 
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+            {brands.map((brand) => (
+              <Link
+                key={brand.id}
+                href={`/brands/${brand.slug}`}
+                className="rounded-[28px] border border-slate-200 bg-white px-5 py-6 text-center shadow-card transition hover:-translate-y-0.5 hover:border-slate-300"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate">Brand</p>
+                <h3 className="mt-4 font-display text-2xl text-ink">{brand.name}</h3>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
 
     </PageShell>
   );
