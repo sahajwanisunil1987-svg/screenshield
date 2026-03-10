@@ -257,7 +257,7 @@ export const accounting = async (req: Request, res: Response) => {
     orderBy: { createdAt: "desc" }
   });
 
-  const summary = orders.reduce((acc, order) => {
+  const reportOrders = orders.map((order) => {
     const subtotal = Number(order.subtotal ?? 0);
     const discountAmount = Number(order.discountAmount ?? 0);
     const shippingAmount = Number(order.shippingAmount ?? 0);
@@ -269,39 +269,62 @@ export const accounting = async (req: Request, res: Response) => {
     const isRefunded = order.paymentStatus === "REFUNDED";
     const isPrepaid = ["PAID", "PENDING", "REFUNDED", "FAILED"].includes(order.paymentStatus);
 
-    acc.grossSales += subtotal;
-    acc.discounts += discountAmount;
-    acc.shippingCollected += shippingAmount;
-    acc.taxCollected += taxAmount;
+    return {
+      id: order.id,
+      orderNumber: order.orderNumber,
+      createdAt: order.createdAt,
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      customerName: order.user?.name ?? "Customer",
+      customerEmail: order.user?.email ?? null,
+      subtotal,
+      discountAmount,
+      shippingAmount,
+      taxAmount,
+      totalAmount,
+      returnRequestStatus: order.returnRequestStatus,
+      isCancelled,
+      isReturned,
+      isNetOrder,
+      isRefunded,
+      isPrepaid
+    };
+  });
 
-    if (isNetOrder) {
-      acc.netSales += totalAmount;
+  const summary = reportOrders.reduce((acc, order) => {
+    acc.grossSales += order.subtotal;
+    acc.discounts += order.discountAmount;
+    acc.shippingCollected += order.shippingAmount;
+    acc.taxCollected += order.taxAmount;
+
+    if (order.isNetOrder) {
+      acc.netSales += order.totalAmount;
       acc.netOrders += 1;
     }
 
-    if (isCancelled) {
+    if (order.isCancelled) {
       acc.cancelledOrders += 1;
-      acc.cancelledValue += totalAmount;
+      acc.cancelledValue += order.totalAmount;
     }
 
-    if (isReturned) {
+    if (order.isReturned) {
       acc.returnedOrders += 1;
-      acc.returnedValue += totalAmount;
+      acc.returnedValue += order.totalAmount;
     }
 
-    if (isRefunded) {
-      acc.refundedValue += totalAmount;
+    if (order.isRefunded) {
+      acc.refundedValue += order.totalAmount;
     }
 
     if (order.paymentStatus === "COD") {
       acc.codOrders += 1;
-      if (isNetOrder) acc.codValue += totalAmount;
+      if (order.isNetOrder) acc.codValue += order.totalAmount;
     }
 
-    if (isPrepaid) {
+    if (order.isPrepaid) {
       acc.prepaidOrders += 1;
-      if (isNetOrder && order.paymentStatus === "PAID") acc.prepaidValue += totalAmount;
-      if (order.paymentStatus === "PENDING") acc.pendingPaymentValue += totalAmount;
+      if (order.isNetOrder && order.paymentStatus === "PAID") acc.prepaidValue += order.totalAmount;
+      if (order.paymentStatus === "PENDING") acc.pendingPaymentValue += order.totalAmount;
     }
 
     return acc;
@@ -324,21 +347,6 @@ export const accounting = async (req: Request, res: Response) => {
     pendingPaymentValue: 0
   });
 
-  const recentFinancialOrders = orders.slice(0, 8).map((order) => ({
-    id: order.id,
-    orderNumber: order.orderNumber,
-    createdAt: order.createdAt,
-    status: order.status,
-    paymentStatus: order.paymentStatus,
-    totalAmount: Number(order.totalAmount ?? 0),
-    discountAmount: Number(order.discountAmount ?? 0),
-    taxAmount: Number(order.taxAmount ?? 0),
-    shippingAmount: Number(order.shippingAmount ?? 0),
-    customerName: order.user?.name ?? "Customer",
-    customerEmail: order.user?.email ?? null,
-    returnRequestStatus: order.returnRequestStatus
-  }));
-
   res.json({
     range,
     rangeStart,
@@ -346,8 +354,85 @@ export const accounting = async (req: Request, res: Response) => {
       ...summary,
       averageNetOrderValue: summary.netOrders ? summary.netSales / summary.netOrders : 0
     },
-    recentOrders: recentFinancialOrders
+    reportOrders
   });
+};
+
+export const exportAccounting = async (req: Request, res: Response) => {
+  const range = String(req.query.range ?? "30d") as keyof typeof rangeDaysMap;
+  const days = rangeDaysMap[range] ?? 30;
+  const rangeStart = new Date();
+  rangeStart.setHours(0, 0, 0, 0);
+  rangeStart.setDate(rangeStart.getDate() - (days - 1));
+
+  const orders = await prisma.order.findMany({
+    where: { createdAt: { gte: rangeStart } },
+    select: {
+      orderNumber: true,
+      createdAt: true,
+      status: true,
+      paymentStatus: true,
+      subtotal: true,
+      discountAmount: true,
+      shippingAmount: true,
+      taxAmount: true,
+      totalAmount: true,
+      returnRequestStatus: true,
+      user: {
+        select: {
+          name: true,
+          email: true
+        }
+      }
+    },
+    orderBy: { createdAt: "desc" }
+  });
+
+  const escape = (value: string | number | null | undefined) => {
+    const stringValue = String(value ?? "");
+    return `"${stringValue.replace(/"/g, '""')}"`;
+  };
+
+  const rows = [
+    [
+      'Order Number',
+      'Created At',
+      'Customer Name',
+      'Customer Email',
+      'Order Status',
+      'Payment Status',
+      'Return Status',
+      'Subtotal',
+      'Discount',
+      'Shipping',
+      'GST',
+      'Total',
+      'Net Order'
+    ],
+    ...orders.map((order) => {
+      const isNetOrder = order.status !== 'CANCELLED' && order.returnRequestStatus !== 'APPROVED';
+      return [
+        order.orderNumber,
+        order.createdAt.toISOString(),
+        order.user?.name ?? 'Customer',
+        order.user?.email ?? '',
+        order.status,
+        order.paymentStatus,
+        order.returnRequestStatus ?? '',
+        Number(order.subtotal ?? 0).toFixed(2),
+        Number(order.discountAmount ?? 0).toFixed(2),
+        Number(order.shippingAmount ?? 0).toFixed(2),
+        Number(order.taxAmount ?? 0).toFixed(2),
+        Number(order.totalAmount ?? 0).toFixed(2),
+        isNetOrder ? 'YES' : 'NO'
+      ];
+    })
+  ];
+
+  const csv = rows.map((row) => row.map(escape).join(',')).join('\n');
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="accounting-${range}.csv"`);
+  res.status(200).send(csv);
 };
 
 export const inventory = async (_req: Request, res: Response) => {

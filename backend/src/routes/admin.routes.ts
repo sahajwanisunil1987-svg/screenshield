@@ -10,6 +10,7 @@ const router = Router();
 
 router.get("/admin/dashboard", authenticate, requireAdmin, validate({ query: adminDashboardSchema }), adminController.dashboard);
 router.get("/admin/accounting", authenticate, requireAdmin, validate({ query: adminAccountingSchema }), adminController.accounting);
+router.get("/admin/accounting/export", authenticate, requireAdmin, validate({ query: adminAccountingSchema }), adminController.exportAccounting);
 router.get("/admin/inventory", authenticate, requireAdmin, validate({ query: adminInventoryListSchema }), adminController.inventory);
 router.patch("/admin/inventory/:id", authenticate, requireAdmin, validate({ params: idParamSchema, body: inventoryUpdateSchema }), adminController.updateInventory);
 router.get("/admin/users", authenticate, requireAdmin, validate({ query: adminUserListSchema }), adminController.users);

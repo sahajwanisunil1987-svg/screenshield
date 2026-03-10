@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { AdminGuard } from "@/components/admin/admin-guard";
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -29,7 +30,7 @@ type AccountingResponse = {
     pendingPaymentValue: number;
     averageNetOrderValue: number;
   };
-  recentOrders: Array<{
+  reportOrders: Array<{
     id: string;
     orderNumber: string;
     createdAt: string;
@@ -50,6 +51,7 @@ export default function AdminAccountingPage() {
   const [range, setRange] = useState<"7d" | "30d" | "90d">("30d");
   const [data, setData] = useState<AccountingResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -94,6 +96,31 @@ export default function AdminAccountingPage() {
     [data]
   );
 
+  const exportCsv = async () => {
+    if (!token) return;
+    try {
+      setIsExporting(true);
+      const response = await api.get<Blob>("/admin/accounting/export", {
+        ...authHeaders(token),
+        params: { range },
+        responseType: "blob"
+      });
+      const blob = new Blob([response.data], { type: "text/csv;charset=utf-8" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `accounting-${range}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Unable to export accounting CSV"));
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const riskCards = useMemo(
     () => [
       {
@@ -133,7 +160,16 @@ export default function AdminAccountingPage() {
                   Monitor gross versus net sales, refunds, tax collection, and payment mix without leaving the admin panel.
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={exportCsv}
+                  disabled={isExporting || isLoading}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/80 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Download className="h-4 w-4" />
+                  {isExporting ? "Exporting" : "Export CSV"}
+                </button>
                 {(["7d", "30d", "90d"] as const).map((entry) => (
                   <button
                     key={entry}
@@ -193,8 +229,8 @@ export default function AdminAccountingPage() {
         <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="font-semibold text-white">Recent accounting activity</h3>
-              <p className="mt-1 text-sm text-white/50">Latest orders that affect sales, refunds, and tax totals.</p>
+              <h3 className="font-semibold text-white">Accounting report</h3>
+              <p className="mt-1 text-sm text-white/50">Order-wise sales, tax, discount, and refund impact for the selected range.</p>
             </div>
           </div>
 
@@ -203,8 +239,8 @@ export default function AdminAccountingPage() {
               Array.from({ length: 4 }).map((_, index) => (
                 <div key={index} className="h-24 animate-pulse rounded-[24px] bg-white/5" />
               ))
-            ) : data?.recentOrders?.length ? (
-              data.recentOrders.map((order) => (
+) : data?.reportOrders?.length ? (
+              data.reportOrders.map((order) => (
                 <div key={order.id} className="rounded-[24px] border border-white/10 bg-black/10 p-4 text-white/80">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -243,7 +279,7 @@ export default function AdminAccountingPage() {
               ))
             ) : (
               <p className="rounded-[24px] border border-dashed border-white/10 bg-black/10 px-4 py-8 text-center text-white/50">
-                No orders were created in this range, so there is no accounting activity to report yet.
+                No orders were created in this range, so there is no accounting report to export yet.
               </p>
             )}
           </div>
