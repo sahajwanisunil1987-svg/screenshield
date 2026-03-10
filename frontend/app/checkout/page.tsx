@@ -57,6 +57,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!token) {
+      router.replace("/login?next=/checkout");
       return;
     }
 
@@ -193,6 +194,10 @@ export default function CheckoutPage() {
       toast.error(getApiErrorMessage(error, "Unable to place order"));
     }
   });
+
+  if (!token) {
+    return null;
+  }
 
   return (
     <PageShell>
