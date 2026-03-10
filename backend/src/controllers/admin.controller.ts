@@ -261,7 +261,17 @@ export const inventory = async (_req: Request, res: Response) => {
           include: {
             brand: true,
             model: true,
-            category: true
+            category: true,
+            orderItems: {
+              where: {
+                order: {
+                  status: { in: ["PENDING", "CONFIRMED", "PACKED", "SHIPPED"] }
+                }
+              },
+              select: {
+                orderId: true
+              }
+            }
           }
         }
       },
@@ -301,8 +311,13 @@ export const inventory = async (_req: Request, res: Response) => {
     { critical: 0, low: 0, healthy: 0, totalUnits: 0, reorderUnits: 0 }
   );
 
+  const enrichedItems = items.map((item) => ({
+    ...item,
+    impactedActiveOrders: new Set(item.product.orderItems.map((entry) => entry.orderId)).size
+  }));
+
   res.json({
-    items,
+    items: enrichedItems,
     pagination: {
       page,
       limit,

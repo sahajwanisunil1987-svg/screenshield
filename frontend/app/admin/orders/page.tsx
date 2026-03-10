@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AdminGuard } from "@/components/admin/admin-guard";
@@ -275,6 +276,11 @@ export default function AdminOrdersPage() {
                           <p className="font-medium text-white">{item.productName}</p>
                           <p className="mt-1 text-white/60">SKU {item.productSku}</p>
                           <p className="mt-1 text-white/60">Qty {item.quantity}</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <Link href={`/admin/inventory?search=${encodeURIComponent(item.productSku)}`} className="rounded-full border border-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80 transition hover:bg-white/10">
+                              Open inventory
+                            </Link>
+                          </div>
                         </div>
                       ))}
                     </div>

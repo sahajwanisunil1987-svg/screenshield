@@ -226,6 +226,7 @@ export type InventoryItem = {
   lowStockLimit: number;
   warehouseCode?: string | null;
   lastRestockedAt?: string | null;
+  impactedActiveOrders?: number;
   product: Product;
 };
 
