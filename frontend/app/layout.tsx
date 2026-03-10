@@ -3,7 +3,6 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { AuthBootstrap } from "@/components/layout/auth-bootstrap";
 import { PwaRegister } from "@/components/pwa/pwa-register";
-import { ThemeBootstrap } from "@/components/theme/theme-bootstrap";
 
 export const metadata: Metadata = {
   title: "SpareKart | Mobile Spare Parts Store",
@@ -23,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [{ media: "(prefers-color-scheme: light)", color: "#f4f7fb" }, { media: "(prefers-color-scheme: dark)", color: "#06101d" }],
+  themeColor: "#f4f7fb",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1
@@ -31,9 +30,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="font-sans" suppressHydrationWarning>
-        <ThemeBootstrap />
+    <html lang="en">
+      <body className="font-sans">
         <AuthBootstrap />
         <PwaRegister />
         {children}

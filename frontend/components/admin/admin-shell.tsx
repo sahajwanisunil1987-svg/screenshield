@@ -23,6 +23,8 @@ const links = [
   { href: "/admin/users", label: "Users" }
 ];
 
+const mobileLinks = links.filter((link) => ["/admin/products", "/admin/orders"].includes(link.href));
+
 export function AdminShell({ title, children }: { title: string; children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -72,7 +74,7 @@ export function AdminShell({ title, children }: { title: string; children: React
           </div>
           <p className="mt-3 text-xs font-semibold uppercase tracking-[0.3em] text-teal-200/80">{title}</p>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-            {links.map((link) => {
+            {mobileLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <Link
