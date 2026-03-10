@@ -79,7 +79,7 @@ export default function AdminInventoryPage() {
   return (
     <AdminGuard>
       <AdminShell title="Inventory">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
           <div className="rounded-[28px] border border-red-400/20 bg-red-500/10 p-5 text-white">
             <div className="flex items-center justify-between"><p className="text-sm text-white/65">Critical items</p><AlertTriangle className="h-5 w-5 text-red-200" /></div>
             <p className="mt-3 font-display text-4xl text-red-100">{summary.critical}</p>
@@ -161,7 +161,7 @@ export default function AdminInventoryPage() {
                     </label>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-3 xl:justify-end">
+                  <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center xl:justify-end">
                   <Link href={`/admin/orders?search=${encodeURIComponent(item.product.sku)}`} className="rounded-full border border-white/10 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10">
                     View related orders
                   </Link>

@@ -108,7 +108,7 @@ export default function AdminProductsPage() {
   return (
     <AdminGuard>
       <AdminShell title="Products">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
           <div className="rounded-[28px] border border-emerald-400/20 bg-emerald-500/10 p-5 text-white">
             <p className="text-sm text-white/65">Ready products</p>
             <p className="mt-3 font-display text-4xl text-emerald-100">{summary.ready}</p>
@@ -144,7 +144,7 @@ export default function AdminProductsPage() {
             </Link>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible sm:px-0">
             {[
               { key: "ALL", label: "All products" },
               { key: "LOW_STOCK", label: "Low stock" },
@@ -155,7 +155,7 @@ export default function AdminProductsPage() {
                 key={entry.key}
                 type="button"
                 onClick={() => setOpsFilter(entry.key as typeof opsFilter)}
-                className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
+                className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
                   opsFilter === entry.key ? "bg-white text-ink" : "border border-white/10 text-white/70 hover:bg-white/10"
                 }`}
               >
@@ -213,7 +213,7 @@ export default function AdminProductsPage() {
                     <span>{product.videoUrl ? "Video added" : "No video"}</span>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-3 xl:justify-end">
+                <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center xl:justify-end">
                   <Link href={`/products/${product.slug}`} className="rounded-full border border-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white/80 transition hover:bg-white/10">
                     Open live
                   </Link>

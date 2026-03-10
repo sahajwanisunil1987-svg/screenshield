@@ -172,13 +172,13 @@ export default function AdminOrdersPage() {
             </div>
             <button type="button" onClick={load} className="text-sm text-white/60 underline">Refresh list</button>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible sm:px-0">
             {opsViews.map((entry) => (
               <button
                 key={entry.key}
                 type="button"
                 onClick={() => setOpsView(entry.key)}
-                className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
+                className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
                   opsView === entry.key ? "bg-white text-ink" : "border border-white/10 text-white/70 hover:bg-white/10"
                 }`}
               >
@@ -186,7 +186,7 @@ export default function AdminOrdersPage() {
               </button>
             ))}
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
             <div className="rounded-[22px] border border-amber-400/20 bg-amber-500/10 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100/80">Cancel approvals</p>
               <p className="mt-2 text-2xl font-semibold text-white">{opsSummary.pendingCancel}</p>
@@ -271,7 +271,7 @@ export default function AdminOrdersPage() {
                     {order.status === "SHIPPED" && (!order.shippingCourier || !order.shippingAwb) ? <div className="rounded-2xl bg-rose-50/10 p-3 text-rose-100"><p className="text-xs uppercase tracking-[0.16em] text-rose-200/80">Shipment warning</p><p className="mt-2">This order is marked shipped, but courier or AWB details are still missing.</p></div> : null}
                     {order.status === "PACKED" && !order.estimatedDeliveryAt ? <div className="rounded-2xl bg-amber-50/10 p-3 text-amber-100"><p className="text-xs uppercase tracking-[0.16em] text-amber-200/80">ETA warning</p><p className="mt-2">Set an estimated delivery date before shipment so tracking remains clear for the customer.</p></div> : null}
                     {order.returnDecisionNote ? <div className="rounded-2xl bg-rose-50/10 p-3 text-rose-100"><p className="text-xs uppercase tracking-[0.16em] text-rose-200/80">Return decision</p><p className="mt-2">{order.returnDecisionNote}</p></div> : null}
-                    <div className="grid gap-3 md:grid-cols-2">
+                    <div className="grid gap-3 sm:grid-cols-2">
                       {order.items.map((item) => (
                         <div key={item.id} className="rounded-2xl bg-white/5 p-3">
                           <p className="font-medium text-white">{item.productName}</p>
@@ -299,8 +299,8 @@ export default function AdminOrdersPage() {
                     <input value={draft?.shippingAwb ?? ""} onChange={(event) => setDraftField(order.id, "shippingAwb", event.target.value)} placeholder="AWB / tracking number" className="w-full rounded-2xl bg-white px-4 py-3 text-sm text-ink" />
                     <input type="date" value={draft?.estimatedDeliveryAt ?? ""} onChange={(event) => setDraftField(order.id, "estimatedDeliveryAt", event.target.value)} className="w-full rounded-2xl bg-white px-4 py-3 text-sm text-ink" />
                     <textarea value={draft?.adminNotes ?? ""} onChange={(event) => setDraftField(order.id, "adminNotes", event.target.value)} placeholder="Ops note for the customer or internal desk" className="min-h-[110px] w-full rounded-2xl bg-white px-4 py-3 text-sm text-ink" />
-                    {order.cancelRequestStatus === "PENDING" ? <div className="grid grid-cols-2 gap-3"><button type="button" onClick={() => reviewRequest(order.id, "cancel", "APPROVE")} className="rounded-full bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-400">Approve cancel</button><button type="button" onClick={() => reviewRequest(order.id, "cancel", "REJECT")} className="rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Reject cancel</button></div> : null}
-                    {order.returnRequestStatus === "PENDING" ? <div className="grid grid-cols-2 gap-3"><button type="button" onClick={() => reviewRequest(order.id, "return", "APPROVE")} className="rounded-full bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-400">Approve return</button><button type="button" onClick={() => reviewRequest(order.id, "return", "REJECT")} className="rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Reject return</button></div> : null}
+                    {order.cancelRequestStatus === "PENDING" ? <div className="grid gap-3 sm:grid-cols-2"><button type="button" onClick={() => reviewRequest(order.id, "cancel", "APPROVE")} className="rounded-full bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-400">Approve cancel</button><button type="button" onClick={() => reviewRequest(order.id, "cancel", "REJECT")} className="rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Reject cancel</button></div> : null}
+                    {order.returnRequestStatus === "PENDING" ? <div className="grid gap-3 sm:grid-cols-2"><button type="button" onClick={() => reviewRequest(order.id, "return", "APPROVE")} className="rounded-full bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-400">Approve return</button><button type="button" onClick={() => reviewRequest(order.id, "return", "REJECT")} className="rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Reject return</button></div> : null}
                     <button type="button" onClick={() => saveOps(order)} className="w-full rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent/90">Save operations</button>
                   </div>
                 </div>
