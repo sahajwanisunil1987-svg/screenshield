@@ -16,6 +16,7 @@ export default function MyOrdersPage() {
   useAuthGuard("CUSTOMER");
   const token = useAuthStore((state) => state.token);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -26,6 +27,30 @@ export default function MyOrdersPage() {
         toast.error(getApiErrorMessage(error, "Unable to load your orders"));
       });
   }, [token]);
+
+  const downloadInvoice = async (orderId: string, orderNumber: string) => {
+    if (!token) return;
+
+    setDownloadingId(orderId);
+    try {
+      const response = await api.get(`/orders/${orderId}/invoice`, {
+        ...authHeaders(token),
+        responseType: "blob"
+      });
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `invoice-${orderNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Unable to download invoice"));
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const requestCancellation = async (orderId: string) => {
     if (!token) return;
@@ -118,15 +143,15 @@ export default function MyOrdersPage() {
                   </div>
                   <div className="flex flex-wrap items-center gap-4">
                     {order.invoice?.invoiceNumber ? (
-                      <a
-                        href={`${process.env.NEXT_PUBLIC_API_BASE_URL}/orders/${order.id}/invoice`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 font-semibold text-slate underline"
+                      <button
+                        type="button"
+                        onClick={() => downloadInvoice(order.id, order.orderNumber)}
+                        disabled={downloadingId === order.id}
+                        className="inline-flex items-center gap-2 font-semibold text-slate underline disabled:cursor-not-allowed disabled:text-slate/50"
                       >
                         <Download className="h-4 w-4" />
-                        Download invoice
-                      </a>
+                        {downloadingId === order.id ? "Downloading..." : "Download invoice"}
+                      </button>
                     ) : null}
                     {(["PENDING", "CONFIRMED"].includes(order.status) && !order.cancelRequestStatus) ? (
                       <button type="button" onClick={() => requestCancellation(order.id)} className="font-semibold text-amber-700 underline">Request cancellation</button>

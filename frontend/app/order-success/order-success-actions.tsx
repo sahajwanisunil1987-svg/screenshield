@@ -14,6 +14,7 @@ export function OrderSuccessActions({ orderNumber }: { orderNumber?: string }) {
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     if (!orderNumber || !token) {
@@ -48,6 +49,30 @@ export function OrderSuccessActions({ orderNumber }: { orderNumber?: string }) {
     };
   }, [orderNumber, token]);
 
+  const downloadInvoice = async () => {
+    if (!token || !order) return;
+
+    setIsDownloading(true);
+    try {
+      const response = await api.get(`/orders/${order.id}/invoice`, {
+        ...authHeaders(token),
+        responseType: "blob"
+      });
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `invoice-${order.orderNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Unable to download invoice"));
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="mt-8 flex flex-wrap justify-center gap-3">
       <Link href="/products">
@@ -64,16 +89,16 @@ export function OrderSuccessActions({ orderNumber }: { orderNumber?: string }) {
         </Link>
       ) : null}
       {hasHydrated && order?.invoice?.invoiceNumber ? (
-        <a
-          href={`${process.env.NEXT_PUBLIC_API_BASE_URL}/orders/${order.id}/invoice`}
-          target="_blank"
-          rel="noreferrer"
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={isDownloading}
+          onClick={downloadInvoice}
+          className="border border-slate-200 bg-white text-ink hover:bg-accentSoft"
         >
-          <Button variant="ghost" className="border border-slate-200 bg-white text-ink hover:bg-accentSoft">
-            <Download className="mr-2 h-4 w-4" />
-            Download invoice
-          </Button>
-        </a>
+          <Download className="mr-2 h-4 w-4" />
+          {isDownloading ? "Downloading..." : "Download invoice"}
+        </Button>
       ) : null}
       {orderNumber ? (
         <button
