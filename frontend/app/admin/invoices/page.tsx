@@ -17,6 +17,7 @@ export default function AdminInvoicesPage() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [page, setPage] = useState(1);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -43,6 +44,31 @@ export default function AdminInvoicesPage() {
   useEffect(() => {
     setPage(1);
   }, [query, statusFilter]);
+
+  const downloadInvoice = async (orderId: string, orderNumber: string) => {
+    if (!token) return;
+
+    setDownloadingId(orderId);
+    try {
+      const response = await api.get(`/admin/orders/${orderId}/invoice`, {
+        ...authHeaders(token),
+        responseType: "blob"
+      });
+
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `invoice-${orderNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Unable to download invoice"));
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const pageNumbers = useMemo(
     () =>
@@ -109,14 +135,14 @@ export default function AdminInvoicesPage() {
                     </p>
                   </div>
                   <div className="flex flex-col items-start gap-3 lg:items-end">
-                    <a
-                      href={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/api$/, "")}/api/admin/orders/${invoice.orderId}/invoice`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-full border border-white/10 px-4 py-2 text-xs font-semibold text-white/90 transition hover:bg-white/10"
+                    <button
+                      type="button"
+                      onClick={() => downloadInvoice(invoice.orderId, invoice.order.orderNumber)}
+                      disabled={downloadingId === invoice.orderId}
+                      className="rounded-full border border-white/10 px-4 py-2 text-xs font-semibold text-white/90 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:text-white/40"
                     >
-                      Download PDF
-                    </a>
+                      {downloadingId === invoice.orderId ? "Downloading..." : "Download PDF"}
+                    </button>
                     <p className="text-xs text-white/45">
                       {invoice.lastDownloadedAt
                         ? `Last download ${formatDateTime(invoice.lastDownloadedAt)}`
