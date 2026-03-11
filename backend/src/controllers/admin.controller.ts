@@ -452,7 +452,7 @@ export const accounting = async (req: Request, res: Response) => {
     }
 
     if (order.isRefunded) {
-      acc.refundedValue += order.totalAmount;
+      acc.refundedValue += order.refundAmount || order.totalAmount;
       acc.refundOutflow += order.refundAmount || order.totalAmount;
     }
 
@@ -535,7 +535,7 @@ export const accounting = async (req: Request, res: Response) => {
       existing.costOfGoods += order.estimatedCost;
       existing.grossProfit += order.grossProfit;
     }
-    if (order.isCancelled || order.isReturned || order.isRefunded) existing.refunds += order.refundAmount || order.totalAmount;
+    if (order.isRefunded) existing.refunds += order.refundAmount || order.totalAmount;
     dailyBreakdownMap.set(dateKey, existing);
   }
 

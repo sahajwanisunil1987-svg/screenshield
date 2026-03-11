@@ -191,7 +191,7 @@ export default function AdminAccountingPage() {
     () => [
       { label: "Cancelled", value: `${data?.summary?.cancelledOrders ?? 0}`, detail: `${formatCurrency(data?.summary?.cancelledValue ?? 0)} cancelled order value` },
       { label: "Returned", value: `${data?.summary?.returnedOrders ?? 0}`, detail: `${formatCurrency(data?.summary?.returnedValue ?? 0)} approved returns` },
-      { label: "Refunded", value: formatCurrency(data?.summary?.refundedValue ?? 0), detail: "Refunded amount already impacting cash flow" }
+      { label: "Refunded", value: formatCurrency(data?.summary?.refundedValue ?? 0), detail: "Actual refunded amount processed in this range" }
     ],
     [data]
   );
@@ -287,9 +287,9 @@ export default function AdminAccountingPage() {
                 <p className="mt-1 text-xs text-white/55">{formatCurrency(data?.summary?.codValue ?? 0)} net COD value</p>
               </div>
               <div className="rounded-[24px] border border-cyan-400/20 bg-cyan-500/10 p-4">
-                <p className="text-sm text-cyan-100/80">Prepaid orders</p>
+                <p className="text-sm text-cyan-100/80">Prepaid attempts</p>
                 <p className="mt-2 text-2xl font-semibold text-white">{isLoading ? "..." : data?.summary?.prepaidOrders ?? 0}</p>
-                <p className="mt-1 text-xs text-white/55">{formatCurrency(data?.summary?.prepaidValue ?? 0)} captured prepaid value</p>
+                <p className="mt-1 text-xs text-white/55">{formatCurrency(data?.summary?.prepaidValue ?? 0)} successfully captured prepaid value</p>
               </div>
             </div>
             <div className="mt-4 space-y-3">
@@ -564,7 +564,7 @@ export default function AdminAccountingPage() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h3 className="font-semibold text-white">Daily breakdown</h3>
-                  <p className="mt-1 text-sm text-white/50">Gross vs net sales with refund drag by day.</p>
+                  <p className="mt-1 text-sm text-white/50">Gross vs net sales with actual refund outflow by day.</p>
                 </div>
               </div>
               <div className="mt-4 space-y-3">
@@ -580,7 +580,7 @@ export default function AdminAccountingPage() {
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-semibold text-emerald-200">{formatCurrency(entry.netSales)}</p>
-                          <p className="mt-1 text-xs text-white/45">Gross {formatCurrency(entry.grossSales)} · Refund drag {formatCurrency(entry.refunds)}</p>
+                          <p className="mt-1 text-xs text-white/45">Gross {formatCurrency(entry.grossSales)} · Refund outflow {formatCurrency(entry.refunds)}</p>
                         </div>
                       </div>
                     </div>
