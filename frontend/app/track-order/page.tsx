@@ -30,6 +30,15 @@ const paymentDescriptions: Record<string, string> = {
   REFUNDED: "This order payment has been refunded."
 };
 
+const getPaymentLabel = (result: TrackResult) => {
+  if (result.paymentStatus === "COD" && result.status === "DELIVERED") return "COD Reconciliation";
+  if (result.paymentStatus === "PAID" && result.status === "DELIVERED") return "COD Collected";
+  if (result.paymentStatus === "COD") return "COD Pending Collection";
+  if (result.paymentStatus === "PENDING") return "Payment Pending";
+  if (result.paymentStatus === "FAILED") return "Payment Failed";
+  return result.paymentStatus;
+};
+
 
 const timelineLabels: Record<(typeof timeline)[number], string> = {
   PENDING: "Placed",
@@ -238,7 +247,7 @@ export default function TrackOrderPage() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <span className="rounded-full bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white">{result.status}</span>
-                  <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate">{result.paymentStatus}</span>
+                  <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate">{getPaymentLabel(result)}</span>
                 </div>
               </div>
               <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">

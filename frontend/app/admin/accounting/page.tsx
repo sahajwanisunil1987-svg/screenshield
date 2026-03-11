@@ -282,9 +282,9 @@ export default function AdminAccountingPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">Payment mix</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div className="rounded-[24px] border border-emerald-400/20 bg-emerald-500/10 p-4">
-                <p className="text-sm text-emerald-100/80">COD orders</p>
+                <p className="text-sm text-emerald-100/80">COD pending collection</p>
                 <p className="mt-2 text-2xl font-semibold text-white">{isLoading ? "..." : data?.summary?.codOrders ?? 0}</p>
-                <p className="mt-1 text-xs text-white/55">{formatCurrency(data?.summary?.codValue ?? 0)} net COD value</p>
+                <p className="mt-1 text-xs text-white/55">{formatCurrency(data?.summary?.codValue ?? 0)} delivered cash still awaiting reconciliation</p>
               </div>
               <div className="rounded-[24px] border border-cyan-400/20 bg-cyan-500/10 p-4">
                 <p className="text-sm text-cyan-100/80">Prepaid attempts</p>
@@ -333,7 +333,7 @@ export default function AdminAccountingPage() {
                       <p className="text-lg font-semibold text-white">{formatCurrency(order.totalAmount)}</p>
                       <div className="mt-2 flex flex-wrap justify-end gap-2 text-[11px] font-semibold uppercase tracking-[0.14em]">
                         <span className="rounded-full bg-cyan-500/15 px-3 py-1 text-cyan-200">{order.status}</span>
-                        <span className="rounded-full bg-white/10 px-3 py-1 text-white/70">{order.paymentStatus}</span>
+                        <span className="rounded-full bg-white/10 px-3 py-1 text-white/70">{order.paymentStatus === "COD" ? "COD Pending Collection" : order.paymentStatus === "PAID" && order.status === "DELIVERED" ? "COD Collected" : order.paymentStatus}</span>
                         {order.returnRequestStatus === "APPROVED" ? <span className="rounded-full bg-rose-500/15 px-3 py-1 text-rose-200">Returned</span> : null}
                       </div>
                     </div>

@@ -12,6 +12,13 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 
 const orderStatuses = ["PENDING", "CONFIRMED", "PACKED", "SHIPPED", "DELIVERED", "RETURNED", "CANCELLED"];
 const paymentStatuses = ["PENDING", "PAID", "FAILED", "REFUNDED", "COD"];
+const paymentStatusLabels: Record<string, string> = {
+  PENDING: "Payment Pending",
+  PAID: "Paid",
+  FAILED: "Payment Failed",
+  REFUNDED: "Refunded",
+  COD: "COD Pending Collection"
+};
 const opsViews = [
   { key: "ALL", label: "All orders" },
   { key: "PENDING_CANCEL", label: "Cancel approvals" },
@@ -118,6 +125,12 @@ const opsSummary = useMemo(() => ({
         (order.status === "PACKED" && !order.estimatedDeliveryAt)
     ).length
   }), [orders]);
+
+  const getPaymentBadgeLabel = (order: AdminOrder) => {
+    if (order.paymentStatus === "COD" && order.status === "DELIVERED") return "COD Reconciliation";
+    if (order.paymentStatus === "PAID" && order.status === "DELIVERED") return "COD Collected";
+    return paymentStatusLabels[order.paymentStatus] ?? order.paymentStatus;
+  };
 
   const setDraftField = (id: string, key: keyof OpsDraft, value: string) => {
     setDrafts((current) => ({
@@ -239,7 +252,7 @@ const opsSummary = useMemo(() => ({
             </select>
             <select value={paymentFilter} onChange={(event) => setPaymentFilter(event.target.value)} className="rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink">
               <option value="ALL">All payment states</option>
-              {paymentStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+              {paymentStatuses.map((status) => <option key={status} value={status}>{paymentStatusLabels[status] ?? status}</option>)}
             </select>
           </div>
         </div>
@@ -253,7 +266,7 @@ const opsSummary = useMemo(() => ({
                     <div className="flex flex-wrap items-center gap-3">
                       <p className="font-semibold text-white">{order.orderNumber}</p>
                       <span className="rounded-full bg-cyan-500/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-200">{order.status}</span>
-                      <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200">{order.paymentStatus}</span>
+                      <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200">{getPaymentBadgeLabel(order)}</span>
                       {order.cancelRequestStatus === "PENDING" ? <span className="rounded-full bg-amber-500/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-200">Cancel requested</span> : null}
                       {order.cancelRequestStatus === "APPROVED" ? <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200">Cancel approved</span> : null}
                       {order.cancelRequestStatus === "REJECTED" ? <span className="rounded-full bg-rose-500/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-200">Cancel declined</span> : null}
@@ -322,7 +335,7 @@ const opsSummary = useMemo(() => ({
                       {orderStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
                     </select>
                     <select value={draft?.paymentStatus ?? order.paymentStatus} onChange={(event) => setDraftField(order.id, "paymentStatus", event.target.value)} className="w-full rounded-2xl bg-white px-4 py-3 text-sm text-ink">
-                      {paymentStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+                      {paymentStatuses.map((status) => <option key={status} value={status}>{paymentStatusLabels[status] ?? status}</option>)}
                     </select>
                     <input value={draft?.shippingCourier ?? ""} onChange={(event) => setDraftField(order.id, "shippingCourier", event.target.value)} placeholder="Courier name" className="w-full rounded-2xl bg-white px-4 py-3 text-sm text-ink" />
                     <input value={draft?.shippingAwb ?? ""} onChange={(event) => setDraftField(order.id, "shippingAwb", event.target.value)} placeholder="AWB / tracking number" className="w-full rounded-2xl bg-white px-4 py-3 text-sm text-ink" />

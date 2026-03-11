@@ -12,6 +12,16 @@ import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useAuthStore } from "@/store/auth-store";
 import { Order } from "@/types";
 
+const getCustomerPaymentLabel = (order: Order) => {
+  if (order.paymentStatus === "COD" && order.status === "DELIVERED") return "COD reconciliation pending";
+  if (order.paymentStatus === "PAID" && order.status === "DELIVERED") return "COD collected";
+  if (order.paymentStatus === "COD") return "COD pending collection";
+  if (order.paymentStatus === "PENDING") return "Payment pending";
+  if (order.paymentStatus === "FAILED") return "Payment failed";
+  if (order.paymentStatus === "REFUNDED") return "Refunded";
+  return order.paymentStatus;
+};
+
 export default function MyOrdersPage() {
   useAuthGuard("CUSTOMER");
   const token = useAuthStore((state) => state.token);
@@ -106,7 +116,7 @@ export default function MyOrdersPage() {
                         {order.status}
                       </span>
                       <span className="rounded-full bg-[#f5f8fb] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate">
-                        {order.paymentStatus}
+                        {getCustomerPaymentLabel(order)}
                       </span>
                       {order.cancelRequestStatus === "PENDING" ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">Cancel requested</span> : null}
                       {order.cancelRequestStatus === "APPROVED" ? <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">Cancel approved</span> : null}
@@ -137,7 +147,7 @@ export default function MyOrdersPage() {
                 ) : null}
                 <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate">
                   <div className="flex flex-wrap items-center gap-3">
-                    <span>Payment: {order.paymentStatus}</span>
+                    <span>Payment: {getCustomerPaymentLabel(order)}</span>
                     <span>Items: {order.items.length}</span>
                     {order.invoice?.invoiceNumber ? <span>Invoice: {order.invoice.invoiceNumber}</span> : null}
                   </div>
