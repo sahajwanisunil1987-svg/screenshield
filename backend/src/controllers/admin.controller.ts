@@ -706,7 +706,7 @@ export const purchases = async (req: Request, res: Response) => {
     ...(vendorId ? { vendorId } : {})
   };
 
-  const [vendors, entries, total, aggregate, allPurchaseEntries, inventoryItems] = await Promise.all([
+  const [vendors, entries, total, aggregate, allPurchaseEntries, inventoryItems, soldItems] = await Promise.all([
     prisma.vendor.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     prisma.purchaseEntry.findMany({
       where,
@@ -750,6 +750,19 @@ export const purchases = async (req: Request, res: Response) => {
           }
         }
       }
+    }),
+    prisma.orderItem.findMany({
+      where: {
+        order: {
+          createdAt: { gte: rangeStart },
+          status: { not: "CANCELLED" },
+          OR: [{ returnRequestStatus: null }, { returnRequestStatus: { not: "APPROVED" } }]
+        }
+      },
+      select: {
+        productId: true,
+        quantity: true
+      }
     })
   ]);
 
@@ -773,12 +786,18 @@ export const purchases = async (req: Request, res: Response) => {
     vendorSpendMap.set(entry.vendorId, current);
   }
 
+  const soldUnitsByProduct = new Map<string, number>();
+  for (const item of soldItems) {
+    soldUnitsByProduct.set(item.productId, (soldUnitsByProduct.get(item.productId) ?? 0) + item.quantity);
+  }
+
   let inventoryValue = 0;
   const stockInsights = inventoryItems
     .map((item) => {
       const latestUnitCost = latestUnitCostByProduct.get(item.productId) ?? 0;
       const estimatedValue = latestUnitCost * item.stock;
       inventoryValue += estimatedValue;
+      const soldUnits = soldUnitsByProduct.get(item.productId) ?? 0;
       return {
         productId: item.productId,
         productName: item.product.name,
@@ -787,7 +806,10 @@ export const purchases = async (req: Request, res: Response) => {
         lowStockLimit: item.lowStockLimit,
         latestUnitCost,
         estimatedValue,
+        soldUnits,
         isLowStock: item.stock <= item.lowStockLimit,
+        isDeadStock: item.stock > 0 && soldUnits === 0,
+        isSlowMoving: item.stock > 0 && soldUnits > 0 && soldUnits <= 2,
         brandName: item.product.brand.name,
         modelName: item.product.model.name
       };
@@ -797,6 +819,16 @@ export const purchases = async (req: Request, res: Response) => {
 
   const topVendors = Array.from(vendorSpendMap.values())
     .sort((left, right) => right.spend - left.spend)
+    .slice(0, 5);
+
+  const deadStockItems = stockInsights
+    .filter((item) => item.isDeadStock)
+    .sort((left, right) => right.estimatedValue - left.estimatedValue)
+    .slice(0, 5);
+
+  const slowMovingItems = stockInsights
+    .filter((item) => item.isSlowMoving)
+    .sort((left, right) => right.estimatedValue - left.estimatedValue)
     .slice(0, 5);
 
   res.json({
@@ -821,10 +853,14 @@ export const purchases = async (req: Request, res: Response) => {
         ? Number(aggregate._sum.totalCost ?? 0) / Number(aggregate._sum.quantity ?? 0)
         : 0,
       inventoryValue,
-      lowStockItems: inventoryItems.filter((item) => item.stock <= item.lowStockLimit).length
+      lowStockItems: inventoryItems.filter((item) => item.stock <= item.lowStockLimit).length,
+      deadStockItems: stockInsights.filter((item) => item.isDeadStock).length,
+      slowMovingItems: stockInsights.filter((item) => item.isSlowMoving).length
     },
     topVendors,
     stockInsights,
+    deadStockItems,
+    slowMovingItems,
     pagination: {
       page,
       limit,

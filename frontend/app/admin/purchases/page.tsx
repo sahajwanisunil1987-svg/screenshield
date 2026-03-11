@@ -20,6 +20,8 @@ type PurchasesResponse = {
     averageUnitCost: number;
     inventoryValue: number;
     lowStockItems: number;
+    deadStockItems: number;
+    slowMovingItems: number;
   };
   topVendors: Array<{
     vendorId: string;
@@ -35,7 +37,40 @@ type PurchasesResponse = {
     lowStockLimit: number;
     latestUnitCost: number;
     estimatedValue: number;
+    soldUnits: number;
     isLowStock: boolean;
+    isDeadStock: boolean;
+    isSlowMoving: boolean;
+    brandName: string;
+    modelName: string;
+  }>;
+  deadStockItems: Array<{
+    productId: string;
+    productName: string;
+    productSku: string;
+    stock: number;
+    lowStockLimit: number;
+    latestUnitCost: number;
+    estimatedValue: number;
+    soldUnits: number;
+    isLowStock: boolean;
+    isDeadStock: boolean;
+    isSlowMoving: boolean;
+    brandName: string;
+    modelName: string;
+  }>;
+  slowMovingItems: Array<{
+    productId: string;
+    productName: string;
+    productSku: string;
+    stock: number;
+    lowStockLimit: number;
+    latestUnitCost: number;
+    estimatedValue: number;
+    soldUnits: number;
+    isLowStock: boolean;
+    isDeadStock: boolean;
+    isSlowMoving: boolean;
     brandName: string;
     modelName: string;
   }>;
@@ -79,9 +114,9 @@ export default function AdminPurchasesPage() {
 
   const summaryCards = useMemo(() => [
     { label: "Purchase Spend", value: formatCurrency(data?.summary.totalSpend ?? 0), detail: "Vendor-side buying across selected range" },
-    { label: "Units Inward", value: `${data?.summary.totalUnits ?? 0}`, detail: "Total units moved into stock" },
     { label: "Inventory Value", value: formatCurrency(data?.summary.inventoryValue ?? 0), detail: "Current stock value at latest purchase cost" },
-    { label: "Low-stock SKUs", value: `${data?.summary.lowStockItems ?? 0}`, detail: "Inventory items already at or below threshold" }
+    { label: "Dead stock", value: `${data?.summary.deadStockItems ?? 0}`, detail: "Items with stock but no net sales in selected range" },
+    { label: "Slow moving", value: `${data?.summary.slowMovingItems ?? 0}`, detail: "Items with low sales velocity in selected range" }
   ], [data]);
 
   const createVendor = async () => {
@@ -247,6 +282,70 @@ export default function AdminPurchasesPage() {
             <button type="button" onClick={createPurchase} disabled={savingPurchase || !purchaseForm.vendorId || !purchaseForm.productId || !purchaseForm.unitCost} className="mt-4 rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
               {savingPurchase ? "Saving..." : "Add Purchase Entry"}
             </button>
+          </div>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-2">
+          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+            <h3 className="font-semibold text-white">Dead stock watchlist</h3>
+            <p className="mt-1 text-sm text-white/50">Items carrying value but showing no net sales in this range.</p>
+            <div className="mt-4 space-y-3">
+              {isLoading ? (
+                Array.from({ length: 3 }).map((_, index) => <div key={index} className="h-20 animate-pulse rounded-[20px] bg-white/5" />)
+              ) : data?.deadStockItems.length ? (
+                data.deadStockItems.map((item) => (
+                  <div key={item.productId} className="rounded-[22px] border border-white/10 bg-black/10 p-4 text-white/80">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-white">{item.productName}</p>
+                        <p className="mt-1 text-xs text-white/45">{item.brandName} · {item.modelName} · {item.productSku}</p>
+                      </div>
+                      <p className="text-sm font-semibold text-white">{formatCurrency(item.estimatedValue)}</p>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                      <span className="rounded-full bg-rose-500/15 px-3 py-1 text-rose-200">No sales</span>
+                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">Stock {item.stock}</span>
+                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">Unit cost {formatCurrency(item.latestUnitCost)}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="rounded-[22px] border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-white/50">
+                  No dead stock detected in this range.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+            <h3 className="font-semibold text-white">Slow-moving stock</h3>
+            <p className="mt-1 text-sm text-white/50">Items with stock on hand but only limited net sales in selected range.</p>
+            <div className="mt-4 space-y-3">
+              {isLoading ? (
+                Array.from({ length: 3 }).map((_, index) => <div key={index} className="h-20 animate-pulse rounded-[20px] bg-white/5" />)
+              ) : data?.slowMovingItems.length ? (
+                data.slowMovingItems.map((item) => (
+                  <div key={item.productId} className="rounded-[22px] border border-white/10 bg-black/10 p-4 text-white/80">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-white">{item.productName}</p>
+                        <p className="mt-1 text-xs text-white/45">{item.brandName} · {item.modelName} · {item.productSku}</p>
+                      </div>
+                      <p className="text-sm font-semibold text-white">{formatCurrency(item.estimatedValue)}</p>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                      <span className="rounded-full bg-amber-500/15 px-3 py-1 text-amber-200">Sold {item.soldUnits} unit(s)</span>
+                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">Stock {item.stock}</span>
+                      {item.isLowStock ? <span className="rounded-full bg-rose-500/15 px-3 py-1 text-rose-200">Low stock</span> : null}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="rounded-[22px] border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-white/50">
+                  No slow-moving items detected in this range.
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
