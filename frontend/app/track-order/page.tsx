@@ -225,13 +225,13 @@ export default function TrackOrderPage() {
   return (
     <PageShell>
       <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
-        <div className="rounded-[36px] bg-white p-8 shadow-card">
+        <div className="theme-surface rounded-[36px] p-8 shadow-card">
           <h1 className="font-display text-4xl text-ink">Track your order</h1>
           <p className="mt-3 max-w-2xl text-sm text-slate">Enter your SpareKart order number to check the latest processing stage, shipment fields, and payment state.</p>
           <div className="mt-6 grid gap-3 rounded-[28px] bg-panel p-4 text-sm text-slate md:grid-cols-3">
-            <div className="rounded-2xl bg-white/80 p-4"><PackageSearch className="h-5 w-5 text-accent" /><p className="mt-3 font-semibold text-ink">Order visibility</p><p className="mt-1 text-slate">Track order progression from placement to final delivery.</p></div>
-            <div className="rounded-2xl bg-white/80 p-4"><Truck className="h-5 w-5 text-accent" /><p className="mt-3 font-semibold text-ink">Dispatch clarity</p><p className="mt-1 text-slate">See courier, AWB, and ETA as soon as the ops team updates them.</p></div>
-            <div className="rounded-2xl bg-white/80 p-4"><ShieldCheck className="h-5 w-5 text-accent" /><p className="mt-3 font-semibold text-ink">Payment context</p><p className="mt-1 text-slate">Check whether COD or online payment is already confirmed.</p></div>
+            <div className="theme-surface rounded-2xl p-4"><PackageSearch className="h-5 w-5 text-accent" /><p className="mt-3 font-semibold text-ink">Order visibility</p><p className="mt-1 text-slate">Track order progression from placement to final delivery.</p></div>
+            <div className="theme-surface rounded-2xl p-4"><Truck className="h-5 w-5 text-accent" /><p className="mt-3 font-semibold text-ink">Dispatch clarity</p><p className="mt-1 text-slate">See courier, AWB, and ETA as soon as the ops team updates them.</p></div>
+            <div className="theme-surface rounded-2xl p-4"><ShieldCheck className="h-5 w-5 text-accent" /><p className="mt-3 font-semibold text-ink">Payment context</p><p className="mt-1 text-slate">Check whether COD or online payment is already confirmed.</p></div>
           </div>
           <div className="mt-8 flex gap-3">
             <Input value={orderNumber} onChange={(event) => setOrderNumber(event.target.value)} placeholder="Enter order number" />
@@ -247,23 +247,23 @@ export default function TrackOrderPage() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <span className="rounded-full bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white">{result.status}</span>
-                  <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate">{getPaymentLabel(result)}</span>
+                  <span className="rounded-full bg-white/90 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate">{getPaymentLabel(result)}</span>
                 </div>
               </div>
               <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-2xl bg-white p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Placed on</p><p className="mt-2 font-semibold text-ink">{formatDate(result.createdAt)}</p><p className="mt-1 text-xs text-slate">{formatDateTime(result.createdAt)}</p></div>
-                <div className="rounded-2xl bg-white p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Courier</p><p className="mt-2 font-semibold text-ink">{result.shippingCourier ?? "Pending"}</p></div>
-                <div className="rounded-2xl bg-white p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">AWB</p><p className="mt-2 font-semibold text-ink">{result.shippingAwb ?? "Pending"}</p></div>
-                <div className="rounded-2xl bg-white p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">ETA</p><p className="mt-2 font-semibold text-ink">{result.estimatedDeliveryAt ? formatDate(result.estimatedDeliveryAt) : "Pending"}</p></div>
+                <div className="theme-surface rounded-2xl p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Placed on</p><p className="mt-2 font-semibold text-ink">{formatDate(result.createdAt)}</p><p className="mt-1 text-xs text-slate">{formatDateTime(result.createdAt)}</p></div>
+                <div className="theme-surface rounded-2xl p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Courier</p><p className="mt-2 font-semibold text-ink">{result.shippingCourier ?? "Pending"}</p></div>
+                <div className="theme-surface rounded-2xl p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">AWB</p><p className="mt-2 font-semibold text-ink">{result.shippingAwb ?? "Pending"}</p></div>
+                <div className="theme-surface rounded-2xl p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">ETA</p><p className="mt-2 font-semibold text-ink">{result.estimatedDeliveryAt ? formatDate(result.estimatedDeliveryAt) : "Pending"}</p></div>
               </div>
               <div className="mt-4 grid gap-3 md:grid-cols-2">
-                <div className="rounded-2xl bg-white p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Current status</p><p className="mt-2 font-semibold text-ink">{statusDescriptions[result.status] ?? "Order status updated."}</p></div>
-                <div className="rounded-2xl bg-white p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Payment note</p><p className="mt-2 font-semibold text-ink">{paymentDescriptions[result.paymentStatus] ?? "Payment status updated."}</p></div>
+                <div className="theme-surface rounded-2xl p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Current status</p><p className="mt-2 font-semibold text-ink">{statusDescriptions[result.status] ?? "Order status updated."}</p></div>
+                <div className="theme-surface rounded-2xl p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Payment note</p><p className="mt-2 font-semibold text-ink">{paymentDescriptions[result.paymentStatus] ?? "Payment status updated."}</p></div>
               </div>
-              {result.adminNotes ? <div className="mt-4 rounded-2xl bg-white p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Operations note</p><p className="mt-2 font-semibold text-ink">{result.adminNotes}</p></div> : null}
-              {result.cancelRequestReason ? <div className="mt-4 rounded-2xl bg-amber-50 p-4 text-amber-800"><p className="text-xs font-semibold uppercase tracking-[0.18em]">Cancellation request</p><p className="mt-2">{result.cancelRequestReason}</p>{result.cancelRequestStatus ? <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em]">Status: {result.cancelRequestStatus}</p> : null}{result.cancelDecisionNote ? <p className="mt-2 text-sm">Decision note: {result.cancelDecisionNote}</p> : null}</div> : null}
-              {result.returnRequestReason ? <div className="mt-4 rounded-2xl bg-sky-50 p-4 text-sky-800"><p className="text-xs font-semibold uppercase tracking-[0.18em]">Return request</p><p className="mt-2">{result.returnRequestReason}</p>{result.returnRequestStatus ? <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em]">Status: {result.returnRequestStatus}</p> : null}{result.returnDecisionNote ? <p className="mt-2 text-sm">Decision note: {result.returnDecisionNote}</p> : null}</div> : null}
-              <div className="mt-6 rounded-[24px] bg-white p-5">
+              {result.adminNotes ? <div className="mt-4 theme-surface rounded-2xl p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Operations note</p><p className="mt-2 font-semibold text-ink">{result.adminNotes}</p></div> : null}
+              {result.cancelRequestReason ? <div className="mt-4 rounded-2xl bg-amber-500/15 p-4 text-amber-300"><p className="text-xs font-semibold uppercase tracking-[0.18em]">Cancellation request</p><p className="mt-2">{result.cancelRequestReason}</p>{result.cancelRequestStatus ? <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em]">Status: {result.cancelRequestStatus}</p> : null}{result.cancelDecisionNote ? <p className="mt-2 text-sm">Decision note: {result.cancelDecisionNote}</p> : null}</div> : null}
+              {result.returnRequestReason ? <div className="mt-4 rounded-2xl bg-sky-500/15 p-4 text-sky-300"><p className="text-xs font-semibold uppercase tracking-[0.18em]">Return request</p><p className="mt-2">{result.returnRequestReason}</p>{result.returnRequestStatus ? <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em]">Status: {result.returnRequestStatus}</p> : null}{result.returnDecisionNote ? <p className="mt-2 text-sm">Decision note: {result.returnDecisionNote}</p> : null}</div> : null}
+              <div className="theme-surface mt-6 rounded-[24px] p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Shipment timeline</p>
@@ -276,9 +276,9 @@ export default function TrackOrderPage() {
                     </p>
                   </div>
                   {result.status === "CANCELLED" ? (
-                    <span className="rounded-full bg-amber-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-800">Cancelled</span>
+                    <span className="rounded-full bg-amber-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-300">Cancelled</span>
                   ) : result.returnRequestStatus === "APPROVED" ? (
-                    <span className="rounded-full bg-sky-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-sky-800">Returned</span>
+                    <span className="rounded-full bg-sky-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-sky-300">Returned</span>
                   ) : null}
                 </div>
                 <div className="mt-5 grid gap-3 lg:grid-cols-5">
@@ -289,15 +289,15 @@ export default function TrackOrderPage() {
                         step.current
                           ? "border-accent/30 bg-accentSoft"
                           : step.reached
-                            ? "border-emerald-200 bg-emerald-50"
-                            : "border-slate-200 bg-slate-50"
+                            ? "border-emerald-400/20 bg-emerald-500/12"
+                            : "border-slate-200 bg-panel"
                       }`}
                     >
                       {index < shipmentTimeline.length - 1 ? (
                         <div className="absolute -right-2 top-8 hidden h-px w-4 bg-slate-300 lg:block" />
                       ) : null}
                       <div className="flex items-start gap-3">
-                        <div className={`mt-0.5 rounded-full p-2 ${step.current ? "bg-accent text-white" : step.reached ? "bg-emerald-500 text-white" : "bg-white text-slate-400"}`}>
+                        <div className={`mt-0.5 rounded-full p-2 ${step.current ? "bg-accent text-white" : step.reached ? "bg-emerald-500 text-white" : "bg-white/90 text-slate-400"}`}>
                           {step.reached ? <CheckCircle2 className="h-4 w-4" /> : <CircleDotDashed className="h-4 w-4" />}
                         </div>
                         <div className="min-w-0">
@@ -312,7 +312,7 @@ export default function TrackOrderPage() {
                   ))}
                 </div>
               </div>
-              <div className="mt-6 rounded-[24px] border border-white/60 bg-white p-5">
+              <div className="theme-surface mt-6 rounded-[24px] border border-slate-200/70 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Recommended next step</p>
                 <p className="mt-2 text-sm font-semibold text-ink">
                   {result.status === "CANCELLED"
@@ -329,7 +329,7 @@ export default function TrackOrderPage() {
                 </p>
                 <div className="mt-4 flex flex-wrap gap-3">
                   <Link href="/support"><Button variant="secondary"><LifeBuoy className="mr-2 h-4 w-4" />Contact support</Button></Link>
-                  <Link href="/my-orders"><Button variant="ghost" className="border border-slate-200 bg-white text-ink hover:bg-accentSoft">View my orders</Button></Link>
+                  <Link href="/my-orders"><Button variant="ghost" className="border border-slate-200 bg-white/90 text-ink hover:bg-accentSoft">View my orders</Button></Link>
                 </div>
               </div>
             </div>

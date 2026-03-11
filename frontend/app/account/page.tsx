@@ -100,9 +100,9 @@ export default function AccountPage() {
   return (
     <PageShell>
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mb-6 flex justify-end"><Link href="/notifications" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-ink transition hover:bg-white">Notifications</Link></div>
+        <div className="mb-6 flex justify-end"><Link href="/notifications" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-ink transition hover:bg-accentSoft">Notifications</Link></div>
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <form onSubmit={saveProfile} className="rounded-[32px] bg-white p-8 shadow-card">
+          <form onSubmit={saveProfile} className="theme-surface rounded-[32px] p-8 shadow-card">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate">Account profile</p>
             <h1 className="mt-3 font-display text-3xl text-ink">Manage profile</h1>
             <p className="mt-2 text-sm text-slate">Update the contact details used across checkout, invoices, and support.</p>
@@ -114,7 +114,7 @@ export default function AccountPage() {
             <Button className="mt-6 w-full">Save profile</Button>
           </form>
 
-          <div className="rounded-[32px] bg-white p-8 shadow-card">
+          <div className="theme-surface rounded-[32px] p-8 shadow-card">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate">Saved addresses</p>

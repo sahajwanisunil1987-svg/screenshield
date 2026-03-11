@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "sparekart-admin-theme";
+const SITE_STORAGE_KEY = "sparekart-site-theme";
 
 export function useAdminTheme() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
-    const savedTheme = window.localStorage.getItem(STORAGE_KEY);
+    const savedTheme = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(SITE_STORAGE_KEY);
     if (savedTheme === "light" || savedTheme === "dark") {
       setTheme(savedTheme);
     }
@@ -17,6 +18,7 @@ export function useAdminTheme() {
   const updateTheme = (nextTheme: "dark" | "light") => {
     setTheme(nextTheme);
     window.localStorage.setItem(STORAGE_KEY, nextTheme);
+    window.localStorage.setItem(SITE_STORAGE_KEY, nextTheme);
   };
 
   return {

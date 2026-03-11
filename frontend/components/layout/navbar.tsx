@@ -80,7 +80,7 @@ export function Navbar() {
                 onSuggestionSelect={(suggestion: SearchSuggestion) => router.push(`/products/${suggestion.slug}`)}
                 placeholder="Search by brand, model, part, or SKU"
                 inputClassName="border-white/10 bg-white/5 text-white placeholder:text-white/45 focus:border-white/20 focus:ring-white/10"
-                dropdownClassName="bg-white"
+                dropdownClassName="theme-surface"
               />
             </div>
             <button
@@ -192,7 +192,7 @@ export function Navbar() {
                 }}
                 placeholder="Search parts or SKU"
                 inputClassName="border-white/10 bg-white/5 text-white placeholder:text-white/45 focus:border-white/20 focus:ring-white/10"
-                dropdownClassName="bg-white"
+                dropdownClassName="theme-surface"
               />
             </div>
             <button

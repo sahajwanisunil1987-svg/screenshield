@@ -32,12 +32,12 @@ export default function CartPage() {
               Review quantities, coupon savings, GST, and dispatch details before moving into address and payment confirmation.
             </p>
           </div>
-          <div className="rounded-[24px] bg-white/80 p-4 shadow-sm">
+          <div className="theme-surface rounded-[24px] p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Items in cart</p>
             <p className="mt-2 text-2xl font-semibold text-ink">{hasHydrated ? totalItems : "..."}</p>
             <p className="mt-1 text-sm text-slate">{hasHydrated ? `${items.length} product line(s)` : "Loading cart"}</p>
           </div>
-          <div className="rounded-[24px] bg-white/80 p-4 shadow-sm">
+          <div className="theme-surface rounded-[24px] p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Current total</p>
             <p className="mt-2 text-2xl font-semibold text-ink">{hasHydrated ? (items.length ? formatCurrency(total) : formatCurrency(0)) : "..."}</p>
             <p className="mt-1 text-sm text-slate">{hasHydrated && items.length ? "Includes shipping and GST" : "Add items to see shipping and GST"}</p>
@@ -71,7 +71,7 @@ export default function CartPage() {
                     <p className="mt-2 text-sm text-slate">{item.product.model.name}</p>
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em]">
                       <span className="rounded-full bg-accentSoft px-3 py-1 text-accent">{item.product.category.name}</span>
-                      <span className="rounded-full bg-[#f5f8fb] px-3 py-1 text-slate">SKU {item.product.sku}</span>
+                      <span className="rounded-full bg-panel px-3 py-1 text-slate">SKU {item.product.sku}</span>
                     </div>
                     <p className="mt-3 text-sm font-semibold text-ink">{formatCurrency(item.product.price)}</p>
                     {(item.product.inventory?.stock ?? item.product.stock) <= 3 ? (
@@ -81,7 +81,7 @@ export default function CartPage() {
                     ) : null}
                   </div>
                   <div className="flex flex-row flex-wrap items-center justify-between gap-3 sm:col-span-2 xl:col-span-1 xl:flex-col xl:items-end">
-                    <div className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-[#f5f8fb] px-3 py-2">
+                    <div className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-panel px-3 py-2">
                       <button
                         type="button"
                         onClick={() => updateQty(item.product.id, Math.max(item.quantity - 1, 1))}
@@ -128,7 +128,7 @@ export default function CartPage() {
           </div>
           <div className="theme-surface rounded-[32px] p-6">
             <h2 className="text-xl font-semibold text-ink">Order summary</h2>
-            <div className="mt-5 grid gap-3 rounded-[24px] bg-[#f5f8fb] p-4 text-sm text-slate">
+            <div className="mt-5 grid gap-3 rounded-[24px] bg-panel p-4 text-sm text-slate">
               <div className="flex items-start gap-3">
                 <ShieldCheck className="mt-0.5 h-4 w-4 text-accent" />
                 <div>
