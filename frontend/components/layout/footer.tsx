@@ -31,7 +31,7 @@ export function Footer() {
               Premium mobile spare parts with verified quality, fast dispatch, and India-ready support.
             </p>
             <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/65">
-              <span className="rounded-full border border-white/10 px-3 py-2">6 month warranty</span>
+              <span className="rounded-full border border-white/10 px-3 py-2">Warranty-backed parts</span>
               <span className="rounded-full border border-white/10 px-3 py-2">Secure checkout</span>
               <span className="rounded-full border border-white/10 px-3 py-2">India dispatch</span>
             </div>
@@ -59,13 +59,14 @@ export function Footer() {
             <Link href="/privacy-policy" className="transition hover:text-white">Privacy Policy</Link>
             <Link href="/terms" className="transition hover:text-white">Terms</Link>
             <div className="pt-3 text-white/65">
-              <p>
-  Email:{" "}
-  <a href="mailto:sahajwanisunil1987@gmail.com" className="transition hover:text-white">
-    sahajwanisunil1987@gmail.com
-  </a>
-</p>
-
+              <p className="font-semibold text-white/80">Mister Mobile</p>
+              <p className="mt-1 text-white/55">DC hospital near, triveni jaipur 302018</p>
+              <p className="mt-2">
+                Email:{" "}
+                <a href="mailto:sahajwanisunil1987@gmail.com" className="transition hover:text-white">
+                  sahajwanisunil1987@gmail.com
+                </a>
+              </p>
               <p className="mt-1">
                 Phone:{" "}
                 <a href="tel:+919001554862" className="transition hover:text-white">
