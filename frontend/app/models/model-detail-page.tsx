@@ -250,9 +250,6 @@ export async function ModelDetailPageContent(params: ModelPageParams) {
                   <p className="mt-1 font-medium text-ink">{inferredSpecs.display ?? "Verified fitment range"}</p>
                 </div>
               </div>
-              <p className="mt-5 max-w-3xl text-base text-slate">
-                Browse repair parts grouped by replacement need so you can move quickly from model selection to the exact component.
-              </p>
               <div className="mt-6 flex flex-wrap gap-3 text-sm">
                 <span className="rounded-full border border-slate-200 bg-white px-4 py-2 font-medium text-ink">{products.length} listed parts</span>
                 <span className="rounded-full border border-slate-200 bg-white px-4 py-2 font-medium text-ink">{groupedProducts.length} repair groups</span>
