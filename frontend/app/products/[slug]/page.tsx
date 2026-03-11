@@ -150,6 +150,10 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
                 <p className="mt-2 font-semibold text-ink">{product.sku}</p>
               </div>
               <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">GST</p>
+                <p className="mt-2 font-semibold text-ink">{Number(product.gstRate ?? 18)}%</p>
+              </div>
+              <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">Category</p>
                 <p className="mt-2 font-semibold text-ink">{product.category.name}</p>
               </div>
