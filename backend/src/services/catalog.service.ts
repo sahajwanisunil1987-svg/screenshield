@@ -379,38 +379,42 @@ export const getAdminProductById = (id: string) =>
     }
   });
 
-export const createBrand = (payload: { name: string; description?: string; isActive: boolean }) =>
+export const createBrand = (payload: { name: string; description?: string; logoUrl?: string; isActive: boolean }) =>
   prisma.brand.create({
     data: {
       ...payload,
+      logoUrl: payload.logoUrl || null,
       slug: toSlug(payload.name)
     }
   });
 
-export const updateBrand = (id: string, payload: { name: string; description?: string; isActive: boolean }) =>
+export const updateBrand = (id: string, payload: { name: string; description?: string; logoUrl?: string; isActive: boolean }) =>
   prisma.brand.update({
     where: { id },
     data: {
       ...payload,
+      logoUrl: payload.logoUrl || null,
       slug: toSlug(payload.name)
     }
   });
 
 export const deleteBrand = (id: string) => prisma.brand.delete({ where: { id } });
 
-export const createModel = (payload: { name: string; brandId: string; isActive: boolean }) =>
+export const createModel = (payload: { name: string; imageUrl?: string; brandId: string; isActive: boolean }) =>
   prisma.mobileModel.create({
     data: {
       ...payload,
+      imageUrl: payload.imageUrl || null,
       slug: toSlug(payload.name)
     }
   });
 
-export const updateModel = (id: string, payload: { name: string; brandId: string; isActive: boolean }) =>
+export const updateModel = (id: string, payload: { name: string; imageUrl?: string; brandId: string; isActive: boolean }) =>
   prisma.mobileModel.update({
     where: { id },
     data: {
       ...payload,
+      imageUrl: payload.imageUrl || null,
       slug: toSlug(payload.name)
     }
   });

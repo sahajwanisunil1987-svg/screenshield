@@ -35,6 +35,7 @@ export default function AdminModelsPage() {
           deleteBaseUrl="/admin/models"
           fields={[
             { key: "name", placeholder: "Model name" },
+            { key: "imageUrl", placeholder: "Model image URL" },
             {
               key: "brandId",
               placeholder: "Select brand",

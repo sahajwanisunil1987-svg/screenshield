@@ -3,18 +3,21 @@ import { z } from "zod";
 export const brandSchema = z.object({
   name: z.string().min(2),
   description: z.string().optional(),
+  logoUrl: z.string().url().optional().or(z.literal("")),
   isActive: z.boolean().default(true)
 });
 
 export const modelSchema = z.object({
   name: z.string().min(2),
   brandId: z.string().min(1),
+  imageUrl: z.string().url().optional().or(z.literal("")),
   isActive: z.boolean().default(true)
 });
 
 export const categorySchema = z.object({
   name: z.string().min(2),
   description: z.string().optional(),
+  logoUrl: z.string().url().optional().or(z.literal("")),
   isActive: z.boolean().default(true)
 });
 

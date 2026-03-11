@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
@@ -56,17 +57,26 @@ export default async function BrandPage({ params }: BrandPageProps) {
             <span className="text-ink">{brand.name}</span>
           </div>
 
-          <div className="mt-6 max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Brand catalog</p>
-            <h1 className="mt-3 font-display text-4xl text-ink sm:text-5xl">{brand.name} Spare Parts</h1>
-            <p className="mt-4 text-base text-slate">
-              Choose the exact {brand.name} model first, then move into the compatible batteries, displays, charging parts, cameras, and more.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3 text-sm">
-              <span className="rounded-full border border-slate-200 bg-white px-4 py-2 font-medium text-ink">{brandModels.length} supported models</span>
-              <Link href={`/products?brand=${brand.slug}`} className="rounded-full bg-accent px-5 py-2.5 font-semibold text-white transition hover:bg-teal-700">
-                Open all {brand.name} parts
-              </Link>
+          <div className="mt-6 grid gap-6 lg:grid-cols-[112px_minmax(0,1fr)] lg:items-center">
+            <div className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50">
+              {brand.logoUrl ? (
+                <Image src={brand.logoUrl} alt={`${brand.name} logo`} fill className="object-contain p-4" />
+              ) : (
+                <span className="text-4xl font-semibold text-ink">{brand.name.slice(0, 1)}</span>
+              )}
+            </div>
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Brand catalog</p>
+              <h1 className="mt-3 font-display text-4xl text-ink sm:text-5xl">{brand.name} Spare Parts</h1>
+              <p className="mt-4 text-base text-slate">
+                Choose the exact {brand.name} model first, then move into the compatible batteries, displays, charging parts, cameras, and more.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3 text-sm">
+                <span className="rounded-full border border-slate-200 bg-white px-4 py-2 font-medium text-ink">{brandModels.length} supported models</span>
+                <Link href={`/products?brand=${brand.slug}`} className="rounded-full bg-accent px-5 py-2.5 font-semibold text-white transition hover:bg-teal-700">
+                  Open all {brand.name} parts
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -92,9 +102,20 @@ export default async function BrandPage({ params }: BrandPageProps) {
                   href={`/brands/${brand.slug}/models/${model.slug}`}
                   className="rounded-[28px] border border-slate-200 bg-white px-6 py-6 shadow-card transition hover:-translate-y-0.5 hover:border-slate-300"
                 >
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate">Model</p>
-                  <h3 className="mt-4 font-display text-2xl text-ink">{model.name}</h3>
-                  <p className="mt-3 text-sm text-slate">Open compatible spare parts and accessories for this device.</p>
+                  <div className="flex items-center gap-4">
+                    <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-slate-100">
+                      {model.imageUrl ? (
+                        <Image src={model.imageUrl} alt={model.name} fill className="object-cover" />
+                      ) : (
+                        <span className="text-lg font-semibold text-ink">{model.name.slice(0, 1)}</span>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate">Model</p>
+                      <h3 className="mt-2 font-display text-2xl text-ink">{model.name}</h3>
+                      <p className="mt-2 text-sm text-slate">Open compatible spare parts and accessories for this device.</p>
+                    </div>
+                  </div>
                 </Link>
               ))}
             </div>

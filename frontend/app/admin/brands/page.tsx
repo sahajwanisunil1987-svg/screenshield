@@ -14,6 +14,7 @@ export default function AdminBrandsPage() {
           deleteBaseUrl="/admin/brands"
           fields={[
             { key: "name", placeholder: "Brand name" },
+            { key: "logoUrl", placeholder: "Logo image URL" },
             { key: "description", placeholder: "Description" }
           ]}
           subtitlePath="description"

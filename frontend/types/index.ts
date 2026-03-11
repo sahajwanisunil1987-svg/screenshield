@@ -2,6 +2,7 @@ export type Brand = {
   id: string;
   name: string;
   slug: string;
+  logoUrl?: string | null;
   description?: string | null;
   isActive?: boolean;
 };
@@ -10,6 +11,7 @@ export type MobileModel = {
   id: string;
   name: string;
   slug: string;
+  imageUrl?: string | null;
   brandId: string;
   brand?: Brand;
   isActive?: boolean;
@@ -19,6 +21,7 @@ export type Category = {
   id: string;
   name: string;
   slug: string;
+  logoUrl?: string | null;
   description?: string | null;
   isActive?: boolean;
 };

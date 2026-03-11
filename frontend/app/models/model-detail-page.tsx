@@ -154,7 +154,7 @@ export async function ModelDetailPageContent(params: ModelPageParams) {
 
   const products = productsResponse.items;
   const inferredSpecs = inferSpecs(products);
-  const heroImage = products[0]?.images[0]?.url ?? null;
+  const heroImage = model.imageUrl ?? products[0]?.images[0]?.url ?? null;
   const modelDisplayName = getModelDisplayName(model);
 
   const groupedProducts = Object.entries(
