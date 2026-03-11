@@ -706,7 +706,7 @@ export const purchases = async (req: Request, res: Response) => {
     ...(vendorId ? { vendorId } : {})
   };
 
-  const [vendors, entries, total, aggregate] = await Promise.all([
+  const [vendors, entries, total, aggregate, allPurchaseEntries, inventoryItems] = await Promise.all([
     prisma.vendor.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     prisma.purchaseEntry.findMany({
       where,
@@ -726,8 +726,78 @@ export const purchases = async (req: Request, res: Response) => {
       take: limit
     }),
     prisma.purchaseEntry.count({ where }),
-    prisma.purchaseEntry.aggregate({ where, _sum: { totalCost: true, quantity: true } })
+    prisma.purchaseEntry.aggregate({ where, _sum: { totalCost: true, quantity: true } }),
+    prisma.purchaseEntry.findMany({
+      where,
+      select: {
+        vendorId: true,
+        totalCost: true,
+        quantity: true,
+        vendor: { select: { id: true, name: true } },
+        productId: true,
+        unitCost: true,
+        purchasedAt: true
+      },
+      orderBy: [{ productId: 'asc' }, { purchasedAt: 'desc' }]
+    }),
+    prisma.inventory.findMany({
+      include: {
+        product: {
+          include: {
+            brand: true,
+            model: true,
+            category: true
+          }
+        }
+      }
+    })
   ]);
+
+  const latestUnitCostByProduct = new Map<string, number>();
+  for (const entry of allPurchaseEntries) {
+    if (!latestUnitCostByProduct.has(entry.productId)) {
+      latestUnitCostByProduct.set(entry.productId, Number(entry.unitCost));
+    }
+  }
+
+  const vendorSpendMap = new Map<string, { vendorId: string; vendorName: string; spend: number; units: number }>();
+  for (const entry of allPurchaseEntries) {
+    const current = vendorSpendMap.get(entry.vendorId) ?? {
+      vendorId: entry.vendor.id,
+      vendorName: entry.vendor.name,
+      spend: 0,
+      units: 0
+    };
+    current.spend += Number(entry.totalCost);
+    current.units += entry.quantity;
+    vendorSpendMap.set(entry.vendorId, current);
+  }
+
+  let inventoryValue = 0;
+  const stockInsights = inventoryItems
+    .map((item) => {
+      const latestUnitCost = latestUnitCostByProduct.get(item.productId) ?? 0;
+      const estimatedValue = latestUnitCost * item.stock;
+      inventoryValue += estimatedValue;
+      return {
+        productId: item.productId,
+        productName: item.product.name,
+        productSku: item.product.sku,
+        stock: item.stock,
+        lowStockLimit: item.lowStockLimit,
+        latestUnitCost,
+        estimatedValue,
+        isLowStock: item.stock <= item.lowStockLimit,
+        brandName: item.product.brand.name,
+        modelName: item.product.model.name
+      };
+    })
+    .sort((left, right) => right.estimatedValue - left.estimatedValue)
+    .slice(0, 5);
+
+  const topVendors = Array.from(vendorSpendMap.values())
+    .sort((left, right) => right.spend - left.spend)
+    .slice(0, 5);
 
   res.json({
     range,
@@ -749,8 +819,12 @@ export const purchases = async (req: Request, res: Response) => {
       activeVendors: vendors.length,
       averageUnitCost: Number(aggregate._sum.quantity ?? 0)
         ? Number(aggregate._sum.totalCost ?? 0) / Number(aggregate._sum.quantity ?? 0)
-        : 0
+        : 0,
+      inventoryValue,
+      lowStockItems: inventoryItems.filter((item) => item.stock <= item.lowStockLimit).length
     },
+    topVendors,
+    stockInsights,
     pagination: {
       page,
       limit,

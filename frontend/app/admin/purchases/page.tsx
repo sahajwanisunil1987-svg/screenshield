@@ -18,7 +18,27 @@ type PurchasesResponse = {
     totalUnits: number;
     activeVendors: number;
     averageUnitCost: number;
+    inventoryValue: number;
+    lowStockItems: number;
   };
+  topVendors: Array<{
+    vendorId: string;
+    vendorName: string;
+    spend: number;
+    units: number;
+  }>;
+  stockInsights: Array<{
+    productId: string;
+    productName: string;
+    productSku: string;
+    stock: number;
+    lowStockLimit: number;
+    latestUnitCost: number;
+    estimatedValue: number;
+    isLowStock: boolean;
+    brandName: string;
+    modelName: string;
+  }>;
   pagination: {
     page: number;
     limit: number;
@@ -60,8 +80,8 @@ export default function AdminPurchasesPage() {
   const summaryCards = useMemo(() => [
     { label: "Purchase Spend", value: formatCurrency(data?.summary.totalSpend ?? 0), detail: "Vendor-side buying across selected range" },
     { label: "Units Inward", value: `${data?.summary.totalUnits ?? 0}`, detail: "Total units moved into stock" },
-    { label: "Active Vendors", value: `${data?.summary.activeVendors ?? 0}`, detail: "Vendors available for new purchase entries" },
-    { label: "Avg Unit Cost", value: formatCurrency(data?.summary.averageUnitCost ?? 0), detail: "Average buying cost per unit in selected range" }
+    { label: "Inventory Value", value: formatCurrency(data?.summary.inventoryValue ?? 0), detail: "Current stock value at latest purchase cost" },
+    { label: "Low-stock SKUs", value: `${data?.summary.lowStockItems ?? 0}`, detail: "Inventory items already at or below threshold" }
   ], [data]);
 
   const createVendor = async () => {
@@ -115,6 +135,70 @@ export default function AdminPurchasesPage() {
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-semibold text-white">Vendor spend insights</h3>
+                <p className="mt-1 text-sm text-white/50">See which suppliers are driving current inward spend.</p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-3">
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-[20px] bg-white/5" />)
+              ) : data?.topVendors.length ? (
+                data.topVendors.map((vendor) => (
+                  <div key={vendor.vendorId} className="rounded-[22px] border border-white/10 bg-black/10 p-4 text-white/80">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-white">{vendor.vendorName}</p>
+                        <p className="mt-1 text-xs text-white/45">{vendor.units} units purchased in selected range</p>
+                      </div>
+                      <p className="text-sm font-semibold text-white">{formatCurrency(vendor.spend)}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="rounded-[22px] border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-white/50">
+                  No vendor spend recorded in this range yet.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-semibold text-white">Stock valuation watchlist</h3>
+                <p className="mt-1 text-sm text-white/50">Highest-value inventory based on latest purchase cost.</p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-3">
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-20 animate-pulse rounded-[20px] bg-white/5" />)
+              ) : data?.stockInsights.length ? (
+                data.stockInsights.map((item) => (
+                  <div key={item.productId} className="rounded-[22px] border border-white/10 bg-black/10 p-4 text-white/80">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-white">{item.productName}</p>
+                        <p className="mt-1 text-xs text-white/45">{item.brandName} · {item.modelName} · {item.productSku}</p>
+                      </div>
+                      <p className="text-sm font-semibold text-white">{formatCurrency(item.estimatedValue)}</p>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">Stock {item.stock}</span>
+                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">Unit cost {formatCurrency(item.latestUnitCost)}</span>
+                      {item.isLowStock ? <span className="rounded-full bg-amber-500/15 px-3 py-1 text-amber-200">Low stock</span> : null}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="rounded-[22px] border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-white/50">
+                  No stock valuation data available yet.
+                </p>
+              )}
+            </div>
+          </div>
           <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
             <h3 className="font-semibold text-white">New vendor</h3>
             <div className="mt-4 grid gap-3">
