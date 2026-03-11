@@ -77,25 +77,25 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
             {brands.map((brand) => (
               <Link
                 key={brand.id}
                 href={`/brands/${brand.slug}`}
-                className="flex min-h-[164px] flex-col items-center justify-center rounded-[28px] border border-slate-200 bg-white px-5 py-6 text-center shadow-card transition hover:-translate-y-0.5 hover:border-slate-300"
+                className="flex aspect-square items-center justify-center rounded-[24px] border border-slate-200 bg-white p-4 text-center shadow-card transition hover:-translate-y-0.5 hover:border-slate-300 sm:rounded-[28px] sm:p-5"
               >
                 {brand.logoUrl ? (
-                  <div className="relative h-12 w-32">
+                  <div className="relative h-10 w-24 sm:h-12 sm:w-28">
                     <Image
                       src={brand.logoUrl}
                       alt={`${brand.name} logo`}
                       fill
                       className="object-contain"
-                      sizes="128px"
+                      sizes="(max-width: 640px) 96px, 112px"
                     />
                   </div>
                 ) : (
-                  <h3 className="font-display text-2xl text-ink">{brand.name}</h3>
+                  <h3 className="font-display text-xl text-ink sm:text-2xl">{brand.name}</h3>
                 )}
               </Link>
             ))}
