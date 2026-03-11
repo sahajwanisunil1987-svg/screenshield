@@ -53,7 +53,11 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
-      items: true,
+      items: {
+        include: {
+          product: true
+        }
+      },
       user: true,
       payment: true,
       invoice: true
@@ -97,21 +101,23 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
   const sgst = tax / 2;
 
   const columns = {
-    item: 54,
-    sku: 220,
-    qty: 305,
-    gross: 345,
-    taxable: 420,
-    amount: 495
+    item: 52,
+    hsn: 202,
+    sku: 262,
+    qty: 330,
+    gst: 364,
+    taxable: 414,
+    amount: 492
   };
 
   const drawTableHeader = (y: number) => {
     doc.roundedRect(40, y - 12, 515, 28, 10).fill("#e9eef5");
     doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(10);
     doc.text("Item", columns.item, y - 3);
+    doc.text("HSN", columns.hsn, y - 3);
     doc.text("SKU", columns.sku, y - 3);
     doc.text("Qty", columns.qty, y - 3);
-    doc.text("Gross", columns.gross, y - 3);
+    doc.text("GST", columns.gst, y - 3);
     doc.text("Taxable", columns.taxable, y - 3);
     doc.text("Amount", columns.amount, y - 3);
   };
@@ -171,14 +177,17 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
     const grossValue = Number(item.totalPrice);
     const allocatedDiscount = subtotal > 0 ? (grossValue / subtotal) * discount : 0;
     const lineTaxableValue = Math.max(grossValue - allocatedDiscount, 0);
+    const itemGstRate = Number(item.product.gstRate ?? 18);
+    const itemHsnCode = item.product.hsnCode ?? "-";
 
     doc.roundedRect(40, y - 8, 515, rowHeight, 8).fill(index % 2 === 0 ? "#ffffff" : "#f9fbfd");
-    doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(10).text(item.productName, columns.item, y, { width: 155 });
-    doc.font("Helvetica").fontSize(9).fillColor("#5b6474").text(item.productSku, columns.sku, y + 1, { width: 70 });
-    doc.fillColor("#08111f").fontSize(10).text(String(item.quantity), columns.qty, y + 1);
-    doc.text(formatCurrency(grossValue), columns.gross, y + 1, { width: 60 });
-    doc.text(formatCurrency(lineTaxableValue), columns.taxable, y + 1, { width: 65 });
-    doc.text(formatCurrency(grossValue), columns.amount, y + 1, { width: 55 });
+    doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(10).text(item.productName, columns.item, y, { width: 140 });
+    doc.font("Helvetica").fontSize(9).fillColor("#5b6474").text(itemHsnCode, columns.hsn, y + 1, { width: 48 });
+    doc.text(item.productSku, columns.sku, y + 1, { width: 58 });
+    doc.fillColor("#08111f").fontSize(10).text(String(item.quantity), columns.qty, y + 1, { width: 24 });
+    doc.text(`${itemGstRate.toFixed(0)}%`, columns.gst, y + 1, { width: 36 });
+    doc.text(formatCurrency(lineTaxableValue), columns.taxable, y + 1, { width: 68 });
+    doc.text(formatCurrency(grossValue), columns.amount, y + 1, { width: 60 });
     y += rowHeight + 6;
   });
 
@@ -203,7 +212,7 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
   doc.text(`Payment mode: ${order.payment?.provider ?? order.paymentStatus}`, 54, summaryTop + 74);
   doc.text(`Payment status: ${order.paymentStatus}`, 54, summaryTop + 92);
   doc.text(`Order placed on: ${formatDate(order.createdAt)}`, 54, summaryTop + 110);
-  doc.text(`GST charged on order: ${gstRate.toFixed(1)}%`, 54, summaryTop + 128);
+  doc.text(`GST charged on order: blended effective ${gstRate.toFixed(1)}%`, 54, summaryTop + 128);
   if (order.notes) {
     doc.text(`Notes: ${order.notes}`, 54, summaryTop + 146, { width: 210 });
   }
