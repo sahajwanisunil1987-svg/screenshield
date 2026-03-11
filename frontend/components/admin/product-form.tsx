@@ -16,6 +16,8 @@ import { Input } from "../ui/input";
 const schema = z.object({
   name: z.string().min(3),
   sku: z.string().min(3),
+  hsnCode: z.string().max(20).optional(),
+  gstRate: z.coerce.number().min(0).max(100).default(18),
   shortDescription: z.string().min(10),
   description: z.string().min(20),
   price: z.coerce.number().positive(),
@@ -53,6 +55,7 @@ export function ProductForm({ productId }: { productId?: string }) {
       compatibleModelIds: [],
       isFeatured: false,
       isActive: true,
+      gstRate: 18,
       specificationsText: "quality: Premium\nwarranty: 6 Months",
       imageUrls: "",
       videoUrl: ""
@@ -95,6 +98,8 @@ export function ProductForm({ productId }: { productId?: string }) {
         if (!product) return;
         setValue("name", product.name);
         setValue("sku", product.sku);
+        setValue("hsnCode", product.hsnCode ?? "");
+        setValue("gstRate", Number(product.gstRate ?? 18));
         setValue("shortDescription", product.shortDescription);
         setValue("description", product.description);
         setValue("price", product.price);
@@ -249,6 +254,8 @@ export function ProductForm({ productId }: { productId?: string }) {
         const payload = {
           name: values.name,
           sku: values.sku,
+          hsnCode: values.hsnCode || undefined,
+          gstRate: values.gstRate,
           shortDescription: values.shortDescription,
           description: values.description,
           specifications,
@@ -284,6 +291,8 @@ export function ProductForm({ productId }: { productId?: string }) {
     >
       <Input placeholder="Product name" {...register("name")} />
       <Input placeholder="SKU" {...register("sku")} />
+      <Input placeholder="HSN code" {...register("hsnCode")} />
+      <Input placeholder="GST rate (%)" type="number" step="0.01" {...register("gstRate")} />
       <Input placeholder="Short description" {...register("shortDescription")} />
       <Input placeholder="Description" {...register("description")} />
       <Input placeholder="Price" type="number" {...register("price")} />

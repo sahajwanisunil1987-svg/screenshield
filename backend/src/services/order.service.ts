@@ -146,6 +146,7 @@ export const createOrder = async (
       }
 
       const lineTotal = Number(product.price) * item.quantity;
+      const lineTax = lineTotal * (Number(product.gstRate ?? 18) / 100);
       subtotal += lineTotal;
 
       return {
@@ -153,6 +154,7 @@ export const createOrder = async (
         quantity: item.quantity,
         unitPrice: decimal(Number(product.price)),
         totalPrice: decimal(lineTotal),
+        taxAmount: decimal(lineTax),
         productName: product.name,
         productSku: product.sku
       };
@@ -169,7 +171,7 @@ export const createOrder = async (
     }
 
     const shippingAmount = subtotal > 999 ? 0 : 79;
-    const taxAmount = subtotal * 0.18;
+    const taxAmount = orderItems.reduce((sum, item) => sum + Number(item.taxAmount), 0);
     const totalAmount = subtotal - discountAmount + shippingAmount + taxAmount;
 
     if (payload.paymentMethod === "COD") {

@@ -24,6 +24,8 @@ export const categorySchema = z.object({
 export const productSchema = z.object({
   name: z.string().min(3),
   sku: z.string().min(3),
+  hsnCode: z.string().max(20).optional().nullable(),
+  gstRate: z.coerce.number().min(0).max(100).default(18),
   shortDescription: z.string().min(10),
   description: z.string().min(20),
   specifications: z.record(z.string(), z.string()),

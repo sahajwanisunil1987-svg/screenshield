@@ -111,6 +111,8 @@ model Product {
   name               String
   slug               String         @unique
   sku                String         @unique
+  hsnCode            String?
+  gstRate            Decimal        @db.Decimal(5, 2) @default(18)
   shortDescription   String
   description        String
   specifications     Json

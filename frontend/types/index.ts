@@ -38,6 +38,8 @@ export type Product = {
   name: string;
   slug: string;
   sku: string;
+  hsnCode?: string | null;
+  gstRate?: number;
   shortDescription: string;
   description: string;
   specifications: Record<string, string>;

@@ -2,6 +2,8 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { toSlug } from "../utils/helpers.js";
 
+const decimal = (value: number) => new Prisma.Decimal(value.toFixed(2));
+
 const normalize = (value: string) => value.trim().toLowerCase();
 
 const tokenize = (value: string) =>
@@ -443,6 +445,8 @@ export const deleteCategory = (id: string) => prisma.category.delete({ where: { 
 export const createProduct = async (payload: {
   name: string;
   sku: string;
+  hsnCode?: string | null;
+  gstRate: number;
   shortDescription: string;
   description: string;
   specifications: Record<string, string>;
@@ -461,12 +465,14 @@ export const createProduct = async (payload: {
   isActive: boolean;
   images: { url: string; alt?: string }[];
 }) => {
-  const { compatibleModelIds = [], lowStockLimit, warehouseCode, stock, images, specifications, videoUrl, ...productData } = payload;
+  const { compatibleModelIds = [], lowStockLimit, warehouseCode, stock, images, specifications, videoUrl, hsnCode, gstRate, ...productData } = payload;
   const normalizedCompatibleModelIds = Array.from(new Set([payload.modelId, ...compatibleModelIds]));
 
   return prisma.product.create({
     data: {
       ...productData,
+      hsnCode: hsnCode || null,
+      gstRate: decimal(gstRate),
       slug: toSlug(`${payload.name}-${payload.sku}`),
       specifications,
       videoUrl: videoUrl || null,
@@ -505,13 +511,15 @@ export const updateProduct = async (id: string, payload: Parameters<typeof creat
   await prisma.productImage.deleteMany({ where: { productId: id } });
   await prisma.productCompatibility.deleteMany({ where: { productId: id } });
 
-  const { compatibleModelIds = [], lowStockLimit, warehouseCode, stock, images, specifications, videoUrl, ...productData } = payload;
+  const { compatibleModelIds = [], lowStockLimit, warehouseCode, stock, images, specifications, videoUrl, hsnCode, gstRate, ...productData } = payload;
   const normalizedCompatibleModelIds = Array.from(new Set([payload.modelId, ...compatibleModelIds]));
 
   return prisma.product.update({
     where: { id },
     data: {
       ...productData,
+      hsnCode: hsnCode || null,
+      gstRate: decimal(gstRate),
       slug: toSlug(`${payload.name}-${payload.sku}`),
       specifications,
       videoUrl: videoUrl || null,
