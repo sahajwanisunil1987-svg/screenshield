@@ -84,9 +84,8 @@ export default async function HomePage() {
                 href={`/brands/${brand.slug}`}
                 className="flex min-h-[164px] flex-col items-center justify-center rounded-[28px] border border-slate-200 bg-white px-5 py-6 text-center shadow-card transition hover:-translate-y-0.5 hover:border-slate-300"
               >
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate">Brand</p>
                 {brand.logoUrl ? (
-                  <div className="relative mt-5 h-12 w-32">
+                  <div className="relative h-12 w-32">
                     <Image
                       src={brand.logoUrl}
                       alt={`${brand.name} logo`}
@@ -96,7 +95,7 @@ export default async function HomePage() {
                     />
                   </div>
                 ) : (
-                  <h3 className="mt-4 font-display text-2xl text-ink">{brand.name}</h3>
+                  <h3 className="font-display text-2xl text-ink">{brand.name}</h3>
                 )}
               </Link>
             ))}
