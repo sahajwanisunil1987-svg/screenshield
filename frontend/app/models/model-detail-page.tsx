@@ -217,11 +217,17 @@ export async function ModelDetailPageContent(params: ModelPageParams) {
 
           <div className="mt-8 grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
             <div className="flex justify-center lg:justify-start">
-              <div className="relative flex aspect-[4/5] w-[180px] items-center justify-center overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 shadow-sm">
+              <div className="relative aspect-[4/5] w-[180px] overflow-hidden rounded-[28px] border border-slate-200 bg-slate-950/5 shadow-sm">
                 {heroImage ? (
-                  <Image src={heroImage} alt={`${model.name} reference`} fill className="object-cover" />
+                  <Image
+                    src={heroImage}
+                    alt={`${model.name} reference`}
+                    fill
+                    className="object-contain"
+                    sizes="180px"
+                  />
                 ) : (
-                  <div className="flex flex-col items-center gap-3 text-slate">
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-slate">
                     <Smartphone className="h-12 w-12" />
                     <span className="text-sm font-medium">{modelDisplayName}</span>
                   </div>
