@@ -223,7 +223,7 @@ export async function ModelDetailPageContent(params: ModelPageParams) {
                     src={heroImage}
                     alt={`${model.name} reference`}
                     fill
-                    className="object-contain"
+                    className="object-contain p-1"
                     sizes="180px"
                   />
                 ) : (
