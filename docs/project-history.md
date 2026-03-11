@@ -1,190 +1,130 @@
-# SpareKart Project History
+# Project History
 
 ## Overview
+- Project: SpareKart
+- Type: Mobile spare parts ecommerce platform with admin operations
+- Frontend: Next.js
+- Backend: Node.js/Express + Prisma/PostgreSQL
+- Deployments:
+  - Frontend: Vercel
+  - Backend: Render
 
-This document captures the major implementation history for SpareKart across the planning, build, polish, and go-live-hardening phases completed in this workspace.
+## Deployment and Hosting
+- Frontend was moved to Vercel and backend kept on Render.
+- Render frontend was deprecated after Vercel stabilized.
+- Live frontend URL set to `https://sparekart-gamma.vercel.app`
+- Live backend URL set to `https://sparekart-backend.onrender.com`
+- CORS and production env alignment were fixed for the Vercel frontend origin.
 
-It is not a literal chat export. It is a structured project record intended for handoff, future maintenance, and release tracking.
+## Major Fixes
+- Fixed malformed JSX in footer.
+- Fixed nested form hydration issues in navbar/search flows.
+- Fixed admin reference-data authentication for brands, models, and categories.
+- Fixed stale product image visibility by changing fetch/caching behavior.
+- Fixed authenticated invoice downloads for both admin and users.
+- Fixed duplicate cancel notifications on unchanged order status.
+- Fixed public catalog routes accidentally blocked by admin/account auth middleware.
 
-## Original Build Brief
+## Auth and User Flows
+- Added email verification flow.
+- Added forgot password and reset password flow.
+- Added stricter registration behavior: rollback if verification email cannot be sent.
+- Added register confirm-password and password show/hide UX.
+- Added login redirect improvements and verification-related UX polishing.
+- Added dev-friendly email fallback/log behavior for localhost when SMTP is not configured.
+- Added development rate-limit bypass to reduce local auth friction.
 
-The project was built against a detailed SpareKart prompt for a single-vendor mobile spare-parts platform with:
+## Customer Features
+- Account management page added.
+- Saved addresses and profile management added.
+- My Orders improvements:
+  - cancel request flow
+  - return request flow
+  - authenticated invoice download
+- Notifications center added with read/unread handling.
+- Track order page improved with shipment timeline and better cancelled-order treatment.
 
-- Next.js 14 frontend
-- Express + Prisma backend
-- PostgreSQL
-- Razorpay payments
-- Cloudinary uploads
-- customer and admin flows
-- Brand -> Model -> Part Type discovery
+## Admin and Operations
+- Shipment fields added:
+  - courier
+  - AWB
+  - ETA
+  - admin notes
+- Cancel/return request approval workflow added.
+- Admin customer detail view added.
+- Low-stock alerts and reorder suggestions added.
+- COD restrictions by order value and pincode added.
+- Support inbox workflow added.
+- Admin dashboard improved with operations-focused metrics.
+- Admin orders page improved with ops filters and shipment warnings.
+- Admin products page improved with readiness/media/stock workflow.
+- Inventory and orders cross-linking added.
 
-## Implementation Phases
+## Accounting and Business Features
+- Accounting dashboard added.
+- Accounting report table and CSV export added.
+- GST summary and daily breakdown added.
+- Margin tracking added:
+  - estimated cost
+  - gross profit
+  - margin percentage
+- Vendor purchases and stock inward tracking added.
+- Refund and return analytics added to accounting.
+- Invoice PDF upgraded with improved layout and tax details.
+- Accounting sanity fixes applied for refund semantics and prepaid wording.
 
-### P1
+## Catalog and Discovery
+- Homepage was simplified multiple times to reduce clutter.
+- Hero content was rewritten to focus on brand > model > part discovery.
+- Popular/featured/trust sections were removed from homepage for cleaner discovery.
+- Brand-first model navigation added:
+  - `/brands`
+  - `/brands/[slug]`
+  - `/brands/[slug]/models/[modelSlug]`
+- Model landing pages were redesigned in a Maxbhi-style direction.
+- Brand logos and model image support were added locally for admin/public surfaces.
+- Per-product GST and HSN support were added locally:
+  - manual GST rate per product
+  - HSN code per product
+  - order tax calculation moved from flat 18% to product-level rate
 
-Core stabilization and must-have product behavior:
+## Mobile and Responsive Work
+- Mobile homepage top fold simplified.
+- Storefront navbar optimized for mobile.
+- Admin mobile navigation and overflow handling improved.
+- Checkout mobile layout improved.
+- Product gallery mobile touch behavior improved.
+- Product, cart, and product detail pages received mobile-polish passes.
 
-- aligned cart and checkout totals with backend GST handling
-- added persistent wishlist APIs and frontend sync
-- made navbar search functional
-- added route-level loading, error, and not-found states
-- hardened auth with refresh-session handling instead of only long-lived client token use
+## Production Data and Cleanup
+- Demo login UI references were removed.
+- Production env validation was tightened.
+- Demo seeding was gated behind explicit env flags.
+- Production data cleanup scripts and one-off DB cleanup steps were prepared and used.
+- Existing sample orders/customers/coupons were cleaned while preserving catalog/admin where needed.
+- Admin credentials were updated from demo to real values.
 
-### P2
+## Proposal and Sales Material
+- Client proposal template created.
+- WhatsApp proposal templates created:
+  - English short version
+  - Hindi-English mixed version
 
-Search, SEO, admin UX, storefront polish, and operational product depth:
+## Local Development Notes
+- Localhost issues encountered included:
+  - env strictness failures
+  - hydration mismatches
+  - stale `.next` cache
+  - duplicate dev processes
+- Local setup was stabilized through env loading fixes, auth-flow adjustments, and dev-only fallbacks.
 
-- live autocomplete search
-- stronger search ranking
-- product and catalog SEO metadata
-- product JSON-LD and breadcrumb structured data
-- catalog sorting, pagination, and richer filter UX
-- homepage and mobile search polish
-- admin search, filtering, and backend-driven pagination
-- admin dashboard polish
-- admin theme reuse
-- product-page and review-panel polish
-- checkout, order-success, my-orders, and tracking UX polish
-- product compatibility support
-- improved GST invoice layout
+## Current Notable Docs
+- `docs/client-proposal.md`
+- `docs/whatsapp-proposal.md`
+- `docs/launch.md`
+- `docs/operations.md`
+- `docs/status.md`
 
-### P3
-
-Recommended deeper functionality:
-
-- review moderation workflow
-- range-based admin analytics
-- invoice persistence and invoice history
-- product comparison flow
-
-## Additional Launch Hardening
-
-After P1, P2, and P3, go-live-focused backend and operational work was added:
-
-- request ID and structured request logging
-- structured error logging
-- rate limiting for auth, search, order, payment, and upload endpoints
-- DB-aware health endpoint
-- graceful shutdown hooks
-- uncaught exception and unhandled rejection logging
-- Razorpay webhook verification and reconciliation handling
-- baseline backend automated tests
-- operations runbook and launch checklist documentation
-
-## Major Documentation Added
-
-- [launch.md](/home/mistermobiletriveni/screen/screenshield/docs/launch.md)
-- [status.md](/home/mistermobiletriveni/screen/screenshield/docs/status.md)
-- [operations.md](/home/mistermobiletriveni/screen/screenshield/docs/operations.md)
-
-## Key Render / Deployment Notes
-
-- Backend Render service root is `backend`
-- Frontend Render service root is `frontend`
-- From a Render backend shell inside `/opt/render/project/src/backend`, use:
-
-```bash
-npm run prisma:push
-npm run prisma:generate
-```
-
-- Do not use:
-
-```bash
-npm run db:push
-```
-
-inside the `backend` directory, because that root-level script does not exist there.
-
-- Production auth persistence depends on:
-  - exact `FRONTEND_URL`
-  - secure refresh cookie handling
-  - `SameSite=None` in production
-
-- Razorpay webhook verification now depends on:
-  - `RAZORPAY_WEBHOOK_SECRET`
-
-## Important Production Environment Variables
-
-### Backend
-
-- `DATABASE_URL`
-- `DIRECT_URL`
-- `JWT_SECRET`
-- `JWT_REFRESH_SECRET`
-- `FRONTEND_URL`
-- `SITE_URL`
-- `RAZORPAY_KEY_ID`
-- `RAZORPAY_KEY_SECRET`
-- `RAZORPAY_WEBHOOK_SECRET`
-- `COMPANY_NAME`
-- `COMPANY_LEGAL_NAME`
-- `COMPANY_GSTIN`
-- `COMPANY_PHONE`
-- `COMPANY_EMAIL`
-- `COMPANY_ADDRESS_LINE1`
-- `COMPANY_ADDRESS_LINE2`
-
-### Frontend
-
-- `NEXT_PUBLIC_API_BASE_URL`
-- `NEXT_PUBLIC_RAZORPAY_KEY_ID`
-- `NEXT_PUBLIC_SITE_URL`
-
-## Current Project Status
-
-The planned implementation sequence is complete:
-
-- `P1`: complete
-- `P2`: complete
-- `P3`: complete
-
-The current remaining work is go-live verification and operational confirmation, not missing product scope.
-
-## Remaining Go-Live Focus
-
-- verify auth refresh persistence on Render
-- verify live Razorpay payment flow
-- verify webhook delivery and reconciliation
-- confirm production logs and health checks
-- expand automated coverage beyond the current backend baseline
-- finalize backups, alerts, and rollback process
-- replace any placeholder business or policy content still present
-
-## Notable Commits
-
-This is a partial milestone list, not every single commit:
-
-- `e958dcf` complete P1 storefront, wishlist, and auth hardening
-- `ed1fd90` richer catalog UX
-- `bc7e0a4` search relevance scoring
-- `2954c55` mobile catalog filters
-- `cc57913` product detail polish
-- `5d0ca92` review panel polish
-- `f7743ca` admin search and filtering
-- `3dbc616` admin dashboard polish
-- `4ae8c6b` backend-driven admin filtering and pagination
-- `41f0cee` refresh-session cleanup and mobile web app meta fix
-- `05713ad` product compatibility support
-- `3cd275d` upgraded GST invoice output
-- `3ce90b0` admin login theme toggle
-- `42612aa` persisted-store hydration mismatch fix
-- `92accd7` deterministic client date formatting for hydration
-- `b0bd89f` auth-form hydration guard
-- `0ebde6d` Render cross-origin refresh-cookie fix
-- `08a10ed` review moderation workflow
-- `8e35079` range-based admin analytics
-- `1a34f49` invoice persistence history
-- `8bd736a` product compare
-- `e32c3b3` go-live checklist doc
-- `dbbcbf7` project status doc
-- `a1799e0` go-live hardening and operations runbook
-
-## How To Use This File
-
-Use this file as a quick reference for:
-
-- what has already been implemented
-- how the project evolved
-- what still needs production verification
-- which docs to read next before launch
+## Notes
+- This file is a concise project/chat-derived history, not a verbatim transcript.
+- It is intended to preserve the major technical, deployment, business, and UX decisions made during development.
