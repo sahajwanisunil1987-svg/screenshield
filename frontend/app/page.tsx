@@ -82,10 +82,12 @@ export default async function HomePage() {
               <Link
                 key={brand.id}
                 href={`/brands/${brand.slug}`}
-                className="flex aspect-square items-center justify-center rounded-[24px] border border-slate-200 bg-white p-4 text-center shadow-card transition hover:-translate-y-0.5 hover:border-slate-300 sm:rounded-[28px] sm:p-5"
+                className="group relative flex aspect-square items-center justify-center overflow-hidden rounded-[24px] border border-slate-200/90 bg-white p-4 text-center shadow-[0_14px_30px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_22px_42px_rgba(15,23,42,0.14)] sm:rounded-[28px] sm:p-5"
               >
+                <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.65),transparent_48%)] opacity-70 transition duration-200 group-hover:opacity-100" />
                 {brand.logoUrl ? (
-                  <div className="relative h-10 w-24 sm:h-12 sm:w-28">
+                  <div className="relative h-10 w-24 transition duration-200 group-hover:scale-[1.03] sm:h-12 sm:w-28">
                     <Image
                       src={brand.logoUrl}
                       alt={`${brand.name} logo`}
@@ -95,7 +97,9 @@ export default async function HomePage() {
                     />
                   </div>
                 ) : (
-                  <h3 className="font-display text-xl text-ink sm:text-2xl">{brand.name}</h3>
+                  <h3 className="relative font-display text-xl text-ink transition duration-200 group-hover:scale-[1.03] sm:text-2xl">
+                    {brand.name}
+                  </h3>
                 )}
               </Link>
             ))}
