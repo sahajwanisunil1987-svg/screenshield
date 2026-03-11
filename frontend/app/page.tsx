@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import nextDynamic from "next/dynamic";
+import Image from "next/image";
 import Link from "next/link";
 import { PageShell } from "@/components/layout/page-shell";
 import { fetchApi } from "@/lib/server-api";
@@ -81,10 +82,22 @@ export default async function HomePage() {
               <Link
                 key={brand.id}
                 href={`/brands/${brand.slug}`}
-                className="rounded-[28px] border border-slate-200 bg-white px-5 py-6 text-center shadow-card transition hover:-translate-y-0.5 hover:border-slate-300"
+                className="flex min-h-[164px] flex-col items-center justify-center rounded-[28px] border border-slate-200 bg-white px-5 py-6 text-center shadow-card transition hover:-translate-y-0.5 hover:border-slate-300"
               >
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate">Brand</p>
-                <h3 className="mt-4 font-display text-2xl text-ink">{brand.name}</h3>
+                {brand.logoUrl ? (
+                  <div className="relative mt-5 h-12 w-32">
+                    <Image
+                      src={brand.logoUrl}
+                      alt={`${brand.name} logo`}
+                      fill
+                      className="object-contain"
+                      sizes="128px"
+                    />
+                  </div>
+                ) : (
+                  <h3 className="mt-4 font-display text-2xl text-ink">{brand.name}</h3>
+                )}
               </Link>
             ))}
           </div>
