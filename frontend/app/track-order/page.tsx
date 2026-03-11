@@ -18,6 +18,7 @@ const statusDescriptions: Record<string, string> = {
   PACKED: "The spare part has been packed and is being readied for shipment.",
   SHIPPED: "Your order is in transit and moving through the delivery network.",
   DELIVERED: "The order has been delivered successfully.",
+  RETURNED: "The delivered order was returned and has moved into the return workflow.",
   CANCELLED: "This order was cancelled before completion."
 };
 
@@ -78,6 +79,59 @@ const buildTimeline = (result: TrackResult): (TimelineStep | CancelledTimelineSt
     ];
   }
 
+  if (result.returnRequestStatus === "APPROVED") {
+    return [
+      {
+        key: "PENDING",
+        label: "Placed",
+        description: statusDescriptions.PENDING,
+        reached: true,
+        current: false,
+        timestamp: result.createdAt
+      },
+      {
+        key: "CONFIRMED",
+        label: "Confirmed",
+        description: statusDescriptions.CONFIRMED,
+        reached: true,
+        current: false,
+        timestamp: result.confirmedAt ?? result.updatedAt
+      },
+      {
+        key: "PACKED",
+        label: "Packed",
+        description: statusDescriptions.PACKED,
+        reached: true,
+        current: false,
+        timestamp: result.packedAt ?? result.updatedAt
+      },
+      {
+        key: "SHIPPED",
+        label: "Shipped",
+        description: statusDescriptions.SHIPPED,
+        reached: true,
+        current: false,
+        timestamp: result.shippedAt ?? result.updatedAt
+      },
+      {
+        key: "DELIVERED",
+        label: "Delivered",
+        description: statusDescriptions.DELIVERED,
+        reached: true,
+        current: false,
+        timestamp: result.deliveredAt ?? result.updatedAt
+      },
+      {
+        key: "RETURNED",
+        label: "Returned",
+        description: statusDescriptions.RETURNED,
+        reached: true,
+        current: true,
+        timestamp: result.returnDecisionAt ?? result.updatedAt
+      }
+    ];
+  }
+
   const statusIndex = timeline.indexOf(result.status as (typeof timeline)[number]);
   const shippedAt = result.status === "SHIPPED" || result.status === "DELIVERED" ? result.updatedAt : null;
   const deliveredAt = result.status === "DELIVERED" ? result.updatedAt : null;
@@ -112,6 +166,10 @@ type TrackResult = {
   paymentStatus: string;
   createdAt: string;
   updatedAt: string;
+  confirmedAt?: string | null;
+  packedAt?: string | null;
+  shippedAt?: string | null;
+  deliveredAt?: string | null;
   shippingCourier?: string | null;
   shippingAwb?: string | null;
   estimatedDeliveryAt?: string | null;
@@ -123,6 +181,7 @@ type TrackResult = {
   returnRequestedAt?: string | null;
   returnRequestReason?: string | null;
   returnRequestStatus?: "PENDING" | "APPROVED" | "REJECTED" | null;
+  returnDecisionAt?: string | null;
   returnDecisionNote?: string | null;
 };
 
@@ -202,11 +261,15 @@ export default function TrackOrderPage() {
                     <p className="mt-2 text-sm text-slate">
                       {result.status === "CANCELLED"
                         ? "This order reached a terminal cancelled state before fulfilment was completed."
-                        : "Milestones become active as the operations team moves the order through fulfilment."}
+                        : result.returnRequestStatus === "APPROVED"
+                          ? "This order completed delivery and later moved through the return workflow."
+                          : "Milestones become active as the operations team moves the order through fulfilment."}
                     </p>
                   </div>
                   {result.status === "CANCELLED" ? (
                     <span className="rounded-full bg-amber-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-800">Cancelled</span>
+                  ) : result.returnRequestStatus === "APPROVED" ? (
+                    <span className="rounded-full bg-sky-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-sky-800">Returned</span>
                   ) : null}
                 </div>
                 <div className="mt-5 grid gap-3 lg:grid-cols-5">
@@ -245,13 +308,15 @@ export default function TrackOrderPage() {
                 <p className="mt-2 text-sm font-semibold text-ink">
                   {result.status === "CANCELLED"
                     ? "This order has been cancelled. Contact support if you need help with a replacement or a new order."
-                    : timelineIndex <= 0
-                      ? "Give the operations team a little time to confirm and queue the order."
-                      : timelineIndex <= 2
-                        ? "Your order is progressing normally. Check again after the next dispatch update."
-                        : timelineIndex === 3
-                          ? "The order is on the way. Keep the order number ready for delivery-related support."
-                          : "Order delivered. If anything looks wrong, contact support with your order number."}
+                    : result.returnRequestStatus === "APPROVED"
+                      ? "This order has been returned. Contact support if you need help with refund or replacement updates."
+                      : timelineIndex <= 0
+                        ? "Give the operations team a little time to confirm and queue the order."
+                        : timelineIndex <= 2
+                          ? "Your order is progressing normally. Check again after the next dispatch update."
+                          : timelineIndex === 3
+                            ? "The order is on the way. Keep the order number ready for delivery-related support."
+                            : "Order delivered. If anything looks wrong, contact support with your order number."}
                 </p>
                 <div className="mt-4 flex flex-wrap gap-3">
                   <Link href="/support"><Button variant="secondary"><LifeBuoy className="mr-2 h-4 w-4" />Contact support</Button></Link>

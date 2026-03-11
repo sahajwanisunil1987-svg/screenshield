@@ -135,7 +135,7 @@ export const createOrder = async (
     }
 
     let subtotal = 0;
-    const orderItems = payload.items.map((item) => {
+    const rawOrderItems = payload.items.map((item) => {
       const product = products.find((entry: (typeof products)[number]) => entry.id === item.productId);
       if (!product) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid product in cart");
@@ -145,16 +145,16 @@ export const createOrder = async (
         throw new ApiError(StatusCodes.BAD_REQUEST, `Insufficient stock for ${product.name}`);
       }
 
-      const lineTotal = Number(product.price) * item.quantity;
-      const lineTax = lineTotal * (Number(product.gstRate ?? 18) / 100);
+      const unitPriceValue = Number(product.price);
+      const lineTotal = unitPriceValue * item.quantity;
       subtotal += lineTotal;
 
       return {
         productId: product.id,
         quantity: item.quantity,
-        unitPrice: decimal(Number(product.price)),
-        totalPrice: decimal(lineTotal),
-        taxAmount: decimal(lineTax),
+        unitPriceValue,
+        lineTotal,
+        gstRate: Number(product.gstRate ?? 18),
         productName: product.name,
         productSku: product.sku
       };
@@ -169,6 +169,22 @@ export const createOrder = async (
       couponId = coupon.id;
       couponUsageLimit = coupon.usageLimit;
     }
+
+    const orderItems = rawOrderItems.map((item) => {
+      const allocatedDiscount = subtotal > 0 ? (item.lineTotal / subtotal) * discountAmount : 0;
+      const taxableLineTotal = Math.max(item.lineTotal - allocatedDiscount, 0);
+      const lineTax = taxableLineTotal * (item.gstRate / 100);
+
+      return {
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: decimal(item.unitPriceValue),
+        totalPrice: decimal(item.lineTotal),
+        taxAmount: decimal(lineTax),
+        productName: item.productName,
+        productSku: item.productSku
+      };
+    });
 
     const shippingAmount = subtotal > 999 ? 0 : 79;
     const taxAmount = orderItems.reduce((sum, item) => sum + Number(item.taxAmount), 0);
@@ -571,7 +587,7 @@ export const trackOrder = async (orderNumber: string) => {
 
 export const adminOrders = async (query?: {
   search?: string;
-  status?: "ALL" | OrderStatus;
+  status?: "ALL" | OrderStatus | "RETURNED";
   paymentStatus?: "ALL" | PaymentStatus;
   opsView?: "ALL" | "PENDING_CANCEL" | "PENDING_RETURN" | "AWAITING_PACKING" | "AWAITING_SHIPMENT" | "MISSING_SHIPMENT_FIELDS";
   page?: number;
@@ -600,7 +616,11 @@ export const adminOrders = async (query?: {
               : {};
 
   const where: Prisma.OrderWhereInput = {
-    ...(query?.status && query.status !== "ALL" ? { status: query.status } : {}),
+    ...(query?.status && query.status !== "ALL"
+      ? query.status === "RETURNED"
+        ? { returnRequestStatus: RequestStatus.APPROVED }
+        : { status: query.status }
+      : {}),
     ...(query?.paymentStatus && query.paymentStatus !== "ALL" ? { paymentStatus: query.paymentStatus } : {}),
     ...opsViewWhere,
     ...(query?.search
@@ -670,6 +690,7 @@ export const updateOrderStatus = async (id: string, payload: {
     if (existingOrder.status === OrderStatus.CANCELLED && payload.status !== OrderStatus.CANCELLED) {
       throw new ApiError(StatusCodes.CONFLICT, "Cancelled orders cannot be moved back to an active state");
     }
+
 
     const shouldRestoreStock = existingOrder.status !== OrderStatus.CANCELLED && payload.status === OrderStatus.CANCELLED;
 

@@ -10,7 +10,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { AdminOrder, PaginatedResponse } from "@/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
-const orderStatuses = ["PENDING", "CONFIRMED", "PACKED", "SHIPPED", "DELIVERED", "CANCELLED"];
+const orderStatuses = ["PENDING", "CONFIRMED", "PACKED", "SHIPPED", "DELIVERED", "RETURNED", "CANCELLED"];
 const paymentStatuses = ["PENDING", "PAID", "FAILED", "REFUNDED", "COD"];
 const opsViews = [
   { key: "ALL", label: "All orders" },

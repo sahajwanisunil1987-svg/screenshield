@@ -114,6 +114,9 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
     hsnSummaryMap.set(key, current);
   });
   const hsnSummary = Array.from(hsnSummaryMap.entries()).map(([hsn, value]) => ({ hsn, ...value }));
+  const uniqueGstRates = Array.from(new Set(hsnSummary.map((entry) => Number(entry.gstRate.toFixed(2)))));
+  const cgstLabel = uniqueGstRates.length > 1 ? "CGST (blended)" : `CGST (${(gstRate / 2).toFixed(1)}%)`;
+  const sgstLabel = uniqueGstRates.length > 1 ? "SGST (blended)" : `SGST (${(gstRate / 2).toFixed(1)}%)`;
 
   const columns = {
     item: 52,
@@ -217,8 +220,8 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
   drawSectionCard(doc, 305, summaryTop, 250, 150, "Tax Summary");
   drawLabelValue(doc, "Taxable Value", formatCurrency(taxableValue), 319, summaryTop + 24, 200);
   drawLabelValue(doc, "Shipping", formatCurrency(shipping), 319, summaryTop + 50, 200);
-  drawLabelValue(doc, `CGST (${(gstRate / 2).toFixed(1)}%)`, formatCurrency(cgst), 319, summaryTop + 76, 200);
-  drawLabelValue(doc, `SGST (${(gstRate / 2).toFixed(1)}%)`, formatCurrency(sgst), 319, summaryTop + 102, 200);
+  drawLabelValue(doc, cgstLabel, formatCurrency(cgst), 319, summaryTop + 76, 200);
+  drawLabelValue(doc, sgstLabel, formatCurrency(sgst), 319, summaryTop + 102, 200);
   drawLabelValue(doc, "Amount Payable", formatCurrency(total), 319, summaryTop + 128, 200);
 
   doc.roundedRect(305, summaryTop + 162, 250, hsnBlockHeight, 12).fillAndStroke("#ffffff", "#d6dee8");

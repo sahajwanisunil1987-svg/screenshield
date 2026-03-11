@@ -7,7 +7,7 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
-import { Product, PurchaseEntry, Vendor } from "@/types";
+import { PaginatedResponse, Product, PurchaseEntry, Vendor } from "@/types";
 
 type PurchasesResponse = {
   range: "7d" | "30d" | "90d";
@@ -98,7 +98,7 @@ export default function AdminPurchasesPage() {
     setIsLoading(true);
     Promise.all([
       api.get<PurchasesResponse>("/admin/purchases", { ...authHeaders(token), params: { range } }),
-      api.get<{ items: Product[] }>("/products", { params: { limit: 40 } })
+      api.get<PaginatedResponse<Product>>("/admin/products", { ...authHeaders(token), params: { limit: 100 } })
     ])
       .then(([purchaseResponse, productResponse]) => {
         setData(purchaseResponse.data);
