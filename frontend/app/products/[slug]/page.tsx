@@ -199,23 +199,25 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
               </div>
             </div>
             <ProductActions product={product} />
-            <div>
-              <h2 className="text-lg font-semibold text-ink">Detailed description</h2>
-              <p className="mt-3 text-sm leading-7 text-slate">{product.description}</p>
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-ink">Specifications</h2>
-              <div className="mt-4 grid gap-3">
-                {Object.entries(product.specifications).map(([key, value]) => (
-                  <div key={key} className="rounded-2xl border border-slate-200 p-4">
-                    <p className="text-xs uppercase tracking-[0.2em] text-slate">{key}</p>
-                    <p className="mt-1 text-sm font-semibold text-ink">{value}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
+        <section className="mt-10 grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="theme-surface rounded-[32px] p-6 shadow-card">
+            <h2 className="text-lg font-semibold text-ink">Detailed description</h2>
+            <p className="mt-3 text-sm leading-7 text-slate">{product.description}</p>
+          </div>
+          <div className="theme-surface rounded-[32px] p-6 shadow-card">
+            <h2 className="text-lg font-semibold text-ink">Specifications</h2>
+            <div className="mt-4 grid gap-3">
+              {Object.entries(product.specifications).map(([key, value]) => (
+                <div key={key} className="rounded-2xl border border-slate-200 p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate">{key}</p>
+                  <p className="mt-1 text-sm font-semibold text-ink">{value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
         <ReviewPanel
           productId={product.id}
           initialReviews={product.reviews}
