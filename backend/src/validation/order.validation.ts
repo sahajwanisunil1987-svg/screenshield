@@ -34,6 +34,7 @@ export const updateOrderStatusSchema = z.object({
   shippingAwb: z.string().max(120).optional(),
   estimatedDeliveryAt: z.string().datetime().optional().or(z.literal("")),
   adminNotes: z.string().max(1000).optional(),
+  internalNotes: z.string().max(2000).optional(),
   refundAmount: z.coerce.number().min(0).optional(),
   refundReason: z.string().max(1000).optional()
 });

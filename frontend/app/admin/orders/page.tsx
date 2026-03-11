@@ -28,6 +28,7 @@ type OpsDraft = {
   shippingAwb: string;
   estimatedDeliveryAt: string;
   adminNotes: string;
+  internalNotes: string;
 };
 
 export default function AdminOrdersPage() {
@@ -68,7 +69,8 @@ export default function AdminOrdersPage() {
               shippingCourier: order.shippingCourier ?? "",
               shippingAwb: order.shippingAwb ?? "",
               estimatedDeliveryAt: order.estimatedDeliveryAt ? String(order.estimatedDeliveryAt).slice(0, 10) : "",
-              adminNotes: order.adminNotes ?? ""
+              adminNotes: order.adminNotes ?? "",
+              internalNotes: order.internalNotes ?? ""
             };
           }
           return next;
@@ -91,7 +93,21 @@ export default function AdminOrdersPage() {
     ), [pagination.page, pagination.pages]);
 
 
-  const opsSummary = useMemo(() => ({
+  const timelineRows = (order: AdminOrder) => {
+  const rows = [
+    { label: "Placed", at: order.createdAt },
+    { label: "Confirmed", at: order.confirmedAt },
+    { label: "Packed", at: order.packedAt },
+    { label: "Shipped", at: order.shippedAt },
+    { label: "Delivered", at: order.deliveredAt },
+    { label: "Cancelled", at: order.cancelledAt },
+    { label: "Returned", at: order.returnedAt }
+  ];
+
+  return rows.filter((entry) => entry.at);
+};
+
+const opsSummary = useMemo(() => ({
     pendingCancel: orders.filter((order) => order.cancelRequestStatus === "PENDING").length,
     pendingReturn: orders.filter((order) => order.returnRequestStatus === "PENDING").length,
     awaitingPacking: orders.filter((order) => order.status === "CONFIRMED").length,
@@ -140,7 +156,8 @@ export default function AdminOrdersPage() {
         shippingCourier: draft.shippingCourier || undefined,
         shippingAwb: draft.shippingAwb || undefined,
         estimatedDeliveryAt: draft.estimatedDeliveryAt ? new Date(`${draft.estimatedDeliveryAt}T12:00:00.000Z`).toISOString() : undefined,
-        adminNotes: draft.adminNotes || undefined
+        adminNotes: draft.adminNotes || undefined,
+        internalNotes: draft.internalNotes || undefined
       }, authHeaders(token));
 
       setOrders((current) => current.map((item) => (item.id === order.id ? response.data : item)));
@@ -152,7 +169,8 @@ export default function AdminOrdersPage() {
           shippingCourier: response.data.shippingCourier ?? "",
           shippingAwb: response.data.shippingAwb ?? "",
           estimatedDeliveryAt: response.data.estimatedDeliveryAt ? String(response.data.estimatedDeliveryAt).slice(0, 10) : "",
-          adminNotes: response.data.adminNotes ?? ""
+          adminNotes: response.data.adminNotes ?? "",
+          internalNotes: response.data.internalNotes ?? ""
         }
       }));
       toast.success("Order operations updated");
@@ -258,6 +276,17 @@ export default function AdminOrdersPage() {
 
                 <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
                   <div className="space-y-3 rounded-[24px] border border-white/10 bg-black/10 p-4 text-white/75">
+                    <div className="rounded-2xl bg-white/5 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">Timeline</p>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        {timelineRows(order).map((entry) => (
+                          <div key={entry.label} className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45">{entry.label}</p>
+                            <p className="mt-1 text-sm text-white">{formatDate(entry.at as string)}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">Customer & destination</p>
                     <div>
                       <p className="font-medium text-white">{order.addressSnapshot?.fullName ?? order.user.name}</p>
@@ -298,7 +327,8 @@ export default function AdminOrdersPage() {
                     <input value={draft?.shippingCourier ?? ""} onChange={(event) => setDraftField(order.id, "shippingCourier", event.target.value)} placeholder="Courier name" className="w-full rounded-2xl bg-white px-4 py-3 text-sm text-ink" />
                     <input value={draft?.shippingAwb ?? ""} onChange={(event) => setDraftField(order.id, "shippingAwb", event.target.value)} placeholder="AWB / tracking number" className="w-full rounded-2xl bg-white px-4 py-3 text-sm text-ink" />
                     <input type="date" value={draft?.estimatedDeliveryAt ?? ""} onChange={(event) => setDraftField(order.id, "estimatedDeliveryAt", event.target.value)} className="w-full rounded-2xl bg-white px-4 py-3 text-sm text-ink" />
-                    <textarea value={draft?.adminNotes ?? ""} onChange={(event) => setDraftField(order.id, "adminNotes", event.target.value)} placeholder="Ops note for the customer or internal desk" className="min-h-[110px] w-full rounded-2xl bg-white px-4 py-3 text-sm text-ink" />
+                    <textarea value={draft?.adminNotes ?? ""} onChange={(event) => setDraftField(order.id, "adminNotes", event.target.value)} placeholder="Customer-visible note for tracking/invoice context" className="min-h-[110px] w-full rounded-2xl bg-white px-4 py-3 text-sm text-ink" />
+                    <textarea value={draft?.internalNotes ?? ""} onChange={(event) => setDraftField(order.id, "internalNotes", event.target.value)} placeholder="Internal staff note (not shown to customer)" className="min-h-[110px] w-full rounded-2xl bg-white px-4 py-3 text-sm text-ink" />
                     {order.cancelRequestStatus === "PENDING" ? <div className="grid gap-3 sm:grid-cols-2"><button type="button" onClick={() => reviewRequest(order.id, "cancel", "APPROVE")} className="rounded-full bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-400">Approve cancel</button><button type="button" onClick={() => reviewRequest(order.id, "cancel", "REJECT")} className="rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Reject cancel</button></div> : null}
                     {order.returnRequestStatus === "PENDING" ? <div className="grid gap-3 sm:grid-cols-2"><button type="button" onClick={() => reviewRequest(order.id, "return", "APPROVE")} className="rounded-full bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-400">Approve return</button><button type="button" onClick={() => reviewRequest(order.id, "return", "REJECT")} className="rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Reject return</button></div> : null}
                     <button type="button" onClick={() => saveOps(order)} className="w-full rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent/90">Save operations</button>

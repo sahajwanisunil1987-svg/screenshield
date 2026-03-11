@@ -282,6 +282,11 @@ model Order {
   shippingAwb         String?
   estimatedDeliveryAt DateTime?
   adminNotes          String?
+  internalNotes       String?
+  confirmedAt         DateTime?
+  packedAt            DateTime?
+  shippedAt           DateTime?
+  deliveredAt         DateTime?
   cancelRequestedAt   DateTime?
   cancelRequestReason String?
   cancelRequestStatus RequestStatus?

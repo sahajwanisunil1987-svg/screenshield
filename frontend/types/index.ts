@@ -143,6 +143,11 @@ export type Order = {
   shippingAwb?: string | null;
   estimatedDeliveryAt?: string | null;
   adminNotes?: string | null;
+  internalNotes?: string | null;
+  confirmedAt?: string | null;
+  packedAt?: string | null;
+  shippedAt?: string | null;
+  deliveredAt?: string | null;
   cancelRequestedAt?: string | null;
   cancelRequestReason?: string | null;
   cancelRequestStatus?: "PENDING" | "APPROVED" | "REJECTED" | null;

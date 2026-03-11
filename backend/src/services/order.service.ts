@@ -541,6 +541,10 @@ export const trackOrder = async (orderNumber: string) => {
       paymentStatus: true,
       createdAt: true,
       updatedAt: true,
+      confirmedAt: true,
+      packedAt: true,
+      shippedAt: true,
+      deliveredAt: true,
       shippingCourier: true,
       shippingAwb: true,
       estimatedDeliveryAt: true,
@@ -647,6 +651,7 @@ export const updateOrderStatus = async (id: string, payload: {
   shippingAwb?: string;
   estimatedDeliveryAt?: string;
   adminNotes?: string;
+  internalNotes?: string;
   refundAmount?: number;
   refundReason?: string;
 }) =>
@@ -686,6 +691,22 @@ export const updateOrderStatus = async (id: string, payload: {
 
     const nextPaymentStatus = payload.paymentStatus ?? existingOrder.paymentStatus;
     const willBeRefunded = nextPaymentStatus === PaymentStatus.REFUNDED;
+    const now = new Date();
+    const timelinePatch: Prisma.OrderUpdateInput = {
+      ...(payload.status === OrderStatus.CONFIRMED ? { confirmedAt: existingOrder.confirmedAt ?? now } : {}),
+      ...(payload.status === OrderStatus.PACKED ? { confirmedAt: existingOrder.confirmedAt ?? now, packedAt: existingOrder.packedAt ?? now } : {}),
+      ...(payload.status === OrderStatus.SHIPPED ? {
+        confirmedAt: existingOrder.confirmedAt ?? now,
+        packedAt: existingOrder.packedAt ?? existingOrder.confirmedAt ?? now,
+        shippedAt: existingOrder.shippedAt ?? now
+      } : {}),
+      ...(payload.status === OrderStatus.DELIVERED ? {
+        confirmedAt: existingOrder.confirmedAt ?? now,
+        packedAt: existingOrder.packedAt ?? existingOrder.confirmedAt ?? now,
+        shippedAt: existingOrder.shippedAt ?? existingOrder.packedAt ?? existingOrder.confirmedAt ?? now,
+        deliveredAt: existingOrder.deliveredAt ?? now
+      } : {})
+    };
     const fallbackRefundReason = payload.status === OrderStatus.CANCELLED
       ? (payload.refundReason || payload.adminNotes || existingOrder.cancelRequestReason || existingOrder.cancelDecisionNote || existingOrder.adminNotes || "Order cancelled")
       : (payload.refundReason || payload.adminNotes || existingOrder.returnRequestReason || existingOrder.returnDecisionNote || existingOrder.adminNotes || "Order refunded");
@@ -709,6 +730,8 @@ export const updateOrderStatus = async (id: string, payload: {
         shippingAwb: payload.shippingAwb || null,
         estimatedDeliveryAt: payload.estimatedDeliveryAt ? new Date(payload.estimatedDeliveryAt) : null,
         adminNotes: payload.adminNotes || null,
+        internalNotes: payload.internalNotes || null,
+        ...timelinePatch,
         ...(payload.status === OrderStatus.CANCELLED ? { cancelledAt: existingOrder.cancelledAt ?? new Date() } : {}),
         refundAmount,
         refundReason: willBeRefunded ? fallbackRefundReason : existingOrder.refundReason,
