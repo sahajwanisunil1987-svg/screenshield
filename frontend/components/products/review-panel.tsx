@@ -15,12 +15,14 @@ export function ReviewPanel({
   productId,
   initialReviews,
   averageRating,
-  reviewCount
+  reviewCount,
+  className
 }: {
   productId: string;
   initialReviews: Review[];
   averageRating: number;
   reviewCount: number;
+  className?: string;
 }) {
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
@@ -40,7 +42,7 @@ export function ReviewPanel({
   }, [averageRating, reviewCount, reviews]);
 
   return (
-    <section className="mt-14 grid gap-8 lg:grid-cols-[0.88fr_1.12fr]">
+    <section className={`grid gap-8 lg:grid-cols-[0.88fr_1.12fr] ${className ?? ""}`}>
       <div className="rounded-[36px] bg-[linear-gradient(180deg,#ffffff,#eef5f8)] p-8 shadow-card">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-accent">Ratings snapshot</p>
         <div className="mt-5 rounded-[28px] bg-white p-6 shadow-card">

@@ -62,6 +62,15 @@ h6 {
     #07111f;
 }
 
+.bg-spare-grid {
+  background:
+    linear-gradient(rgba(15, 118, 110, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 118, 110, 0.08) 1px, transparent 1px),
+    radial-gradient(circle at center, rgba(15, 118, 110, 0.06), transparent 62%);
+  background-size: 24px 24px, 24px 24px, 100% 100%;
+  background-position: center;
+}
+
 .theme-surface {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 253, 248, 0.92));
   box-shadow: var(--shadow-card);

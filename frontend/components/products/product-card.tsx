@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { GitCompareArrows, Heart, ShieldCheck, ShoppingCart, Star, Truck } from "lucide-react";
@@ -12,6 +13,7 @@ import { useCompareStore } from "@/store/compare-store";
 import { useWishlistStore } from "@/store/wishlist-store";
 
 export function ProductCard({ product }: { product: Product }) {
+  const [mounted, setMounted] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
   const toggleCompare = useCompareStore((state) => state.toggle);
   const hasCompared = useCompareStore((state) => state.has);
@@ -25,6 +27,12 @@ export function ProductCard({ product }: { product: Product }) {
   const isLowStock = stock > 0 && stock <= (product.inventory?.lowStockLimit ?? 5);
   const compatibilityCount = product.compatibilityModels?.length ?? 0;
   const primaryCompatibility = compatibilityCount ? product.compatibilityModels?.[0]?.model.name : null;
+  const isWishlisted = mounted && wishlistHydrated && has(product.id);
+  const isCompared = mounted && compareHydrated && hasCompared(product.id);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="group overflow-hidden rounded-[30px] border border-slate-200/80 bg-panel shadow-card transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_28px_80px_rgba(8,17,31,0.12)]">
@@ -74,7 +82,7 @@ export function ProductCard({ product }: { product: Product }) {
             className="rounded-full border border-slate-200 bg-white/90 p-2 transition hover:border-accent/30 hover:bg-accentSoft"
           >
             <Heart
-              className={`h-4 w-4 ${wishlistHydrated && has(product.id) ? "fill-rose-500 text-rose-500" : "text-slate"}`}
+              className={`h-4 w-4 ${isWishlisted ? "fill-rose-500 text-rose-500" : "text-slate"}`}
             />
           </button>
         </div>
@@ -158,8 +166,8 @@ export function ProductCard({ product }: { product: Product }) {
           }}
           className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-accent/30 hover:bg-accentSoft"
         >
-          <GitCompareArrows className={`h-4 w-4 ${compareHydrated && hasCompared(product.id) ? "text-accent" : "text-slate"}`} />
-          {compareHydrated && hasCompared(product.id) ? "Remove from Compare" : "Compare Product"}
+          <GitCompareArrows className={`h-4 w-4 ${isCompared ? "text-accent" : "text-slate"}`} />
+          {isCompared ? "Remove from Compare" : "Compare Product"}
         </button>
       </div>
     </div>

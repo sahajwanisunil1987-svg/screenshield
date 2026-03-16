@@ -5,8 +5,9 @@ import { BadgeCheck, ShieldCheck, Star, Truck } from "lucide-react";
 import { PageShell } from "@/components/layout/page-shell";
 import { ProductCard } from "@/components/products/product-card";
 import { ProductGallery } from "@/components/products/product-gallery";
-import { ReviewPanel } from "@/components/products/review-panel";
 import { ProductActions } from "./product-actions";
+import { ProductDetailTabs } from "./product-detail-tabs";
+import { ProductMobileBar } from "./product-mobile-bar";
 import { buildBreadcrumbStructuredData, buildMetadata, buildProductStructuredData } from "@/lib/seo";
 import { fetchApi } from "@/lib/server-api";
 import { formatCurrency } from "@/lib/utils";
@@ -70,6 +71,13 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
   const stock = product.inventory?.stock ?? product.stock;
   const savings = product.comparePrice ? Math.max(product.comparePrice - product.price, 0) : 0;
   const compatibleModels = product.compatibilityModels?.map((entry) => entry.model) ?? [product.model];
+  const specificationEntries = Object.entries(product.specifications ?? {});
+  const quickFacts = [
+    { label: "Category", value: product.category.name },
+    { label: "Warranty", value: `${product.warrantyMonths} months` },
+    { label: "Fitment", value: `${compatibleModels.length} models` },
+    { label: "GST", value: `${Number(product.gstRate ?? 18)}%` }
+  ];
   const trustPoints = [
     { icon: ShieldCheck, title: `${product.warrantyMonths} month warranty` },
     { icon: Truck, title: "Fast dispatch across India" },
@@ -86,8 +94,8 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbStructuredData) }}
       />
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-wrap items-center gap-3 text-sm text-slate">
+      <div className="mx-auto max-w-7xl px-4 py-8 pb-28 sm:px-6 sm:py-16 lg:px-8 xl:pb-16">
+        <div className="mb-5 flex flex-wrap items-center gap-2 text-xs text-slate sm:mb-8 sm:gap-3 sm:text-sm">
           <Link href="/" className="transition hover:text-ink">Home</Link>
           <span>/</span>
           <Link href="/products" className="transition hover:text-ink">Products</Link>
@@ -96,143 +104,146 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
           <span>/</span>
           <span className="text-ink">{product.name}</span>
         </div>
-        <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-          <ProductGallery images={product.images} productName={product.name} videoUrl={product.videoUrl} />
-          <div className="theme-surface space-y-6 rounded-[40px] p-6 shadow-card sm:p-8">
+        <div className="grid gap-5 sm:gap-8 xl:grid-cols-[minmax(0,1.05fr)_420px]">
+          <div className="space-y-4 sm:space-y-5">
+            <ProductGallery images={product.images} productName={product.name} videoUrl={product.videoUrl} />
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
+              {quickFacts.map((fact) => (
+                <div key={fact.label} className="rounded-[20px] border border-slate-200 bg-white p-3 shadow-card sm:rounded-[24px] sm:p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate">{fact.label}</p>
+                  <p className="mt-1.5 text-sm font-semibold text-ink">{fact.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="theme-surface space-y-4 rounded-[28px] p-4 shadow-card sm:space-y-5 sm:rounded-[40px] sm:p-8 xl:sticky xl:top-24 xl:self-start">
             <div>
               <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
                 <span>{product.brand.name}</span>
                 <span className="text-slate">/</span>
                 <span>{product.model.name}</span>
               </div>
-              <h1 className="mt-4 font-display text-4xl leading-tight text-ink sm:text-5xl">{product.name}</h1>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate">{product.shortDescription}</p>
-              <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-slate">
-                <div className="inline-flex items-center gap-2 rounded-full bg-panel px-4 py-2">
+              <h1 className="mt-3 font-display text-[2rem] leading-tight text-ink sm:mt-4 sm:text-5xl">{product.name}</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate sm:mt-4 sm:leading-7">{product.shortDescription}</p>
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate sm:mt-5 sm:gap-3 sm:text-sm">
+                <div className="inline-flex items-center gap-2 rounded-full bg-panel px-3 py-2 sm:px-4">
                   <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                   <span className="font-semibold text-ink">{product.averageRating?.toFixed(1) ?? "0.0"}</span>
                   <span>from {product.reviewCount} review(s)</span>
                 </div>
-                <div className={`rounded-full px-4 py-2 font-semibold ${stock > 0 ? "bg-emerald-500/15 text-emerald-400" : "bg-rose-500/15 text-rose-400"}`}>
+                <div className={`rounded-full px-3 py-2 font-semibold sm:px-4 ${stock > 0 ? "bg-emerald-500/15 text-emerald-400" : "bg-rose-500/15 text-rose-400"}`}>
                   {stock > 0 ? `${stock} in stock` : "Currently out of stock"}
                 </div>
                 {savings > 0 ? (
-                  <div className="rounded-full bg-amber-500/15 px-4 py-2 font-semibold text-amber-400">
+                  <div className="rounded-full bg-amber-500/15 px-3 py-2 font-semibold text-amber-400 sm:px-4">
                     Save {formatCurrency(savings)}
                   </div>
                 ) : null}
               </div>
+              <div className="mt-4 flex flex-wrap gap-2 sm:mt-5">
+                <span className="rounded-full bg-panel px-3 py-1.5 text-[11px] font-semibold text-ink sm:px-3 sm:py-2 sm:text-xs">SKU {product.sku}</span>
+                <span className="rounded-full bg-panel px-3 py-1.5 text-[11px] font-semibold text-ink sm:px-3 sm:py-2 sm:text-xs">{product.category.name}</span>
+                <span className="rounded-full bg-panel px-3 py-1.5 text-[11px] font-semibold text-ink sm:px-3 sm:py-2 sm:text-xs">{compatibleModels.length} compatible models</span>
+              </div>
             </div>
-            <div className="rounded-[32px] bg-[linear-gradient(135deg,#07111f,#0f2731)] p-6 text-white">
-              <div className="flex flex-wrap items-end gap-4">
-                <span className="text-4xl font-bold">{formatCurrency(product.price)}</span>
-                <div className="pb-1 text-sm text-white/65">
+            <div className="rounded-[24px] bg-[linear-gradient(135deg,#07111f,#0f2731)] p-4 text-white sm:rounded-[32px] sm:p-6">
+              <div className="flex flex-wrap items-end gap-3 sm:gap-4">
+                <span className="text-3xl font-bold sm:text-4xl">{formatCurrency(product.price)}</span>
+                <div className="pb-0.5 text-xs text-white/65 sm:pb-1 sm:text-sm">
                   <p>Inclusive of catalog pricing</p>
                 </div>
               </div>
               {product.comparePrice ? (
-                <p className="mt-2 text-sm text-white/60">
+                <p className="mt-2 text-xs text-white/60 sm:text-sm">
                   Compare at <span className="line-through">{formatCurrency(product.comparePrice)}</span>
                 </p>
               ) : null}
-              <div className="mt-5 grid gap-3">
+              <div className="mt-4 grid gap-2.5 sm:mt-5 sm:gap-3">
                 {trustPoints.map((item) => (
-                  <div key={item.title} className="rounded-[22px] bg-white/8 p-4">
-                    <item.icon className="h-5 w-5 text-teal-200" />
-                    <p className="mt-3 text-sm font-semibold">{item.title}</p>
+                  <div key={item.title} className="flex items-center gap-3 rounded-[18px] bg-white/8 p-3 sm:rounded-[22px] sm:p-4">
+                    <item.icon className="h-4 w-4 shrink-0 text-teal-200 sm:h-5 sm:w-5" />
+                    <p className="text-sm font-semibold">{item.title}</p>
                   </div>
                 ))}
-              </div>
-            </div>
-            <div className="grid gap-3 rounded-[28px] bg-panel p-5 text-sm text-slate">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">SKU</p>
-                <p className="mt-2 font-semibold text-ink">{product.sku}</p>
-              </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">GST</p>
-                <p className="mt-2 font-semibold text-ink">{Number(product.gstRate ?? 18)}%</p>
-              </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">Category</p>
-                <p className="mt-2 font-semibold text-ink">{product.category.name}</p>
-              </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">Warranty</p>
-                <p className="mt-2 font-semibold text-ink">{product.warrantyMonths} months</p>
-              </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">Availability</p>
-                <p className="mt-2 font-semibold text-ink">{stock > 0 ? "Ready to order" : "Notify for restock"}</p>
-              </div>
-            </div>
-            <div className="rounded-[28px] border border-slate-200 p-5">
-              <h2 className="text-lg font-semibold text-ink">Compatibility</h2>
-              <div className="mt-4 grid gap-3">
-                <div className="rounded-2xl bg-panel p-4">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate">Brand</p>
-                  <p className="mt-2 font-semibold text-ink">{product.brand.name}</p>
-                </div>
-                <div className="rounded-2xl bg-panel p-4">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate">Compatible models</p>
-                  <p className="mt-2 font-semibold text-ink">
-                    {compatibleModels.slice(0, 3).map((model) => model.name).join(", ")}
-                  </p>
-                  {compatibleModels.length > 3 ? (
-                    <p className="mt-1 text-xs text-slate">+{compatibleModels.length - 3} more supported variants</p>
-                  ) : null}
-                </div>
-                <div className="rounded-2xl bg-panel p-4">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate">Part type</p>
-                  <p className="mt-2 font-semibold text-ink">{product.category.name}</p>
-                </div>
-              </div>
-              <div className="mt-4 rounded-2xl bg-panel p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate">Supported model list</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {compatibleModels.map((model) => (
-                    <span key={model.id} className="rounded-full bg-white/90 px-3 py-2 text-sm font-semibold text-ink shadow-sm">
-                      {model.name}
-                    </span>
-                  ))}
-                </div>
               </div>
             </div>
             <ProductActions product={product} />
           </div>
         </div>
-        <section className="mt-10 grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="theme-surface rounded-[32px] p-6 shadow-card">
-            <h2 className="text-lg font-semibold text-ink">Detailed description</h2>
-            <p className="mt-3 text-sm leading-7 text-slate">{product.description}</p>
-          </div>
-          <div className="theme-surface rounded-[32px] p-6 shadow-card">
-            <h2 className="text-lg font-semibold text-ink">Specifications</h2>
-            <div className="mt-4 grid gap-3">
-              {Object.entries(product.specifications).map(([key, value]) => (
-                <div key={key} className="rounded-2xl border border-slate-200 p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate">{key}</p>
-                  <p className="mt-1 text-sm font-semibold text-ink">{value}</p>
-                </div>
+        <section className="mt-6 grid gap-3 sm:mt-8 sm:gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-card sm:rounded-[28px] sm:p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-ink">Compatibility snapshot</h2>
+                <p className="mt-2 text-sm text-slate">
+                  Designed for {product.brand.name} {product.model.name} and {compatibleModels.length - 1 > 0 ? `${compatibleModels.length - 1} more supported models.` : "the exact listed model."}
+                </p>
+              </div>
+              <div className="rounded-full bg-panel px-4 py-2 text-sm font-semibold text-ink">
+                {compatibleModels.length} models
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {compatibleModels.slice(0, 6).map((model) => (
+                <span key={model.id} className="rounded-full bg-panel px-3 py-2 text-sm font-semibold text-ink">
+                  {model.name}
+                </span>
               ))}
+              {compatibleModels.length > 6 ? (
+                <span className="rounded-full bg-white px-3 py-2 text-sm font-semibold text-slate">
+                  +{compatibleModels.length - 6} more
+                </span>
+              ) : null}
+            </div>
+          </div>
+          <div className="grid gap-2 rounded-[22px] bg-panel p-4 text-sm text-slate sm:grid-cols-2 sm:gap-3 sm:rounded-[28px] sm:p-5 lg:grid-cols-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">SKU</p>
+              <p className="mt-1.5 font-semibold text-ink sm:mt-2">{product.sku}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">GST</p>
+              <p className="mt-1.5 font-semibold text-ink sm:mt-2">{Number(product.gstRate ?? 18)}%</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">Category</p>
+              <p className="mt-1.5 font-semibold text-ink sm:mt-2">{product.category.name}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">Warranty</p>
+              <p className="mt-1.5 font-semibold text-ink sm:mt-2">{product.warrantyMonths} months</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">Availability</p>
+              <p className="mt-1.5 font-semibold text-ink sm:mt-2">{stock > 0 ? "Ready to order" : "Notify for restock"}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">Top specs</p>
+              <p className="mt-1.5 font-semibold text-ink sm:mt-2">
+                {specificationEntries.slice(0, 2).map(([key, value]) => `${key}: ${value}`).join(" • ")}
+              </p>
             </div>
           </div>
         </section>
-        <ReviewPanel
+        <ProductDetailTabs
           productId={product.id}
-          initialReviews={product.reviews}
+          description={product.description}
+          specifications={product.specifications}
+          compatibleModels={compatibleModels}
           averageRating={product.averageRating}
           reviewCount={product.reviewCount}
+          initialReviews={product.reviews}
         />
-        <section className="mt-14">
-          <h2 className="font-display text-3xl text-ink">Related products</h2>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="mt-8 sm:mt-10">
+          <h2 className="font-display text-2xl text-ink sm:text-3xl">Related products</h2>
+          <div className="mt-4 grid gap-4 sm:mt-6 sm:grid-cols-2 lg:grid-cols-4">
             {payload.relatedProducts.map((item) => (
               <ProductCard key={item.id} product={item} />
             ))}
           </div>
         </section>
       </div>
+      <ProductMobileBar product={product} stock={stock} />
     </PageShell>
   );
 }

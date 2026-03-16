@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
+import { Expand, X } from "lucide-react";
 import { ProductImage } from "@/types";
 
 type GalleryItem =
@@ -19,63 +20,98 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
     return videoUrl ? [...imageItems, { type: "video" as const, url: videoUrl, alt: `${productName} product video` }] : imageItems;
   }, [images, productName, videoUrl]);
   const [activeItem, setActiveItem] = useState(gallery[0]);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-[40px] bg-[radial-gradient(circle_at_top_left,rgba(15,118,110,0.16),transparent_32%),linear-gradient(180deg,#ffffff,#eef4f7)] p-3 shadow-card">
-        <div className="group relative aspect-square overflow-hidden rounded-[32px] bg-white">
-{activeItem.type === "video" ? (
-            <video src={activeItem.url} controls className="h-full w-full object-cover" preload="metadata" />
+    <>
+      <div className="space-y-3 sm:space-y-4">
+        <div className="rounded-[28px] bg-[radial-gradient(circle_at_top_left,rgba(15,118,110,0.16),transparent_32%),linear-gradient(180deg,#ffffff,#eef4f7)] p-2.5 shadow-card sm:rounded-[40px] sm:p-3">
+          <div className="group relative aspect-[4/3] overflow-hidden rounded-[24px] border border-white/70 bg-white sm:aspect-square sm:rounded-[32px]">
+            <div className="absolute inset-0 bg-spare-grid opacity-70" />
+            {activeItem.type === "video" ? (
+            <video src={activeItem.url} controls className="relative z-[1] h-full w-full object-contain p-2 sm:p-4" preload="metadata" />
           ) : (
+              <button
+                type="button"
+                onClick={() => setIsPreviewOpen(true)}
+                className="absolute inset-0 z-[1] flex items-center justify-center"
+                aria-label={`Open full preview of ${activeItem.alt ?? productName}`}
+              >
+                <Image
+                  src={activeItem.url}
+                  alt={activeItem.alt ?? productName}
+                  fill
+                  className="object-contain p-3 transition duration-500 group-hover:scale-[1.04] sm:p-6"
+                />
+              </button>
+            )}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] flex items-center justify-between bg-gradient-to-t from-ink/75 via-ink/35 to-transparent px-3 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/90 sm:px-5 sm:py-4 sm:text-xs sm:tracking-[0.24em]">
+              <span>Full part preview</span>
+              <span>{gallery.findIndex((item) => item.url === activeItem.url) + 1}/{gallery.length}</span>
+            </div>
+            {activeItem.type === "image" ? (
+              <button
+                type="button"
+                onClick={() => setIsPreviewOpen(true)}
+                className="absolute right-3 top-3 z-[2] inline-flex items-center gap-1.5 rounded-full bg-white/92 px-2.5 py-1.5 text-[11px] font-semibold text-ink shadow-card transition hover:bg-white sm:right-4 sm:top-4 sm:gap-2 sm:px-3 sm:py-2 sm:text-xs"
+              >
+                <Expand className="h-3.5 w-3.5" />
+                Inspect
+              </button>
+            ) : null}
+          </div>
+        </div>
+        <div className="flex gap-2.5 overflow-x-auto pb-1 sm:gap-3">
+          {gallery.map((item, index) => {
+            const isActive = item.url === activeItem.url;
+
+            return (
+              <button
+                key={`${item.url}-${index}`}
+                type="button"
+                onClick={() => setActiveItem(item)}
+                className={`relative aspect-square w-20 shrink-0 overflow-hidden rounded-[20px] border-2 bg-white shadow-card transition sm:w-28 sm:rounded-[24px] ${
+                  isActive ? "border-accent ring-2 ring-accent/15" : "border-transparent hover:border-accent/40"
+                }`}
+              >
+                <div className="absolute inset-0 bg-spare-grid opacity-60" />
+                {item.type === "video" ? (
+                  <div className="relative z-[1] flex h-full w-full items-center justify-center bg-black text-xs font-semibold uppercase tracking-[0.2em] text-white">Video</div>
+                ) : (
+                  <Image src={item.url} alt={item.alt ?? productName} fill className="object-contain p-1.5 sm:p-2" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <div className="rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-ink shadow-card sm:px-4 sm:py-2 sm:text-xs">Full image visible</div>
+          <div className="rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-ink shadow-card sm:px-4 sm:py-2 sm:text-xs">Closer part inspection</div>
+          <div className="rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-ink shadow-card sm:px-4 sm:py-2 sm:text-xs">Fitment details clearer</div>
+        </div>
+      </div>
+      {isPreviewOpen && activeItem.type === "image" ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/90 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            onClick={() => setIsPreviewOpen(false)}
+            className="absolute right-4 top-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+          >
+            <X className="h-4 w-4" />
+            Close
+          </button>
+          <div className="relative h-[82vh] w-full max-w-6xl overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,#0b1727,#09111d)]">
+            <div className="absolute inset-0 bg-spare-grid opacity-20" />
             <Image
               src={activeItem.url}
               alt={activeItem.alt ?? productName}
               fill
-              className="object-cover transition duration-500 group-hover:scale-110"
+              className="object-contain p-6 sm:p-10"
+              sizes="100vw"
             />
-          )}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-ink/70 to-transparent px-5 py-4 text-xs font-semibold uppercase tracking-[0.24em] text-white/90">
-            <span>Tap to preview</span>
-            <span>{gallery.findIndex((item) => item.url === activeItem.url) + 1}/{gallery.length}</span>
           </div>
         </div>
-      </div>
-      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-        {gallery.map((item, index) => {
-          const isActive = item.url === activeItem.url;
-
-          return (
-            <button
-              key={`${item.url}-${index}`}
-              type="button"
-              onClick={() => setActiveItem(item)}
-              className={`relative aspect-square overflow-hidden rounded-[24px] border-2 bg-white shadow-card transition ${
-                isActive ? "border-accent ring-2 ring-accent/15" : "border-transparent hover:border-accent/40"
-              }`}
-            >
-{item.type === "video" ? (
-                <div className="flex h-full w-full items-center justify-center bg-black text-xs font-semibold uppercase tracking-[0.2em] text-white">Video</div>
-              ) : (
-                <Image src={item.url} alt={item.alt ?? productName} fill className="object-cover" />
-              )}
-            </button>
-          );
-        })}
-      </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-[24px] bg-white p-4 shadow-card">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate">Dispatch</p>
-          <p className="mt-2 text-sm font-semibold text-ink">Fast warehouse fulfilment</p>
-        </div>
-        <div className="rounded-[24px] bg-white p-4 shadow-card">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate">Protection</p>
-          <p className="mt-2 text-sm font-semibold text-ink">Transit-safe packaging</p>
-        </div>
-        <div className="rounded-[24px] bg-white p-4 shadow-card">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate">Support</p>
-          <p className="mt-2 text-sm font-semibold text-ink">Fitment help after purchase</p>
-        </div>
-      </div>
-    </div>
+      ) : null}
+    </>
   );
 }
