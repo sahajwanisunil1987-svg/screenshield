@@ -180,14 +180,14 @@ export const createOrder = async (
         quantity: item.quantity,
         unitPrice: decimal(item.unitPriceValue),
         totalPrice: decimal(item.lineTotal),
-        taxAmount: decimal(lineTax),
+        lineTax,
         productName: item.productName,
         productSku: item.productSku
       };
     });
 
     const shippingAmount = subtotal > 999 ? 0 : 79;
-    const taxAmount = orderItems.reduce((sum, item) => sum + Number(item.taxAmount), 0);
+    const taxAmount = orderItems.reduce((sum, item) => sum + item.lineTax, 0);
     const totalAmount = subtotal - discountAmount + shippingAmount + taxAmount;
 
     if (payload.paymentMethod === "COD") {
@@ -260,7 +260,7 @@ export const createOrder = async (
         gstNumber: payload.address.gstNumber,
         paymentStatus: payload.paymentMethod === "COD" ? PaymentStatus.COD : PaymentStatus.PENDING,
         items: {
-          create: orderItems
+          create: orderItems.map(({ lineTax: _lineTax, ...item }) => item)
         },
         payment: {
           create: {
