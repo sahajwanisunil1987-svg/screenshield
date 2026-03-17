@@ -11,7 +11,7 @@ export const createOrder = async (req: Request, res: Response) => {
   const order = await orderService.createOrder(req.user!.userId, req.body);
 
   const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
-  if (user) {
+  if (user && req.body.paymentMethod === "COD") {
     await Promise.allSettled([
       sendOrderConfirmation(user.email, order.orderNumber),
       sendWhatsappNotification({ orderNumber: order.orderNumber, user: user.name }),

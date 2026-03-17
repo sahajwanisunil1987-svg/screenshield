@@ -182,16 +182,11 @@ type TrackResult = {
   shippingCourier?: string | null;
   shippingAwb?: string | null;
   estimatedDeliveryAt?: string | null;
-  adminNotes?: string | null;
   cancelRequestedAt?: string | null;
-  cancelRequestReason?: string | null;
   cancelRequestStatus?: "PENDING" | "APPROVED" | "REJECTED" | null;
-  cancelDecisionNote?: string | null;
   returnRequestedAt?: string | null;
-  returnRequestReason?: string | null;
   returnRequestStatus?: "PENDING" | "APPROVED" | "REJECTED" | null;
   returnDecisionAt?: string | null;
-  returnDecisionNote?: string | null;
 };
 
 export default function TrackOrderPage() {
@@ -260,9 +255,8 @@ export default function TrackOrderPage() {
                 <div className="theme-surface rounded-2xl p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Current status</p><p className="mt-2 font-semibold text-ink">{statusDescriptions[result.status] ?? "Order status updated."}</p></div>
                 <div className="theme-surface rounded-2xl p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Payment note</p><p className="mt-2 font-semibold text-ink">{paymentDescriptions[result.paymentStatus] ?? "Payment status updated."}</p></div>
               </div>
-              {result.adminNotes ? <div className="mt-4 theme-surface rounded-2xl p-4"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Operations note</p><p className="mt-2 font-semibold text-ink">{result.adminNotes}</p></div> : null}
-              {result.cancelRequestReason ? <div className="mt-4 rounded-2xl bg-amber-500/15 p-4 text-amber-300"><p className="text-xs font-semibold uppercase tracking-[0.18em]">Cancellation request</p><p className="mt-2">{result.cancelRequestReason}</p>{result.cancelRequestStatus ? <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em]">Status: {result.cancelRequestStatus}</p> : null}{result.cancelDecisionNote ? <p className="mt-2 text-sm">Decision note: {result.cancelDecisionNote}</p> : null}</div> : null}
-              {result.returnRequestReason ? <div className="mt-4 rounded-2xl bg-sky-500/15 p-4 text-sky-300"><p className="text-xs font-semibold uppercase tracking-[0.18em]">Return request</p><p className="mt-2">{result.returnRequestReason}</p>{result.returnRequestStatus ? <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em]">Status: {result.returnRequestStatus}</p> : null}{result.returnDecisionNote ? <p className="mt-2 text-sm">Decision note: {result.returnDecisionNote}</p> : null}</div> : null}
+              {result.cancelRequestStatus ? <div className="mt-4 rounded-2xl bg-amber-500/15 p-4 text-amber-300"><p className="text-xs font-semibold uppercase tracking-[0.18em]">Cancellation request</p><p className="mt-2 text-sm">Status: {result.cancelRequestStatus}</p></div> : null}
+              {result.returnRequestStatus ? <div className="mt-4 rounded-2xl bg-sky-500/15 p-4 text-sky-300"><p className="text-xs font-semibold uppercase tracking-[0.18em]">Return request</p><p className="mt-2 text-sm">Status: {result.returnRequestStatus}</p></div> : null}
               <div className="theme-surface mt-6 rounded-[24px] p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>

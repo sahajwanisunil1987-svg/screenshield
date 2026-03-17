@@ -194,52 +194,54 @@ export const createOrder = async (
       assertCodAllowed((payload.address.postalCode ?? payload.address.pincode) as string | undefined, totalAmount);
     }
 
-    for (const product of products) {
-      const qty = payload.items.find((item) => item.productId === product.id)?.quantity ?? 0;
-      if (!qty) continue;
+    if (payload.paymentMethod === "COD") {
+      for (const product of products) {
+        const qty = payload.items.find((item) => item.productId === product.id)?.quantity ?? 0;
+        if (!qty) continue;
 
-      if (product.inventory) {
-        const inventoryUpdate = await tx.inventory.updateMany({
-          where: {
-            productId: product.id,
-            stock: { gte: qty }
-          },
-          data: {
-            stock: { decrement: qty }
+        if (product.inventory) {
+          const inventoryUpdate = await tx.inventory.updateMany({
+            where: {
+              productId: product.id,
+              stock: { gte: qty }
+            },
+            data: {
+              stock: { decrement: qty }
+            }
+          });
+
+          if (inventoryUpdate.count === 0) {
+            throw new ApiError(StatusCodes.BAD_REQUEST, `Insufficient stock for ${product.name}`);
           }
-        });
+        } else {
+          const productUpdate = await tx.product.updateMany({
+            where: {
+              id: product.id,
+              stock: { gte: qty }
+            },
+            data: {
+              stock: { decrement: qty }
+            }
+          });
 
-        if (inventoryUpdate.count === 0) {
-          throw new ApiError(StatusCodes.BAD_REQUEST, `Insufficient stock for ${product.name}`);
-        }
-      } else {
-        const productUpdate = await tx.product.updateMany({
-          where: {
-            id: product.id,
-            stock: { gte: qty }
-          },
-          data: {
-            stock: { decrement: qty }
+          if (productUpdate.count === 0) {
+            throw new ApiError(StatusCodes.BAD_REQUEST, `Insufficient stock for ${product.name}`);
           }
-        });
-
-        if (productUpdate.count === 0) {
-          throw new ApiError(StatusCodes.BAD_REQUEST, `Insufficient stock for ${product.name}`);
         }
       }
-    }
 
-    if (couponId) {
-      const couponUpdate = await tx.coupon.updateMany({
-        where: {
-          id: couponId,
-          ...(couponUsageLimit ? { usedCount: { lt: couponUsageLimit } } : {})
-        },
-        data: { usedCount: { increment: 1 } }
-      });
+      if (couponId) {
+        const couponUpdate = await tx.coupon.updateMany({
+          where: {
+            id: couponId,
+            ...(couponUsageLimit ? { usedCount: { lt: couponUsageLimit } } : {})
+          },
+          data: { usedCount: { increment: 1 } }
+        });
 
-      if (couponUpdate.count === 0) {
-        throw new ApiError(StatusCodes.CONFLICT, "Coupon usage limit reached");
+        if (couponUpdate.count === 0) {
+          throw new ApiError(StatusCodes.CONFLICT, "Coupon usage limit reached");
+        }
       }
     }
 
@@ -564,17 +566,12 @@ export const trackOrder = async (orderNumber: string) => {
       shippingCourier: true,
       shippingAwb: true,
       estimatedDeliveryAt: true,
-      adminNotes: true,
       cancelRequestedAt: true,
-      cancelRequestReason: true,
       cancelRequestStatus: true,
       cancelDecisionAt: true,
-      cancelDecisionNote: true,
       returnRequestedAt: true,
-      returnRequestReason: true,
       returnRequestStatus: true,
-      returnDecisionAt: true,
-      returnDecisionNote: true
+      returnDecisionAt: true
     }
   });
 

@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
+import { prisma } from "../lib/prisma.js";
+import { createNotification, sendOrderConfirmation, sendWhatsappNotification } from "../services/notification.service.js";
 import {
   createRazorpayOrder,
   handleRazorpayWebhook,
@@ -12,7 +14,38 @@ export const createOrder = async (req: Request, res: Response) => {
 };
 
 export const verify = async (req: Request, res: Response) => {
-  res.json(await verifyRazorpayPayment(req.body));
+  const result = await verifyRazorpayPayment(req.body);
+
+  if (!result.alreadyProcessed) {
+    const order = await prisma.order.findUnique({
+      where: { id: result.orderId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    if (order?.user) {
+      await Promise.allSettled([
+        sendOrderConfirmation(order.user.email, order.orderNumber),
+        sendWhatsappNotification({ orderNumber: order.orderNumber, user: order.user.name }),
+        createNotification({
+          userId: order.user.id,
+          title: "Order placed",
+          message: `Your order ${order.orderNumber} has been placed successfully.`,
+          href: "/my-orders",
+          kind: "ORDER"
+        })
+      ]);
+    }
+  }
+
+  res.json(result);
 };
 
 export const webhook = async (req: Request, res: Response) => {
