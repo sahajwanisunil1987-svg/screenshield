@@ -1,5 +1,6 @@
 import { cache } from "react";
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BadgeCheck, ShieldCheck, Star, Truck } from "lucide-react";
@@ -7,7 +8,6 @@ import { PageShell } from "@/components/layout/page-shell";
 import { ProductCardServer } from "@/components/products/product-card-server";
 import { ProductGallery } from "@/components/products/product-gallery";
 import { ProductActions } from "./product-actions";
-import { ProductDetailTabs } from "./product-detail-tabs";
 import { ProductMobileBar } from "./product-mobile-bar";
 import { buildBreadcrumbStructuredData, buildMetadata, buildProductStructuredData } from "@/lib/seo";
 import { fetchApi } from "@/lib/server-api";
@@ -23,6 +23,23 @@ type ProductPayload = {
 
 const getProductPayload = cache((slug: string) =>
   fetchApi<ProductPayload>(`/products/${slug}`, { next: { revalidate: 300 } })
+);
+
+const ProductDetailTabs = dynamic(
+  () => import("./product-detail-tabs").then((module) => module.ProductDetailTabs),
+  {
+    loading: () => (
+      <section className="mt-6 sm:mt-10">
+        <div className="theme-surface rounded-[24px] p-4 shadow-card sm:rounded-[32px] sm:p-6">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="h-28 rounded-[20px] bg-white/75" />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
 );
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {

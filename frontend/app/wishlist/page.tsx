@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect } from "react";
 import Link from "next/link";
 import { Heart, ShoppingBag, Sparkles } from "lucide-react";
@@ -7,11 +8,27 @@ import { toast } from "sonner";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { ProductCard } from "@/components/products/product-card";
 import { getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
 import { useCartStore } from "@/store/cart-store";
 import { useWishlistStore } from "@/store/wishlist-store";
+
+const ProductCard = dynamic(
+  () => import("@/components/products/product-card").then((module) => module.ProductCard),
+  {
+    loading: () => (
+      <div className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-panel shadow-card">
+        <div className="aspect-[4/3] bg-slate-100" />
+        <div className="space-y-4 p-5">
+          <div className="h-3 w-20 rounded-full bg-slate-100" />
+          <div className="h-6 w-3/4 rounded-full bg-slate-100" />
+          <div className="h-4 w-1/2 rounded-full bg-slate-100" />
+          <div className="h-10 rounded-full bg-slate-100" />
+        </div>
+      </div>
+    )
+  }
+);
 
 export default function WishlistPage() {
   const user = useAuthStore((state) => state.user);
