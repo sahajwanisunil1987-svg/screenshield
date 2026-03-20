@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { type MouseEvent, useMemo, useState } from "react";
 import Image from "next/image";
 import { Expand, X } from "lucide-react";
 import { ProductImage } from "@/types";
@@ -21,6 +21,25 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
   }, [images, productName, videoUrl]);
   const [activeItem, setActiveItem] = useState(gallery[0]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomOrigin, setZoomOrigin] = useState({ x: 50, y: 50 });
+
+  const handleImageMouseMove = (event: MouseEvent<HTMLButtonElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - bounds.left) / bounds.width) * 100;
+    const y = ((event.clientY - bounds.top) / bounds.height) * 100;
+
+    setZoomOrigin({
+      x: Math.min(100, Math.max(0, x)),
+      y: Math.min(100, Math.max(0, y))
+    });
+  };
+
+  const handleItemChange = (item: GalleryItem) => {
+    setActiveItem(item);
+    setIsZoomed(false);
+    setZoomOrigin({ x: 50, y: 50 });
+  };
 
   return (
     <>
@@ -29,12 +48,34 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
           <div className="group relative aspect-[4/3] overflow-hidden rounded-[24px] border border-white/70 bg-white sm:aspect-square sm:rounded-[32px]">
             <div className="absolute inset-0 bg-spare-grid opacity-70" />
             {activeItem.type === "video" ? (
-            <video src={activeItem.url} controls className="relative z-[1] h-full w-full object-contain p-2 sm:p-4" preload="metadata" />
-          ) : (
+              <video src={activeItem.url} controls className="relative z-[1] h-full w-full object-contain p-2 sm:p-4" preload="metadata" />
+            ) : (
               <button
                 type="button"
                 onClick={() => setIsPreviewOpen(true)}
-                className="absolute inset-0 z-[1] flex items-center justify-center"
+                onMouseEnter={() => setIsZoomed(true)}
+                onMouseLeave={() => setIsZoomed(false)}
+                onMouseMove={handleImageMouseMove}
+                className="absolute inset-0 z-[1] hidden cursor-zoom-in items-center justify-center sm:flex"
+                aria-label={`Open full preview of ${activeItem.alt ?? productName}`}
+              >
+                <Image
+                  src={activeItem.url}
+                  alt={activeItem.alt ?? productName}
+                  fill
+                  className="object-contain p-6 transition duration-300 ease-out"
+                  style={{
+                    transform: isZoomed ? "scale(1.85)" : "scale(1)",
+                    transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`
+                  }}
+                />
+              </button>
+            )}
+            {activeItem.type === "image" ? (
+              <button
+                type="button"
+                onClick={() => setIsPreviewOpen(true)}
+                className="absolute inset-0 z-[1] flex items-center justify-center sm:hidden"
                 aria-label={`Open full preview of ${activeItem.alt ?? productName}`}
               >
                 <Image
@@ -44,9 +85,12 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
                   className="object-contain p-3 transition duration-500 group-hover:scale-[1.04] sm:p-6"
                 />
               </button>
-            )}
+            ) : null}
+            {activeItem.type === "image" ? (
+              <div className="pointer-events-none absolute inset-0 z-[1] hidden bg-[radial-gradient(circle_at_center,transparent_0,transparent_58%,rgba(15,23,42,0.08)_100%)] opacity-0 transition duration-200 group-hover:opacity-100 sm:block" />
+            ) : null}
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] flex items-center justify-between bg-gradient-to-t from-ink/75 via-ink/35 to-transparent px-3 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/90 sm:px-5 sm:py-4 sm:text-xs sm:tracking-[0.24em]">
-              <span>Full part preview</span>
+              <span>{activeItem.type === "image" ? "Hover to zoom" : "Full part preview"}</span>
               <span>{gallery.findIndex((item) => item.url === activeItem.url) + 1}/{gallery.length}</span>
             </div>
             {activeItem.type === "image" ? (
@@ -69,7 +113,7 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
               <button
                 key={`${item.url}-${index}`}
                 type="button"
-                onClick={() => setActiveItem(item)}
+                onClick={() => handleItemChange(item)}
                 className={`relative aspect-square w-20 shrink-0 overflow-hidden rounded-[20px] border-2 bg-white shadow-card transition sm:w-28 sm:rounded-[24px] ${
                   isActive ? "border-accent ring-2 ring-accent/15" : "border-transparent hover:border-accent/40"
                 }`}
