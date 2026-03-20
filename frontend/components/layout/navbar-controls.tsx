@@ -12,22 +12,19 @@ import { api, authHeaders } from "@/lib/api";
 import { useTheme } from "@/hooks/use-theme";
 import { NavbarSearch } from "./navbar-search";
 
+const NOTIFICATION_CACHE_KEY = "sparekart-navbar-notifications";
+const NOTIFICATION_CACHE_TTL = 60_000;
+
 export function NavbarControls() {
   const router = useRouter();
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const items = useCartStore((state) => state.items);
-  const cartHydrated = useCartStore((state) => state.hasHydrated);
-  const compareItems = useCompareStore((state) => state.items);
-  const compareHydrated = useCompareStore((state) => state.hasHydrated);
-  const wishlist = useWishlistStore((state) => state.items);
-  const wishlistHydrated = useWishlistStore((state) => state.hasHydrated);
+  const cartCount = useCartStore((state) => (state.hasHydrated ? state.items.length : 0));
+  const compareCount = useCompareStore((state) => (state.hasHydrated ? state.items.length : 0));
+  const wishlistCount = useWishlistStore((state) => (state.hasHydrated ? state.items.length : 0));
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
-  const cartCount = cartHydrated ? items.length : 0;
-  const compareCount = compareHydrated ? compareItems.length : 0;
-  const wishlistCount = wishlistHydrated ? wishlist.length : 0;
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const { hydrated: themeHydrated, isDark, toggleTheme } = useTheme();
 
@@ -37,10 +34,23 @@ export function NavbarControls() {
       return;
     }
 
+    const cachedValue = readNotificationCache();
+    if (cachedValue !== null) {
+      setUnreadNotifications(cachedValue);
+      return;
+    }
+
     api
       .get<{ unreadCount: number }>("/account/notifications", authHeaders(token))
-      .then((response) => setUnreadNotifications(response.data.unreadCount ?? 0))
-      .catch(() => setUnreadNotifications(0));
+      .then((response) => {
+        const unreadCount = response.data.unreadCount ?? 0;
+        setUnreadNotifications(unreadCount);
+        writeNotificationCache(unreadCount);
+      })
+      .catch(() => {
+        setUnreadNotifications(0);
+        writeNotificationCache(0);
+      });
   }, [token, user?.id, user?.role]);
 
   return (
@@ -190,4 +200,42 @@ export function NavbarControls() {
 
 function SearchSuggestionIcon() {
   return <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]"><circle cx="11" cy="11" r="6" /><path d="m20 20-3.5-3.5" /></svg>;
+}
+
+function readNotificationCache() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const cachedRaw = window.sessionStorage.getItem(NOTIFICATION_CACHE_KEY);
+  if (!cachedRaw) {
+    return null;
+  }
+
+  try {
+    const cached = JSON.parse(cachedRaw) as { count: number; expiresAt: number };
+    if (cached.expiresAt < Date.now()) {
+      window.sessionStorage.removeItem(NOTIFICATION_CACHE_KEY);
+      return null;
+    }
+
+    return cached.count;
+  } catch {
+    window.sessionStorage.removeItem(NOTIFICATION_CACHE_KEY);
+    return null;
+  }
+}
+
+function writeNotificationCache(count: number) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.setItem(
+    NOTIFICATION_CACHE_KEY,
+    JSON.stringify({
+      count,
+      expiresAt: Date.now() + NOTIFICATION_CACHE_TTL
+    })
+  );
 }
