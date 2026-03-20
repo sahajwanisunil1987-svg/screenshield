@@ -1,11 +1,8 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { toast } from "sonner";
 import { PageShell } from "@/components/layout/page-shell";
 import { Input } from "@/components/ui/input";
@@ -15,25 +12,41 @@ import { calculateOrderPricing } from "@/lib/order-pricing";
 import { formatCurrency } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 import { useCartStore } from "@/store/cart-store";
+import { User } from "@/types";
 
 const COD_MAX_ORDER_VALUE = 5000;
 const BLOCKED_COD_PINCODES = ["560001", "110001"];
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const schema = z.object({
-  fullName: z.string().min(2),
-  line1: z.string().min(5),
-  line2: z.string().optional(),
-  landmark: z.string().optional(),
-  city: z.string().min(2),
-  state: z.string().min(2),
-  postalCode: z.string().min(5),
-  phone: z.string().min(10),
-  email: z.string().email(),
-  gstNumber: z.string().optional(),
-  paymentMethod: z.enum(["COD", "RAZORPAY"])
-});
+type FormValues = {
+  fullName: string;
+  line1: string;
+  line2: string;
+  landmark: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  phone: string;
+  email: string;
+  gstNumber: string;
+  paymentMethod: "COD" | "RAZORPAY";
+};
 
-type FormValues = z.infer<typeof schema>;
+type FormErrors = Partial<Record<keyof FormValues, string>>;
+
+const DEFAULT_FORM_VALUES: FormValues = {
+  fullName: "",
+  line1: "",
+  line2: "",
+  landmark: "",
+  city: "",
+  state: "",
+  postalCode: "",
+  phone: "",
+  email: "",
+  gstNumber: "",
+  paymentMethod: "COD"
+};
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -41,19 +54,18 @@ export default function CheckoutPage() {
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
   const setAuth = useAuthStore((state) => state.setAuth);
+  const [form, setForm] = useState<FormValues>({
+    ...DEFAULT_FORM_VALUES,
+    email: user?.email ?? ""
+  });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount);
-  const { register, handleSubmit, watch, reset, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      email: user?.email ?? "",
-      paymentMethod: "COD"
-    }
-  });
-  const paymentMethod = watch("paymentMethod");
-  const postalCode = watch("postalCode");
-
-  const codAvailable = useMemo(() => total <= COD_MAX_ORDER_VALUE && !BLOCKED_COD_PINCODES.includes((postalCode ?? "").trim()), [postalCode, total]);
+  const codAvailable = useMemo(
+    () => total <= COD_MAX_ORDER_VALUE && !BLOCKED_COD_PINCODES.includes(form.postalCode.trim()),
+    [form.postalCode, total]
+  );
 
   useEffect(() => {
     if (!token) {
@@ -62,15 +74,17 @@ export default function CheckoutPage() {
     }
 
     api
-      .get("/auth/me", authHeaders(token))
+      .get<User>("/auth/me", authHeaders(token))
       .then((response) => {
         const profile = response.data;
-        if (!profile) return;
+        if (!profile) {
+          return;
+        }
 
         setAuth(token, profile);
         const address = profile.addresses?.[0];
 
-        reset((current) => ({
+        setForm((current) => ({
           ...current,
           fullName: address?.fullName ?? profile.name ?? "",
           line1: address?.line1 ?? "",
@@ -80,21 +94,45 @@ export default function CheckoutPage() {
           state: address?.state ?? "",
           postalCode: address?.postalCode ?? "",
           phone: address?.phone ?? profile.phone ?? "",
-          email: profile.email ?? "",
+          email: profile.email ?? current.email,
           gstNumber: address?.gstNumber ?? "",
           paymentMethod: current.paymentMethod ?? "COD"
         }));
       })
       .catch(() => {});
-  }, [reset, setAuth, token]);
+  }, [router, setAuth, token]);
 
   useEffect(() => {
-    if (!codAvailable && paymentMethod === "COD") {
-      setValue("paymentMethod", "RAZORPAY");
+    if (!codAvailable && form.paymentMethod === "COD") {
+      setForm((current) => ({ ...current, paymentMethod: "RAZORPAY" }));
     }
-  }, [codAvailable, paymentMethod, setValue]);
+  }, [codAvailable, form.paymentMethod]);
 
-  const onSubmit = handleSubmit(async (values) => {
+  const updateField = <K extends keyof FormValues>(key: K, value: FormValues[K]) => {
+    setForm((current) => ({ ...current, [key]: value }));
+    if (errors[key]) {
+      setErrors((current) => ({ ...current, [key]: undefined }));
+    }
+  };
+
+  const validate = () => {
+    const nextErrors: FormErrors = {};
+
+    if (form.fullName.trim().length < 2) nextErrors.fullName = "Enter full name";
+    if (form.line1.trim().length < 5) nextErrors.line1 = "Enter address line";
+    if (form.city.trim().length < 2) nextErrors.city = "Enter city";
+    if (form.state.trim().length < 2) nextErrors.state = "Enter state";
+    if (form.postalCode.trim().length < 5) nextErrors.postalCode = "Enter valid pincode";
+    if (form.phone.trim().length < 10) nextErrors.phone = "Enter valid phone number";
+    if (!EMAIL_REGEX.test(form.email.trim())) nextErrors.email = "Enter valid email";
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
     if (!token) {
       toast.error("Please login before checkout");
       router.push("/login");
@@ -106,36 +144,41 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (values.paymentMethod === "COD" && !codAvailable) {
+    if (!validate()) {
+      return;
+    }
+
+    if (form.paymentMethod === "COD" && !codAvailable) {
       toast.error("Cash on Delivery is not available for this order. Please use Razorpay.");
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const response = await api.post(
         "/orders/create",
         {
           items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
           address: {
-            fullName: values.fullName,
-            line1: values.line1,
-            line2: values.line2,
-            landmark: values.landmark,
-            city: values.city,
-            state: values.state,
-            postalCode: values.postalCode,
+            fullName: form.fullName.trim(),
+            line1: form.line1.trim(),
+            line2: form.line2.trim() || undefined,
+            landmark: form.landmark.trim() || undefined,
+            city: form.city.trim(),
+            state: form.state.trim(),
+            postalCode: form.postalCode.trim(),
             country: "India",
-            phone: values.phone,
-            gstNumber: values.gstNumber,
-            email: values.email
+            phone: form.phone.trim(),
+            gstNumber: form.gstNumber.trim() || undefined,
+            email: form.email.trim()
           },
           couponCode: couponCode || undefined,
-          paymentMethod: values.paymentMethod
+          paymentMethod: form.paymentMethod
         },
         authHeaders(token)
       );
 
-      if (values.paymentMethod === "RAZORPAY") {
+      if (form.paymentMethod === "RAZORPAY") {
         const paymentOrder = await api.post(
           "/payments/razorpay/create-order",
           { orderId: response.data.id },
@@ -175,9 +218,9 @@ export default function CheckoutPage() {
             }
           },
           prefill: {
-            name: values.fullName,
-            email: values.email,
-            contact: values.phone
+            name: form.fullName.trim(),
+            email: form.email.trim(),
+            contact: form.phone.trim()
           },
           theme: { color: "#0f766e" }
         });
@@ -192,8 +235,10 @@ export default function CheckoutPage() {
       router.push(`/order-success?orderNumber=${response.data.orderNumber}`);
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Unable to place order"));
+    } finally {
+      setIsSubmitting(false);
     }
-  });
+  };
 
   if (!token) {
     return null;
@@ -210,39 +255,64 @@ export default function CheckoutPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Delivery details</p>
               <p className="mt-2 text-sm text-slate">Use a complete serviceable address so dispatch and GST invoice details stay correct.</p>
             </div>
-            <Input placeholder="Full name" {...register("fullName")} />
-            {errors.fullName ? <p className="text-sm text-red-500">{errors.fullName.message}</p> : null}
-            <Input placeholder="Address line" {...register("line1")} />
+            <Input placeholder="Full name" value={form.fullName} onChange={(event) => updateField("fullName", event.target.value)} />
+            {errors.fullName ? <p className="text-sm text-red-500">{errors.fullName}</p> : null}
+            <Input placeholder="Address line" value={form.line1} onChange={(event) => updateField("line1", event.target.value)} />
+            {errors.line1 ? <p className="text-sm text-red-500">{errors.line1}</p> : null}
             <div className="grid gap-4 md:grid-cols-2">
-              <Input placeholder="Apartment / Shop / Floor (optional)" {...register("line2")} />
-              <Input placeholder="Landmark (optional)" {...register("landmark")} />
+              <Input placeholder="Apartment / Shop / Floor (optional)" value={form.line2} onChange={(event) => updateField("line2", event.target.value)} />
+              <Input placeholder="Landmark (optional)" value={form.landmark} onChange={(event) => updateField("landmark", event.target.value)} />
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-              <Input placeholder="City" {...register("city")} />
-              <Input placeholder="State" {...register("state")} />
+              <div>
+                <Input placeholder="City" value={form.city} onChange={(event) => updateField("city", event.target.value)} />
+                {errors.city ? <p className="mt-2 text-sm text-red-500">{errors.city}</p> : null}
+              </div>
+              <div>
+                <Input placeholder="State" value={form.state} onChange={(event) => updateField("state", event.target.value)} />
+                {errors.state ? <p className="mt-2 text-sm text-red-500">{errors.state}</p> : null}
+              </div>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-              <Input placeholder="Pincode" {...register("postalCode")} />
-              <Input placeholder="Phone number" {...register("phone")} />
+              <div>
+                <Input placeholder="Pincode" value={form.postalCode} onChange={(event) => updateField("postalCode", event.target.value)} />
+                {errors.postalCode ? <p className="mt-2 text-sm text-red-500">{errors.postalCode}</p> : null}
+              </div>
+              <div>
+                <Input placeholder="Phone number" value={form.phone} onChange={(event) => updateField("phone", event.target.value)} />
+                {errors.phone ? <p className="mt-2 text-sm text-red-500">{errors.phone}</p> : null}
+              </div>
             </div>
-            <Input placeholder="Email" {...register("email")} />
-            <Input placeholder="GST Number (optional)" {...register("gstNumber")} />
+            <Input placeholder="Email" value={form.email} onChange={(event) => updateField("email", event.target.value)} />
+            {errors.email ? <p className="text-sm text-red-500">{errors.email}</p> : null}
+            <Input placeholder="GST Number (optional)" value={form.gstNumber} onChange={(event) => updateField("gstNumber", event.target.value)} />
             <div className="rounded-[28px] bg-[#f5f8fb] p-4">
               <p className="text-sm font-semibold text-ink">Payment method</p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <label className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${codAvailable ? "border-slate-200 bg-white text-slate" : "border-slate-100 bg-slate-50 text-slate/40"}`}>
-                  <input type="radio" value="COD" {...register("paymentMethod")} disabled={!codAvailable} />
+                  <input
+                    type="radio"
+                    value="COD"
+                    checked={form.paymentMethod === "COD"}
+                    onChange={() => updateField("paymentMethod", "COD")}
+                    disabled={!codAvailable}
+                  />
                   Cash on Delivery
                 </label>
                 <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate">
-                  <input type="radio" value="RAZORPAY" {...register("paymentMethod")} />
+                  <input
+                    type="radio"
+                    value="RAZORPAY"
+                    checked={form.paymentMethod === "RAZORPAY"}
+                    onChange={() => updateField("paymentMethod", "RAZORPAY")}
+                  />
                   Razorpay
                 </label>
               </div>
               {!codAvailable ? <p className="mt-3 text-sm text-amber-700">COD unavailable for this order because the amount exceeds Rs. {COD_MAX_ORDER_VALUE} or the pincode is restricted.</p> : <p className="mt-3 text-sm text-slate">COD available for this order.</p>}
             </div>
             <Button disabled={isSubmitting} className="w-full">
-              {isSubmitting ? "Placing order..." : paymentMethod === "RAZORPAY" ? "Continue to Razorpay" : "Place order"}
+              {isSubmitting ? "Placing order..." : form.paymentMethod === "RAZORPAY" ? "Continue to Razorpay" : "Place order"}
             </Button>
           </form>
           <div className="rounded-[32px] bg-white p-8 shadow-card">
