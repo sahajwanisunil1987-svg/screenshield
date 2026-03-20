@@ -28,10 +28,10 @@ export function ProductActions({ product }: { product: Product }) {
   }, []);
 
   return (
-    <div className="space-y-4 rounded-[28px] border border-slate-200 bg-[#f7fafb] p-4">
-      <div className="grid gap-3">
+    <div className="space-y-2.5 rounded-[22px] border border-slate-200 bg-[#f7fafb] p-3.5 sm:p-4">
+      <div className="grid gap-2.5">
         <Button
-          className="justify-center gap-2"
+          className="justify-center gap-2 py-2.5"
           onClick={() => {
             addItem(product);
             toast.success("Added to cart");
@@ -42,7 +42,7 @@ export function ProductActions({ product }: { product: Product }) {
         </Button>
         <Button
           variant="secondary"
-          className="justify-center gap-2"
+          className="justify-center gap-2 py-2.5"
           onClick={() => {
             addItem(product);
             router.push("/checkout");
@@ -61,11 +61,9 @@ export function ProductActions({ product }: { product: Product }) {
             toast.error(error instanceof Error ? error.message : "Unable to update wishlist");
           }
         }}
-        className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-accent/30 hover:bg-accentSoft"
+        className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-accent/30 hover:bg-accentSoft"
       >
-        <Heart
-          className={`h-4 w-4 ${isWishlisted ? "fill-rose-500 text-rose-500" : "text-slate"}`}
-        />
+        <Heart className={`h-4 w-4 ${isWishlisted ? "fill-rose-500 text-rose-500" : "text-slate"}`} />
         {isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
       </button>
       <button
@@ -79,15 +77,15 @@ export function ProductActions({ product }: { product: Product }) {
 
           toast.success(result.active ? "Added to compare" : "Removed from compare");
         }}
-        className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-accent/30 hover:bg-accentSoft"
+        className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-accent/30 hover:bg-accentSoft"
       >
         <GitCompareArrows className={`h-4 w-4 ${isCompared ? "text-accent" : "text-slate"}`} />
         {isCompared ? "Remove from Compare" : "Add to Compare"}
       </button>
-      <div className="flex flex-wrap gap-2 text-xs text-slate">
-        <div className="rounded-full bg-white px-4 py-2.5">Secure payment flow</div>
-        <div className="rounded-full bg-white px-4 py-2.5">Repair-shop friendly fitment</div>
-        <div className="rounded-full bg-white px-4 py-2.5">Warranty-backed support</div>
+      <div className="flex flex-wrap gap-2 text-[11px] text-slate">
+        <div className="rounded-full bg-white px-3 py-1.5">Secure payment</div>
+        <div className="rounded-full bg-white px-3 py-1.5">Fitment help</div>
+        <div className="rounded-full bg-white px-3 py-1.5">Warranty support</div>
       </div>
     </div>
   );

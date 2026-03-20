@@ -94,8 +94,8 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbStructuredData) }}
       />
-      <div className="mx-auto max-w-7xl px-4 py-8 pb-28 sm:px-6 sm:py-16 lg:px-8 xl:pb-16">
-        <div className="mb-5 flex flex-wrap items-center gap-2 text-xs text-slate sm:mb-8 sm:gap-3 sm:text-sm">
+      <div className="mx-auto max-w-7xl px-4 py-7 pb-28 sm:px-6 sm:py-12 lg:px-8 xl:pb-16">
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-slate sm:mb-6 sm:gap-3 sm:text-sm">
           <Link href="/" className="transition hover:text-ink">Home</Link>
           <span>/</span>
           <Link href="/products" className="transition hover:text-ink">Products</Link>
@@ -104,65 +104,65 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
           <span>/</span>
           <span className="text-ink">{product.name}</span>
         </div>
-        <div className="grid gap-5 sm:gap-8 xl:grid-cols-[minmax(0,1.05fr)_420px]">
-          <div className="space-y-4 sm:space-y-5">
+        <div className="grid gap-4 sm:gap-6 xl:grid-cols-[minmax(0,0.96fr)_380px]">
+          <div className="space-y-3 sm:space-y-4 xl:max-w-[760px]">
             <ProductGallery images={product.images} productName={product.name} videoUrl={product.videoUrl} />
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
               {quickFacts.map((fact) => (
-                <div key={fact.label} className="rounded-[20px] border border-slate-200 bg-white p-3 shadow-card sm:rounded-[24px] sm:p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate">{fact.label}</p>
-                  <p className="mt-1.5 text-sm font-semibold text-ink">{fact.value}</p>
+                <div key={fact.label} className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-card sm:rounded-[20px]">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate">{fact.label}</p>
+                  <p className="mt-1 text-sm font-semibold text-ink">{fact.value}</p>
                 </div>
               ))}
             </div>
           </div>
-          <div className="theme-surface space-y-4 rounded-[28px] p-4 shadow-card sm:space-y-5 sm:rounded-[40px] sm:p-8 xl:sticky xl:top-24 xl:self-start">
+          <div className="theme-surface space-y-3 rounded-[24px] p-4 shadow-card sm:rounded-[30px] sm:p-5 xl:sticky xl:top-20 xl:self-start">
             <div>
-              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+              <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-accent sm:text-xs">
                 <span>{product.brand.name}</span>
                 <span className="text-slate">/</span>
                 <span>{product.model.name}</span>
               </div>
-              <h1 className="mt-3 font-display text-[2rem] leading-tight text-ink sm:mt-4 sm:text-5xl">{product.name}</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate sm:mt-4 sm:leading-7">{product.shortDescription}</p>
-              <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate sm:mt-5 sm:gap-3 sm:text-sm">
-                <div className="inline-flex items-center gap-2 rounded-full bg-panel px-3 py-2 sm:px-4">
-                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+              <h1 className="mt-2.5 font-display text-[1.95rem] leading-[0.95] text-ink sm:text-[3.2rem]">{product.name}</h1>
+              <p className="mt-2.5 text-sm leading-6 text-slate">{product.shortDescription}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate">
+                <div className="inline-flex items-center gap-2 rounded-full bg-panel px-3 py-1.5">
+                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                   <span className="font-semibold text-ink">{product.averageRating?.toFixed(1) ?? "0.0"}</span>
                   <span>from {product.reviewCount} review(s)</span>
                 </div>
-                <div className={`rounded-full px-3 py-2 font-semibold sm:px-4 ${stock > 0 ? "bg-emerald-500/15 text-emerald-400" : "bg-rose-500/15 text-rose-400"}`}>
+                <div className={`rounded-full px-3 py-1.5 font-semibold ${stock > 0 ? "bg-emerald-500/15 text-emerald-400" : "bg-rose-500/15 text-rose-400"}`}>
                   {stock > 0 ? `${stock} in stock` : "Currently out of stock"}
                 </div>
                 {savings > 0 ? (
-                  <div className="rounded-full bg-amber-500/15 px-3 py-2 font-semibold text-amber-400 sm:px-4">
+                  <div className="rounded-full bg-amber-500/15 px-3 py-1.5 font-semibold text-amber-400">
                     Save {formatCurrency(savings)}
                   </div>
                 ) : null}
               </div>
-              <div className="mt-4 flex flex-wrap gap-2 sm:mt-5">
-                <span className="rounded-full bg-panel px-3 py-1.5 text-[11px] font-semibold text-ink sm:px-3 sm:py-2 sm:text-xs">SKU {product.sku}</span>
-                <span className="rounded-full bg-panel px-3 py-1.5 text-[11px] font-semibold text-ink sm:px-3 sm:py-2 sm:text-xs">{product.category.name}</span>
-                <span className="rounded-full bg-panel px-3 py-1.5 text-[11px] font-semibold text-ink sm:px-3 sm:py-2 sm:text-xs">{compatibleModels.length} compatible models</span>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="rounded-full bg-panel px-3 py-1.5 text-[11px] font-semibold text-ink">SKU {product.sku}</span>
+                <span className="rounded-full bg-panel px-3 py-1.5 text-[11px] font-semibold text-ink">{product.category.name}</span>
+                <span className="rounded-full bg-panel px-3 py-1.5 text-[11px] font-semibold text-ink">{compatibleModels.length} compatible models</span>
               </div>
             </div>
-            <div className="rounded-[24px] bg-[linear-gradient(135deg,#07111f,#0f2731)] p-4 text-white sm:rounded-[32px] sm:p-6">
-              <div className="flex flex-wrap items-end gap-3 sm:gap-4">
-                <span className="text-3xl font-bold sm:text-4xl">{formatCurrency(product.price)}</span>
-                <div className="pb-0.5 text-xs text-white/65 sm:pb-1 sm:text-sm">
+            <div className="rounded-[20px] bg-[linear-gradient(135deg,#07111f,#0f2731)] p-4 text-white sm:rounded-[24px] sm:p-5">
+              <div className="flex flex-wrap items-end gap-2.5">
+                <span className="text-[2.1rem] font-bold leading-none sm:text-[2.6rem]">{formatCurrency(product.price)}</span>
+                <div className="pb-0.5 text-xs text-white/65">
                   <p>Inclusive of catalog pricing</p>
                 </div>
               </div>
               {product.comparePrice ? (
-                <p className="mt-2 text-xs text-white/60 sm:text-sm">
+                <p className="mt-2 text-xs text-white/60">
                   Compare at <span className="line-through">{formatCurrency(product.comparePrice)}</span>
                 </p>
               ) : null}
-              <div className="mt-4 grid gap-2.5 sm:mt-5 sm:gap-3">
+              <div className="mt-3 grid gap-2">
                 {trustPoints.map((item) => (
-                  <div key={item.title} className="flex items-center gap-3 rounded-[18px] bg-white/8 p-3 sm:rounded-[22px] sm:p-4">
-                    <item.icon className="h-4 w-4 shrink-0 text-teal-200 sm:h-5 sm:w-5" />
-                    <p className="text-sm font-semibold">{item.title}</p>
+                  <div key={item.title} className="flex items-center gap-2.5 rounded-[16px] bg-white/8 px-3 py-2.5">
+                    <item.icon className="h-4 w-4 shrink-0 text-teal-200" />
+                    <p className="text-[13px] font-semibold leading-5">{item.title}</p>
                   </div>
                 ))}
               </div>
@@ -170,56 +170,56 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
             <ProductActions product={product} />
           </div>
         </div>
-        <section className="mt-6 grid gap-3 sm:mt-8 sm:gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-card sm:rounded-[28px] sm:p-5">
+        <section className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-card sm:rounded-[24px] sm:p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="text-lg font-semibold text-ink">Compatibility snapshot</h2>
-                <p className="mt-2 text-sm text-slate">
+                <p className="mt-1.5 text-sm text-slate">
                   Designed for {product.brand.name} {product.model.name} and {compatibleModels.length - 1 > 0 ? `${compatibleModels.length - 1} more supported models.` : "the exact listed model."}
                 </p>
               </div>
-              <div className="rounded-full bg-panel px-4 py-2 text-sm font-semibold text-ink">
+              <div className="rounded-full bg-panel px-3 py-1.5 text-sm font-semibold text-ink">
                 {compatibleModels.length} models
               </div>
             </div>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               {compatibleModels.slice(0, 6).map((model) => (
-                <span key={model.id} className="rounded-full bg-panel px-3 py-2 text-sm font-semibold text-ink">
+                <span key={model.id} className="rounded-full bg-panel px-3 py-1.5 text-sm font-semibold text-ink">
                   {model.name}
                 </span>
               ))}
               {compatibleModels.length > 6 ? (
-                <span className="rounded-full bg-white px-3 py-2 text-sm font-semibold text-slate">
+                <span className="rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-slate">
                   +{compatibleModels.length - 6} more
                 </span>
               ) : null}
             </div>
           </div>
-          <div className="grid gap-2 rounded-[22px] bg-panel p-4 text-sm text-slate sm:grid-cols-2 sm:gap-3 sm:rounded-[28px] sm:p-5 lg:grid-cols-3">
+          <div className="grid gap-2 rounded-[22px] bg-panel p-4 text-sm text-slate sm:grid-cols-2 sm:gap-3 sm:rounded-[24px] sm:p-5 lg:grid-cols-3">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">SKU</p>
-              <p className="mt-1.5 font-semibold text-ink sm:mt-2">{product.sku}</p>
+              <p className="mt-1.5 font-semibold text-ink">{product.sku}</p>
             </div>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">GST</p>
-              <p className="mt-1.5 font-semibold text-ink sm:mt-2">{Number(product.gstRate ?? 18)}%</p>
+              <p className="mt-1.5 font-semibold text-ink">{Number(product.gstRate ?? 18)}%</p>
             </div>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">Category</p>
-              <p className="mt-1.5 font-semibold text-ink sm:mt-2">{product.category.name}</p>
+              <p className="mt-1.5 font-semibold text-ink">{product.category.name}</p>
             </div>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">Warranty</p>
-              <p className="mt-1.5 font-semibold text-ink sm:mt-2">{product.warrantyMonths} months</p>
+              <p className="mt-1.5 font-semibold text-ink">{product.warrantyMonths} months</p>
             </div>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">Availability</p>
-              <p className="mt-1.5 font-semibold text-ink sm:mt-2">{stock > 0 ? "Ready to order" : "Notify for restock"}</p>
+              <p className="mt-1.5 font-semibold text-ink">{stock > 0 ? "Ready to order" : "Notify for restock"}</p>
             </div>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">Top specs</p>
-              <p className="mt-1.5 font-semibold text-ink sm:mt-2">
+              <p className="mt-1.5 font-semibold text-ink">
                 {specificationEntries.slice(0, 2).map(([key, value]) => `${key}: ${value}`).join(" • ")}
               </p>
             </div>
@@ -234,9 +234,9 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
           reviewCount={product.reviewCount}
           initialReviews={product.reviews}
         />
-        <section className="mt-8 sm:mt-10">
+        <section className="mt-8 sm:mt-9">
           <h2 className="font-display text-2xl text-ink sm:text-3xl">Related products</h2>
-          <div className="mt-4 grid gap-4 sm:mt-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {payload.relatedProducts.map((item) => (
               <ProductCard key={item.id} product={item} />
             ))}

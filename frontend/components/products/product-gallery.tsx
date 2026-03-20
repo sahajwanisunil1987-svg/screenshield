@@ -43,12 +43,12 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
 
   return (
     <>
-      <div className="space-y-3 sm:space-y-4">
-        <div className="rounded-[28px] bg-[radial-gradient(circle_at_top_left,rgba(15,118,110,0.16),transparent_32%),linear-gradient(180deg,#ffffff,#eef4f7)] p-2.5 shadow-card sm:rounded-[40px] sm:p-3">
-          <div className="group relative aspect-[4/3] overflow-hidden rounded-[24px] border border-white/70 bg-white sm:aspect-square sm:rounded-[32px]">
+      <div className="space-y-2.5 sm:space-y-3">
+        <div className="rounded-[24px] bg-[radial-gradient(circle_at_top_left,rgba(15,118,110,0.16),transparent_32%),linear-gradient(180deg,#ffffff,#eef4f7)] p-2 shadow-card sm:rounded-[30px] sm:p-2.5">
+          <div className="group relative aspect-[4/3] overflow-hidden rounded-[20px] border border-white/70 bg-white lg:aspect-[5/4] xl:aspect-[4/3] sm:rounded-[24px]">
             <div className="absolute inset-0 bg-spare-grid opacity-70" />
             {activeItem.type === "video" ? (
-              <video src={activeItem.url} controls className="relative z-[1] h-full w-full object-contain p-2 sm:p-4" preload="metadata" />
+              <video src={activeItem.url} controls className="relative z-[1] h-full w-full object-contain p-2 sm:p-3" preload="metadata" />
             ) : (
               <button
                 type="button"
@@ -63,9 +63,9 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
                   src={activeItem.url}
                   alt={activeItem.alt ?? productName}
                   fill
-                  className="object-contain p-6 transition duration-300 ease-out"
+                  className="object-contain p-4 transition duration-300 ease-out sm:p-5"
                   style={{
-                    transform: isZoomed ? "scale(1.85)" : "scale(1)",
+                    transform: isZoomed ? "scale(1.75)" : "scale(1)",
                     transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`
                   }}
                 />
@@ -82,14 +82,14 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
                   src={activeItem.url}
                   alt={activeItem.alt ?? productName}
                   fill
-                  className="object-contain p-3 transition duration-500 group-hover:scale-[1.04] sm:p-6"
+                  className="object-contain p-3 transition duration-500 group-hover:scale-[1.04]"
                 />
               </button>
             ) : null}
             {activeItem.type === "image" ? (
               <div className="pointer-events-none absolute inset-0 z-[1] hidden bg-[radial-gradient(circle_at_center,transparent_0,transparent_58%,rgba(15,23,42,0.08)_100%)] opacity-0 transition duration-200 group-hover:opacity-100 sm:block" />
             ) : null}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] flex items-center justify-between bg-gradient-to-t from-ink/75 via-ink/35 to-transparent px-3 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/90 sm:px-5 sm:py-4 sm:text-xs sm:tracking-[0.24em]">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] flex items-center justify-between bg-gradient-to-t from-ink/75 via-ink/35 to-transparent px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/90 sm:px-4 sm:text-[11px]">
               <span>{activeItem.type === "image" ? "Hover to zoom" : "Full part preview"}</span>
               <span>{gallery.findIndex((item) => item.url === activeItem.url) + 1}/{gallery.length}</span>
             </div>
@@ -97,7 +97,7 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
               <button
                 type="button"
                 onClick={() => setIsPreviewOpen(true)}
-                className="absolute right-3 top-3 z-[2] inline-flex items-center gap-1.5 rounded-full bg-white/92 px-2.5 py-1.5 text-[11px] font-semibold text-ink shadow-card transition hover:bg-white sm:right-4 sm:top-4 sm:gap-2 sm:px-3 sm:py-2 sm:text-xs"
+                className="absolute right-3 top-3 z-[2] inline-flex items-center gap-1.5 rounded-full bg-white/92 px-2.5 py-1.5 text-[11px] font-semibold text-ink shadow-card transition hover:bg-white"
               >
                 <Expand className="h-3.5 w-3.5" />
                 Inspect
@@ -105,7 +105,7 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
             ) : null}
           </div>
         </div>
-        <div className="flex gap-2.5 overflow-x-auto pb-1 sm:gap-3">
+        <div className="flex gap-2 overflow-x-auto pb-1 sm:gap-2.5">
           {gallery.map((item, index) => {
             const isActive = item.url === activeItem.url;
 
@@ -114,24 +114,19 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
                 key={`${item.url}-${index}`}
                 type="button"
                 onClick={() => handleItemChange(item)}
-                className={`relative aspect-square w-20 shrink-0 overflow-hidden rounded-[20px] border-2 bg-white shadow-card transition sm:w-28 sm:rounded-[24px] ${
+                className={`relative aspect-square w-[68px] shrink-0 overflow-hidden rounded-[18px] border-2 bg-white shadow-card transition sm:w-20 sm:rounded-[20px] ${
                   isActive ? "border-accent ring-2 ring-accent/15" : "border-transparent hover:border-accent/40"
                 }`}
               >
                 <div className="absolute inset-0 bg-spare-grid opacity-60" />
                 {item.type === "video" ? (
-                  <div className="relative z-[1] flex h-full w-full items-center justify-center bg-black text-xs font-semibold uppercase tracking-[0.2em] text-white">Video</div>
+                  <div className="relative z-[1] flex h-full w-full items-center justify-center bg-black text-[10px] font-semibold uppercase tracking-[0.18em] text-white">Video</div>
                 ) : (
-                  <Image src={item.url} alt={item.alt ?? productName} fill className="object-contain p-1.5 sm:p-2" />
+                  <Image src={item.url} alt={item.alt ?? productName} fill className="object-contain p-1.5" />
                 )}
               </button>
             );
           })}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <div className="rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-ink shadow-card sm:px-4 sm:py-2 sm:text-xs">Full image visible</div>
-          <div className="rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-ink shadow-card sm:px-4 sm:py-2 sm:text-xs">Closer part inspection</div>
-          <div className="rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-ink shadow-card sm:px-4 sm:py-2 sm:text-xs">Fitment details clearer</div>
         </div>
       </div>
       {isPreviewOpen && activeItem.type === "image" ? (
