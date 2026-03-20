@@ -1,28 +1,13 @@
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api, getApiErrorMessage } from "@/lib/api";
-
-const schema = z
-  .object({
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    confirmPassword: z.string().min(8, "Confirm your password")
-  })
-  .refine((values) => values.password === values.confirmPassword, {
-    path: ["confirmPassword"],
-    message: "Passwords do not match"
-  });
-
-type FormValues = z.infer<typeof schema>;
 
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
@@ -30,29 +15,51 @@ export default function ResetPasswordPage() {
   const token = searchParams.get("token") ?? "";
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting }
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
+
+  const validate = () => {
+    const nextErrors: { password?: string; confirmPassword?: string } = {};
+
+    if (password.length < 8) {
+      nextErrors.password = "Password must be at least 8 characters";
+    }
+    if (confirmPassword.length < 8) {
+      nextErrors.confirmPassword = "Confirm your password";
+    } else if (password !== confirmPassword) {
+      nextErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!validate()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await api.post("/auth/reset-password", { token, password });
+      toast.success("Password reset successful. Login with your new password.");
+      router.push("/login");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Unable to reset password"));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <PageShell>
       <div className="mx-auto max-w-md px-4 py-20 sm:px-6 lg:px-8">
         <div className="rounded-[32px] bg-white p-8 shadow-card">
           <h1 className="font-display text-4xl text-ink">Reset Password</h1>
-          <form
-            onSubmit={handleSubmit(async ({ confirmPassword: _confirmPassword, ...values }) => {
-              try {
-                await api.post("/auth/reset-password", { token, password: values.password });
-                toast.success("Password reset successful. Login with your new password.");
-                router.push("/login");
-              } catch (error) {
-                toast.error(getApiErrorMessage(error, "Unable to reset password"));
-              }
-            })}
-            className="mt-8 space-y-4"
-          >
+          <form onSubmit={onSubmit} className="mt-8 space-y-4">
             <div className="space-y-2">
               <div className="relative">
                 <Input
@@ -60,7 +67,13 @@ export default function ResetPasswordPage() {
                   placeholder="New password"
                   autoComplete="new-password"
                   className="pr-20"
-                  {...register("password")}
+                  value={password}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    if (errors.password) {
+                      setErrors((current) => ({ ...current, password: undefined }));
+                    }
+                  }}
                 />
                 <button
                   type="button"
@@ -70,7 +83,7 @@ export default function ResetPasswordPage() {
                   {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
-              {errors.password ? <p className="text-sm text-red-500">{errors.password.message}</p> : null}
+              {errors.password ? <p className="text-sm text-red-500">{errors.password}</p> : null}
             </div>
             <div className="space-y-2">
               <div className="relative">
@@ -79,7 +92,13 @@ export default function ResetPasswordPage() {
                   placeholder="Confirm new password"
                   autoComplete="new-password"
                   className="pr-20"
-                  {...register("confirmPassword")}
+                  value={confirmPassword}
+                  onChange={(event) => {
+                    setConfirmPassword(event.target.value);
+                    if (errors.confirmPassword) {
+                      setErrors((current) => ({ ...current, confirmPassword: undefined }));
+                    }
+                  }}
                 />
                 <button
                   type="button"
@@ -89,7 +108,7 @@ export default function ResetPasswordPage() {
                   {showConfirmPassword ? "Hide" : "Show"}
                 </button>
               </div>
-              {errors.confirmPassword ? <p className="text-sm text-red-500">{errors.confirmPassword.message}</p> : null}
+              {errors.confirmPassword ? <p className="text-sm text-red-500">{errors.confirmPassword}</p> : null}
             </div>
             <Button disabled={isSubmitting || !token} className="w-full">{isSubmitting ? "Resetting..." : "Reset password"}</Button>
           </form>

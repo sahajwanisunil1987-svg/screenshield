@@ -2,10 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { toast } from "sonner";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
@@ -13,12 +10,7 @@ import { Input } from "@/components/ui/input";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
 
-const schema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8)
-});
-
-type FormValues = z.infer<typeof schema>;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,34 +18,45 @@ export default function LoginPage() {
   const next = searchParams.get("next") || "/";
   const setAuth = useAuthStore((state) => state.setAuth);
   const [showPassword, setShowPassword] = useState(false);
-  const [resendEmail, setResendEmail] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [resending, setResending] = useState(false);
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors, isSubmitting }
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema)
-  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
-  useEffect(() => {
-    const emailValue = watch("email");
-    if (emailValue) {
-      setResendEmail(emailValue);
+  const validate = () => {
+    const nextErrors: { email?: string; password?: string } = {};
+
+    if (!EMAIL_REGEX.test(email.trim())) {
+      nextErrors.email = "Enter a valid email";
     }
-  }, [watch]);
 
-  const onSubmit = handleSubmit(async (values) => {
+    if (password.length < 8) {
+      nextErrors.password = "Password must be at least 8 characters";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!validate()) {
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      const response = await api.post("/auth/login", values);
+      const response = await api.post("/auth/login", { email: email.trim(), password });
       setAuth(response.data.token, response.data.user);
       toast.success("Logged in");
       router.push(response.data.user.role === "ADMIN" ? "/admin/dashboard" : next);
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Unable to sign in"));
+    } finally {
+      setIsSubmitting(false);
     }
-  });
+  };
 
   return (
     <PageShell>
@@ -61,8 +64,18 @@ export default function LoginPage() {
         <div className="rounded-[32px] bg-white p-8 shadow-card">
           <h1 className="font-display text-4xl text-ink">Login</h1>
           <form onSubmit={onSubmit} className="mt-8 space-y-4">
-            <Input placeholder="Email" autoComplete="email" {...register("email")} />
-            {errors.email ? <p className="text-sm text-red-500">{errors.email.message}</p> : null}
+            <Input
+              placeholder="Email"
+              autoComplete="email"
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                if (errors.email) {
+                  setErrors((current) => ({ ...current, email: undefined }));
+                }
+              }}
+            />
+            {errors.email ? <p className="text-sm text-red-500">{errors.email}</p> : null}
             <div className="space-y-2">
               <div className="relative">
                 <Input
@@ -70,7 +83,13 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   className="pr-20"
-                  {...register("password")}
+                  value={password}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    if (errors.password) {
+                      setErrors((current) => ({ ...current, password: undefined }));
+                    }
+                  }}
                 />
                 <button
                   type="button"
@@ -80,7 +99,7 @@ export default function LoginPage() {
                   {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
-              {errors.password ? <p className="text-sm text-red-500">{errors.password.message}</p> : null}
+              {errors.password ? <p className="text-sm text-red-500">{errors.password}</p> : null}
             </div>
             <Button disabled={isSubmitting} className="w-full">
               {isSubmitting ? "Signing in..." : "Login"}
@@ -95,11 +114,11 @@ export default function LoginPage() {
             <p className="mt-1">Enter your email above, then resend the verification link.</p>
             <button
               type="button"
-              disabled={!resendEmail || resending}
+              disabled={!email.trim() || resending}
               onClick={async () => {
                 setResending(true);
                 try {
-                  await api.post("/auth/resend-verification", { email: resendEmail });
+                  await api.post("/auth/resend-verification", { email: email.trim() });
                   toast.success("If the account exists, a verification email has been sent.");
                 } catch (error) {
                   toast.error(getApiErrorMessage(error, "Unable to resend verification email"));

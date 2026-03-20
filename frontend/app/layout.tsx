@@ -1,9 +1,13 @@
 import type { Metadata, Viewport } from "next";
+import dynamic from "next/dynamic";
 import "./globals.css";
-import { Toaster } from "sonner";
-import { AuthBootstrap } from "@/components/layout/auth-bootstrap";
-import { PwaRegister } from "@/components/pwa/pwa-register";
-import { ThemeBootstrap } from "@/components/theme/theme-bootstrap";
+
+const ClientBootstraps = dynamic(
+  () => import("@/components/layout/client-bootstraps").then((module) => module.ClientBootstraps),
+  { ssr: false }
+);
+
+const themeBootstrapScript = `(function(){try{var key="sparekart-site-theme";var savedTheme=window.localStorage.getItem(key);var theme=savedTheme==="dark"||savedTheme==="light"?savedTheme:"light";document.documentElement.dataset.theme=theme;document.body.dataset.theme=theme;document.documentElement.style.colorScheme=theme;}catch(e){}})();`;
 
 export const metadata: Metadata = {
   title: "SpareKart | Mobile Spare Parts Store",
@@ -36,11 +40,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans" suppressHydrationWarning>
-        <ThemeBootstrap />
-        <AuthBootstrap />
-        <PwaRegister />
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
         {children}
-        <Toaster richColors position="top-right" />
+        <ClientBootstraps />
       </body>
     </html>
   );
