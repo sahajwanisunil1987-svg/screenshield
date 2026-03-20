@@ -3,7 +3,7 @@ import nextDynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { PageShell } from "@/components/layout/page-shell";
-import { fetchApi } from "@/lib/server-api";
+import { fetchApiOrFallback } from "@/lib/server-api";
 import { buildMetadata } from "@/lib/seo";
 import { Brand, Category, MobileModel } from "@/types";
 
@@ -76,9 +76,9 @@ export const metadata: Metadata = buildMetadata({
 
 export default async function HomePage() {
   const [brands, categories, models] = await Promise.all([
-    fetchApi<Brand[]>("/brands"),
-    fetchApi<Category[]>("/categories"),
-    fetchApi<MobileModel[]>("/models")
+    fetchApiOrFallback<Brand[]>("/brands", []),
+    fetchApiOrFallback<Category[]>("/categories", []),
+    fetchApiOrFallback<MobileModel[]>("/models", [])
   ]);
 
   return (

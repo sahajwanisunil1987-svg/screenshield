@@ -20,3 +20,12 @@ export async function fetchApi<T>(path: string, init?: RequestInit): Promise<T> 
 
   return response.json();
 }
+
+export async function fetchApiOrFallback<T>(path: string, fallback: T, init?: RequestInit): Promise<T> {
+  try {
+    return await fetchApi<T>(path, init);
+  } catch (error) {
+    console.warn(`[server-api] Falling back for ${path}`, error);
+    return fallback;
+  }
+}

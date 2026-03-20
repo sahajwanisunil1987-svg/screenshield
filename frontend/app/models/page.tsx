@@ -3,7 +3,7 @@ import Image from "next/image";
 import { PageShell } from "@/components/layout/page-shell";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { buildMetadata } from "@/lib/seo";
-import { fetchApi } from "@/lib/server-api";
+import { fetchApiOrFallback } from "@/lib/server-api";
 import { MobileModel } from "@/types";
 
 export const revalidate = 300;
@@ -15,7 +15,7 @@ export const metadata: Metadata = buildMetadata({
 });
 
 export default async function ModelsPage() {
-  const models = await fetchApi<MobileModel[]>("/models");
+  const models = await fetchApiOrFallback<MobileModel[]>("/models", []);
 
   return (
     <PageShell>
