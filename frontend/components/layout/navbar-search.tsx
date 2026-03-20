@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { SearchSuggestion } from "@/types";
 
 const SearchAutocomplete = dynamic(
@@ -36,28 +36,14 @@ export function NavbarSearch({
   const [search, setSearch] = useState("");
   const [searchUiReady, setSearchUiReady] = useState(false);
 
-  useEffect(() => {
-    const w = window as Window & {
-      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
-      cancelIdleCallback?: (id: number) => void;
-    };
-    const canUseIdleCallback = typeof w.requestIdleCallback === "function";
-
-    const schedule = canUseIdleCallback
-      ? w.requestIdleCallback!(() => setSearchUiReady(true), { timeout: 1200 })
-      : window.setTimeout(() => setSearchUiReady(true), 250);
-
-    return () => {
-      if (canUseIdleCallback && typeof w.cancelIdleCallback === "function") {
-        w.cancelIdleCallback(schedule as number);
-        return;
-      }
-
-      window.clearTimeout(schedule as number);
-    };
-  }, []);
+  const enableSearchUi = () => setSearchUiReady(true);
 
   const onSearch = () => {
+    if (!searchUiReady) {
+      enableSearchUi();
+      return;
+    }
+
     const params = new URLSearchParams();
     if (search.trim()) {
       params.set("search", search.trim());
@@ -68,7 +54,7 @@ export function NavbarSearch({
   };
 
   return (
-    <div className={wrapperClassName} role="search">
+    <div className={wrapperClassName} role="search" onPointerEnter={enableSearchUi} onFocusCapture={enableSearchUi}>
       <div className="min-w-0 flex-1">
         {searchUiReady ? (
           <SearchAutocomplete
@@ -84,7 +70,7 @@ export function NavbarSearch({
             dropdownClassName={dropdownClassName}
           />
         ) : (
-          <SearchAutocompleteFallback placeholder={placeholder} onActivate={() => setSearchUiReady(true)} />
+          <SearchAutocompleteFallback placeholder={placeholder} onActivate={enableSearchUi} />
         )}
       </div>
       <button type="button" onClick={onSearch} className={buttonClassName}>
