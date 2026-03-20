@@ -13,8 +13,8 @@ import { useAuthStore } from "@/store/auth-store";
 import { useCartStore } from "@/store/cart-store";
 import { useWishlistStore } from "@/store/wishlist-store";
 
-const ProductCard = dynamic(
-  () => import("@/components/products/product-card").then((module) => module.ProductCard),
+const WishlistProductCard = dynamic(
+  () => import("@/components/products/wishlist-product-card").then((module) => module.WishlistProductCard),
   {
     loading: () => (
       <div className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-panel shadow-card">
@@ -113,7 +113,7 @@ export default function WishlistPage() {
           ) : items.length ? (
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {items.map((item) => (
-                <ProductCard key={item.id} product={item} />
+                <WishlistProductCard key={item.id} product={item} />
               ))}
             </div>
           ) : (
