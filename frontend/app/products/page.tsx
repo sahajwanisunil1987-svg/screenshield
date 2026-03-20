@@ -3,8 +3,7 @@ import Link from "next/link";
 import { PageShell } from "@/components/layout/page-shell";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ProductCardServer } from "@/components/products/product-card-server";
-import { CatalogFilters } from "@/components/products/catalog-filters";
-import { CatalogSort } from "@/components/products/catalog-sort";
+import { CatalogFiltersForm } from "@/components/products/catalog-filters-form";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { buildMetadata } from "@/lib/seo";
 import { fetchApi } from "@/lib/server-api";
@@ -119,7 +118,16 @@ export default async function ProductsPage({
           </div>
         </div>
         <div className="mt-10">
-          <CatalogFilters brands={brands} models={models} categories={categories} />
+          <CatalogFiltersForm
+            brands={brands}
+            models={models}
+            categories={categories}
+            selectedBrand={searchParams.brand}
+            selectedModel={searchParams.model}
+            selectedCategory={searchParams.category}
+            search={searchParams.search}
+            sort={searchParams.sort}
+          />
         </div>
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -139,12 +147,9 @@ export default async function ProductsPage({
               </span>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-4">
-            <p className="text-sm text-slate">
-              Showing {startResult}-{endResult} of {products.pagination.total} result(s)
-            </p>
-            <CatalogSort value={searchParams.sort} />
-          </div>
+          <p className="text-sm text-slate">
+            Showing {startResult}-{endResult} of {products.pagination.total} result(s)
+          </p>
         </div>
         <div className="mt-10">
           {products.items.length ? (
