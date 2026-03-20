@@ -6,7 +6,7 @@ import { buildMetadata } from "@/lib/seo";
 import { fetchApi } from "@/lib/server-api";
 import { Brand } from "@/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export const metadata: Metadata = buildMetadata({
   title: "Mobile Brands",

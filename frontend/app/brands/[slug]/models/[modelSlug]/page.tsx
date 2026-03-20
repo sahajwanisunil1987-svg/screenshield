@@ -5,7 +5,7 @@ type BrandModelPageProps = {
   params: { slug: string; modelSlug: string };
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export async function generateMetadata({ params }: BrandModelPageProps): Promise<Metadata> {
   return generateModelDetailMetadata({ slug: params.modelSlug, brandSlug: params.slug });

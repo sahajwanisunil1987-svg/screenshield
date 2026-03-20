@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,14 +9,17 @@ import { fetchApi } from "@/lib/server-api";
 import { buildMetadata } from "@/lib/seo";
 import { Brand, MobileModel } from "@/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type BrandPageProps = {
   params: { slug: string };
 };
 
+const getBrands = cache(() => fetchApi<Brand[]>("/brands", { next: { revalidate: 1800 } }));
+const getModels = cache(() => fetchApi<MobileModel[]>("/models", { next: { revalidate: 1800 } }));
+
 export async function generateMetadata({ params }: BrandPageProps): Promise<Metadata> {
-  const brands = await fetchApi<Brand[]>("/brands", { cache: "no-store" });
+  const brands = await getBrands();
   const brand = brands.find((entry) => entry.slug === params.slug);
 
   if (!brand) {
@@ -32,10 +36,7 @@ export async function generateMetadata({ params }: BrandPageProps): Promise<Meta
 }
 
 export default async function BrandPage({ params }: BrandPageProps) {
-  const [brands, models] = await Promise.all([
-    fetchApi<Brand[]>("/brands", { cache: "no-store" }),
-    fetchApi<MobileModel[]>("/models", { cache: "no-store" })
-  ]);
+  const [brands, models] = await Promise.all([getBrands(), getModels()]);
 
   const brand = brands.find((entry) => entry.slug === params.slug);
 

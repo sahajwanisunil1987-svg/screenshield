@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -9,12 +10,17 @@ import { buildMetadata } from "@/lib/seo";
 import { formatCurrency } from "@/lib/utils";
 import { MobileModel, Product, ProductListResponse } from "@/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type ModelPageParams = {
   slug: string;
   brandSlug?: string;
 };
+
+const getModels = cache(() => fetchApi<MobileModel[]>("/models", { next: { revalidate: 1800 } }));
+const getProductsForModel = cache((slug: string) =>
+  fetchApi<ProductListResponse>(`/products?model=${slug}&limit=40`, { next: { revalidate: 300 } })
+);
 
 const categoryDescriptions: Record<string, string> = {
   "lcd-display": "Display combos, touch panels, and screen assemblies for common repair jobs.",
@@ -115,7 +121,7 @@ function ModelPartTile({ product }: { product: Product }) {
 }
 
 export async function generateModelDetailMetadata(params: ModelPageParams): Promise<Metadata> {
-  const models = await fetchApi<MobileModel[]>("/models", { cache: "no-store" });
+  const models = await getModels();
   const model = models.find((entry) => entry.slug === params.slug);
 
   if (model && params.brandSlug && model.brand?.slug !== params.brandSlug) {
@@ -142,8 +148,8 @@ export async function generateModelDetailMetadata(params: ModelPageParams): Prom
 
 export async function ModelDetailPageContent(params: ModelPageParams) {
   const [models, productsResponse] = await Promise.all([
-    fetchApi<MobileModel[]>("/models", { cache: "no-store" }),
-    fetchApi<ProductListResponse>(`/products?model=${params.slug}&limit=40`, { cache: "no-store" })
+    getModels(),
+    getProductsForModel(params.slug)
   ]);
 
   const model = models.find((entry) => entry.slug === params.slug);

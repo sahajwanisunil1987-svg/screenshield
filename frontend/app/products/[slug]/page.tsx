@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -13,15 +14,19 @@ import { fetchApi } from "@/lib/server-api";
 import { formatCurrency } from "@/lib/utils";
 import { Product, Review } from "@/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type ProductPayload = {
   product: Product & { reviews: Review[] };
   relatedProducts: Product[];
 };
 
+const getProductPayload = cache((slug: string) =>
+  fetchApi<ProductPayload>(`/products/${slug}`, { next: { revalidate: 300 } })
+);
+
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const payload = await fetchApi<ProductPayload>(`/products/${params.slug}`, { cache: "no-store" });
+  const payload = await getProductPayload(params.slug);
   const product = payload.product;
 
   if (!product) {
@@ -59,7 +64,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function ProductDetailsPage({ params }: { params: { slug: string } }) {
-  const payload = await fetchApi<ProductPayload>(`/products/${params.slug}`, { cache: "no-store" });
+  const payload = await getProductPayload(params.slug);
 
   if (!payload.product) {
     notFound();

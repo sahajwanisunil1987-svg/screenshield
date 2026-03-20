@@ -1,11 +1,18 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { ChevronDown, FileText, MessageSquareQuote, SlidersHorizontal, Smartphone } from "lucide-react";
-import { ReviewPanel } from "@/components/products/review-panel";
 import { MobileModel, Review } from "@/types";
 
 type TabKey = "overview" | "specs" | "compatibility" | "reviews";
+
+const ReviewPanel = dynamic(
+  () => import("@/components/products/review-panel").then((module) => module.ReviewPanel),
+  {
+    loading: () => <div className="rounded-[24px] border border-slate-200 bg-white p-4 text-sm text-slate">Loading reviews...</div>
+  }
+);
 
 const tabs: Array<{
   key: TabKey;

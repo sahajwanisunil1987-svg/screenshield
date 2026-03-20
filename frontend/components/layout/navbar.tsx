@@ -1,258 +1,28 @@
-"use client";
-
-import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Bell, GitCompareArrows, Heart, LogOut, Menu, Moon, Package, ShoppingBag, Sun, Truck, User2 } from "lucide-react";
-import { useCartStore } from "@/store/cart-store";
-import { useCompareStore } from "@/store/compare-store";
-import { useWishlistStore } from "@/store/wishlist-store";
-import { useAuthStore } from "@/store/auth-store";
-import { api, authHeaders } from "@/lib/api";
-import { SearchSuggestion } from "@/types";
-import { useTheme } from "@/hooks/use-theme";
-const SearchAutocomplete = dynamic(
-  () => import("@/components/ui/search-autocomplete").then((module) => module.SearchAutocomplete),
-  {
-    ssr: false,
-    loading: () => <div className="h-[50px] w-full rounded-2xl border border-white/10 bg-white/5" />
-  }
-);
+import { NavbarControls } from "./navbar-controls";
+import { NavbarSearch } from "./navbar-search";
 
 export function Navbar() {
-  const router = useRouter();
-  const [search, setSearch] = useState("");
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const items = useCartStore((state) => state.items);
-  const cartHydrated = useCartStore((state) => state.hasHydrated);
-  const compareItems = useCompareStore((state) => state.items);
-  const compareHydrated = useCompareStore((state) => state.hasHydrated);
-  const wishlist = useWishlistStore((state) => state.items);
-  const wishlistHydrated = useWishlistStore((state) => state.hasHydrated);
-  const token = useAuthStore((state) => state.token);
-  const user = useAuthStore((state) => state.user);
-  const clearAuth = useAuthStore((state) => state.clearAuth);
-  const cartCount = cartHydrated ? items.length : 0;
-  const compareCount = compareHydrated ? compareItems.length : 0;
-  const wishlistCount = wishlistHydrated ? wishlist.length : 0;
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const { hydrated: themeHydrated, isDark, toggleTheme } = useTheme();
-
-  useEffect(() => {
-    if (user?.role !== "CUSTOMER" || !token) {
-      setUnreadNotifications(0);
-      return;
-    }
-
-    api
-      .get<{ unreadCount: number }>("/account/notifications", authHeaders(token))
-      .then((response) => setUnreadNotifications(response.data.unreadCount ?? 0))
-      .catch(() => setUnreadNotifications(0));
-  }, [token, user?.id, user?.role]);
-
-  const onSearch = () => {
-    const params = new URLSearchParams();
-    if (search.trim()) {
-      params.set("search", search.trim());
-    }
-
-    router.push(`/products${params.toString() ? `?${params.toString()}` : ""}`);
-  };
-
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-ink/90 shadow-[0_18px_40px_rgba(8,17,31,0.18)] backdrop-blur">
       <div className="mx-auto max-w-7xl px-4 py-4 text-white sm:px-6 lg:px-8">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Link href="/" className="font-display text-2xl tracking-tight">
             SpareKart
           </Link>
-          <div
-            className="hidden flex-1 items-center gap-3 md:flex"
-            role="search"
-          >
-            <div className="flex-1">
-              <SearchAutocomplete
-                value={search}
-                onChange={setSearch}
-                onSubmit={() => onSearch()}
-                onSuggestionSelect={(suggestion: SearchSuggestion) => router.push(`/products/${suggestion.slug}`)}
-                placeholder="Search by brand, model, part, or SKU"
-                inputClassName="border-white/10 bg-white/5 text-white placeholder:text-white/45 focus:border-white/20 focus:ring-white/10"
-                dropdownClassName="theme-surface"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={onSearch}
-              className="rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent/90"
-            >
-              Search
-            </button>
+          <div className="hidden min-w-0 flex-1 md:block">
+            <NavbarSearch
+              placeholder="Search by brand, model, part, or SKU"
+              buttonLabel="Search"
+              wrapperClassName="flex items-center gap-3"
+              inputClassName="border-white/10 bg-white/5 text-white placeholder:text-white/45 focus:border-white/20 focus:ring-white/10"
+              dropdownClassName="theme-surface"
+              buttonClassName="rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-accent/90"
+            />
           </div>
-          <nav className="ml-auto flex items-center gap-1 text-sm sm:gap-3">
-            <button
-              type="button"
-              onClick={() => setMobileSearchOpen((current) => !current)}
-              className="rounded-full p-2 hover:bg-white/10 md:hidden"
-              aria-label="Toggle search"
-            >
-              <SearchSuggestionIcon />
-            </button>
-            <Link href="/track-order" className="inline-flex items-center gap-2 rounded-full p-2 hover:bg-white/10 sm:px-4 sm:py-2">
-              <Truck className="h-5 w-5 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Track</span>
-            </Link>
-            <Link href="/wishlist" className="relative rounded-full p-2 hover:bg-white/10">
-              <Heart className="h-5 w-5" />
-              <span className="absolute -right-1 -top-1 rounded-full bg-ember px-1.5 text-[10px]">
-                {wishlistCount}
-              </span>
-            </Link>
-            <Link href="/cart" className="relative rounded-full p-2 hover:bg-white/10">
-              <ShoppingBag className="h-5 w-5" />
-              <span className="absolute -right-1 -top-1 rounded-full bg-accent px-1.5 text-[10px]">
-                {cartCount}
-              </span>
-            </Link>
-            <Link href={user ? "/account" : "/login"} className="inline-flex items-center gap-2 rounded-full p-2 hover:bg-white/10 sm:px-4 sm:py-2">
-              <User2 className="h-5 w-5 sm:hidden" />
-              <span className="hidden sm:inline">{user ? "Account" : "Login"}</span>
-            </Link>
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen((current) => !current)}
-              className="rounded-full p-2 hover:bg-white/10 md:hidden"
-              aria-label="Open menu"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <div className="hidden items-center gap-1 sm:flex sm:gap-3">
-              {user?.role === "CUSTOMER" ? (
-                <>
-                  <Link href="/my-orders" className="inline-flex items-center gap-2 rounded-full p-2 hover:bg-white/10 lg:px-4 lg:py-2">
-                    <Package className="h-5 w-5 lg:hidden" />
-                    <span className="hidden lg:inline">My Orders</span>
-                  </Link>
-                  <Link href="/notifications" className="relative inline-flex items-center gap-2 rounded-full p-2 hover:bg-white/10 lg:px-4 lg:py-2">
-                    <Bell className="h-5 w-5 lg:hidden" />
-                    <span className="hidden lg:inline">Notifications</span>
-                    {unreadNotifications > 0 ? <span className="absolute -right-1 -top-1 rounded-full bg-ember px-1.5 text-[10px] text-white">{unreadNotifications}</span> : null}
-                  </Link>
-                </>
-              ) : null}
-              <Link href="/compare" className="relative rounded-full p-2 hover:bg-white/10">
-                <GitCompareArrows className="h-5 w-5" />
-                <span className="absolute -right-1 -top-1 rounded-full bg-white px-1.5 text-[10px] text-ink">
-                  {compareCount}
-                </span>
-              </Link>
-              {user ? (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await api.post("/auth/logout").catch(() => null);
-                    clearAuth();
-                    router.replace("/");
-                  }}
-                  className="rounded-full p-2 hover:bg-white/10"
-                  aria-label="Logout"
-                >
-                  <LogOut className="h-5 w-5" />
-                </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className="rounded-full p-2 hover:bg-white/10"
-                aria-label="Toggle theme"
-              >
-                {themeHydrated && isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </button>
-            </div>
-          </nav>
+          <NavbarControls />
         </div>
-        {mobileSearchOpen ? (
-          <div
-            className="mt-4 flex items-center gap-3 md:hidden"
-            role="search"
-          >
-            <div className="flex-1">
-              <SearchAutocomplete
-                value={search}
-                onChange={setSearch}
-                onSubmit={() => {
-                  onSearch();
-                  setMobileSearchOpen(false);
-                }}
-                onSuggestionSelect={(suggestion: SearchSuggestion) => {
-                  setMobileSearchOpen(false);
-                  router.push(`/products/${suggestion.slug}`);
-                }}
-                placeholder="Search parts or SKU"
-                inputClassName="border-white/10 bg-white/5 text-white placeholder:text-white/45 focus:border-white/20 focus:ring-white/10"
-                dropdownClassName="theme-surface"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                onSearch();
-                setMobileSearchOpen(false);
-              }}
-              className="rounded-full bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent/90"
-            >
-              Go
-            </button>
-          </div>
-        ) : null}
-        {mobileMenuOpen ? (
-          <div className="mt-3 grid grid-cols-4 gap-2 rounded-[24px] border border-white/10 bg-white/5 p-3 text-white md:hidden">
-            {user?.role === "CUSTOMER" ? (
-              <>
-                <Link href="/my-orders" onClick={() => setMobileMenuOpen(false)} className="flex flex-col items-center gap-2 rounded-2xl p-3 text-xs font-semibold hover:bg-white/10">
-                  <Package className="h-5 w-5" />
-                  <span>Orders</span>
-                </Link>
-                <Link href="/notifications" onClick={() => setMobileMenuOpen(false)} className="relative flex flex-col items-center gap-2 rounded-2xl p-3 text-xs font-semibold hover:bg-white/10">
-                  <Bell className="h-5 w-5" />
-                  <span>Alerts</span>
-                  {unreadNotifications > 0 ? <span className="absolute right-2 top-2 rounded-full bg-ember px-1.5 text-[10px] text-white">{unreadNotifications}</span> : null}
-                </Link>
-              </>
-            ) : null}
-            <Link href="/compare" onClick={() => setMobileMenuOpen(false)} className="relative flex flex-col items-center gap-2 rounded-2xl p-3 text-xs font-semibold hover:bg-white/10">
-              <GitCompareArrows className="h-5 w-5" />
-              <span>Compare</span>
-              <span className="absolute right-2 top-2 rounded-full bg-white px-1.5 text-[10px] text-ink">{compareCount}</span>
-            </Link>
-            <button type="button" onClick={() => { toggleTheme(); setMobileMenuOpen(false); }} className="flex flex-col items-center gap-2 rounded-2xl p-3 text-xs font-semibold hover:bg-white/10">
-              {themeHydrated && isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              <span>Theme</span>
-            </button>
-            {user ? (
-              <button
-                type="button"
-                onClick={async () => {
-                  await api.post("/auth/logout").catch(() => null);
-                  clearAuth();
-                  setMobileMenuOpen(false);
-                  router.replace("/");
-                }}
-                className="flex flex-col items-center gap-2 rounded-2xl p-3 text-xs font-semibold hover:bg-white/10"
-              >
-                <LogOut className="h-5 w-5" />
-                <span>Logout</span>
-              </button>
-            ) : null}
-          </div>
-        ) : null}
       </div>
     </header>
   );
-}
-
-function SearchSuggestionIcon() {
-  return <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]"><circle cx="11" cy="11" r="6" /><path d="m20 20-3.5-3.5" /></svg>;
 }

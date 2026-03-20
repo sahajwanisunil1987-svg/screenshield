@@ -7,7 +7,7 @@ import { fetchApi } from "@/lib/server-api";
 import { buildMetadata } from "@/lib/seo";
 import { Brand, Category, MobileModel } from "@/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 const HeroSearch = nextDynamic(
   () => import("@/components/home/hero-search").then((module) => module.HeroSearch),
@@ -76,9 +76,9 @@ export const metadata: Metadata = buildMetadata({
 
 export default async function HomePage() {
   const [brands, categories, models] = await Promise.all([
-    fetchApi<Brand[]>("/brands", { cache: "no-store" }),
-    fetchApi<Category[]>("/categories", { cache: "no-store" }),
-    fetchApi<MobileModel[]>("/models", { cache: "no-store" })
+    fetchApi<Brand[]>("/brands"),
+    fetchApi<Category[]>("/categories"),
+    fetchApi<MobileModel[]>("/models")
   ]);
 
   return (

@@ -10,7 +10,7 @@ import { buildMetadata } from "@/lib/seo";
 import { fetchApi } from "@/lib/server-api";
 import { Brand, Category, MobileModel, ProductListResponse } from "@/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export async function generateMetadata({
   searchParams
@@ -41,10 +41,10 @@ export default async function ProductsPage({
   if (searchParams.page) params.set("page", searchParams.page);
 
   const [products, brands, models, categories] = await Promise.all([
-    fetchApi<ProductListResponse>(`/products?${params.toString()}`, { cache: "no-store", next: { revalidate: 0 } }),
-    fetchApi<Brand[]>("/brands", { cache: "no-store", next: { revalidate: 0 } }),
-    fetchApi<MobileModel[]>("/models", { cache: "no-store", next: { revalidate: 0 } }),
-    fetchApi<Category[]>("/categories", { cache: "no-store", next: { revalidate: 0 } })
+    fetchApi<ProductListResponse>(`/products?${params.toString()}`, { next: { revalidate: 300 } }),
+    fetchApi<Brand[]>("/brands", { next: { revalidate: 1800 } }),
+    fetchApi<MobileModel[]>("/models", { next: { revalidate: 1800 } }),
+    fetchApi<Category[]>("/categories", { next: { revalidate: 1800 } })
   ]);
 
   const activeFilters = [
