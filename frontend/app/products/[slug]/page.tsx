@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BadgeCheck, ShieldCheck, Star, Truck } from "lucide-react";
 import { PageShell } from "@/components/layout/page-shell";
-import { ProductCard } from "@/components/products/product-card";
+import { ProductCardServer } from "@/components/products/product-card-server";
 import { ProductGallery } from "@/components/products/product-gallery";
 import { ProductActions } from "./product-actions";
 import { ProductDetailTabs } from "./product-detail-tabs";
@@ -243,7 +243,7 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
           <h2 className="font-display text-2xl text-ink sm:text-3xl">Related products</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {payload.relatedProducts.map((item) => (
-              <ProductCard key={item.id} product={item} />
+              <ProductCardServer key={item.id} product={item} />
             ))}
           </div>
         </section>

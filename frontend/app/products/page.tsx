@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageShell } from "@/components/layout/page-shell";
 import { EmptyState } from "@/components/ui/empty-state";
-import { ProductCard } from "@/components/products/product-card";
+import { ProductCardServer } from "@/components/products/product-card-server";
 import { CatalogFilters } from "@/components/products/catalog-filters";
 import { CatalogSort } from "@/components/products/catalog-sort";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -151,7 +151,7 @@ export default async function ProductsPage({
             <>
               <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {products.items.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCardServer key={product.id} product={product} />
                 ))}
               </div>
               {totalPages > 1 ? (
