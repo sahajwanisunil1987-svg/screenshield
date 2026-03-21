@@ -134,12 +134,12 @@ export default function AccountPage() {
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:w-[420px]">
-              <div className="rounded-[24px] bg-white/80 p-4 shadow-sm">
+              <div className="rounded-[24px] border border-slate-200/80 bg-panel p-4 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Saved addresses</p>
                 <p className="mt-2 text-2xl font-semibold text-ink">{addresses.length}</p>
                 <p className="mt-1 text-sm text-slate">{defaultAddress ? "Default address ready for checkout" : "Add a default address"}</p>
               </div>
-              <div className="rounded-[24px] bg-white/80 p-4 shadow-sm">
+              <div className="rounded-[24px] border border-slate-200/80 bg-panel p-4 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Account email</p>
                 <p className="mt-2 truncate text-base font-semibold text-ink">{user?.email ?? "Loading..."}</p>
                 <p className="mt-1 text-sm text-slate">Used for order updates and verification</p>
@@ -152,7 +152,7 @@ export default function AccountPage() {
               <Link
                 key={action.href}
                 href={action.href}
-                className="flex items-center gap-3 rounded-[22px] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-ink transition hover:border-accent/25 hover:bg-accentSoft"
+                className="flex items-center gap-3 rounded-[22px] border border-slate-200/80 bg-panel px-4 py-3 text-sm font-semibold text-ink transition hover:border-accent/30 hover:bg-accentSoft"
               >
                 <action.icon className="h-4.5 w-4.5 text-accent" />
                 {action.label}
@@ -184,7 +184,7 @@ export default function AccountPage() {
                   />
                 </div>
               </div>
-              <div className="rounded-[22px] border border-slate-200 bg-white p-4 text-sm text-slate">
+              <div className="rounded-[22px] border border-slate-200/80 bg-panel p-4 text-sm text-slate">
                 <div className="flex items-start gap-3">
                   <ShieldCheck className="mt-0.5 h-4.5 w-4.5 text-accent" />
                   <div>
@@ -217,7 +217,7 @@ export default function AccountPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-semibold text-ink">{address.fullName}</p>
                           {address.isDefault ? (
-                            <span className="rounded-full bg-emerald-100 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                            <span className="rounded-full bg-emerald-100 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200">
                               Default
                             </span>
                           ) : null}
@@ -232,14 +232,14 @@ export default function AccountPage() {
                         <button
                           type="button"
                           onClick={() => startEditingAddress(address)}
-                          className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-ink transition hover:border-accent/25 hover:bg-accentSoft"
+                          className="rounded-full border border-slate-200/80 bg-panel px-3 py-2 text-xs font-semibold text-ink transition hover:border-accent/25 hover:bg-accentSoft"
                         >
                           Edit
                         </button>
                         <button
                           type="button"
                           onClick={() => removeAddress(address.id)}
-                          className="rounded-full border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+                          className="rounded-full border border-red-200/80 bg-panel px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-500/30 dark:text-red-300 dark:hover:bg-red-500/10"
                         >
                           Delete
                         </button>
@@ -262,7 +262,7 @@ export default function AccountPage() {
                   <p className="mt-1 text-sm text-slate">Separate recipient details from location details for easier updates.</p>
                 </div>
                 {editingId ? (
-                  <span className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-accent">Editing current address</span>
+                  <span className="rounded-full border border-accent/20 bg-accentSoft px-3 py-1.5 text-xs font-semibold text-accent">Editing current address</span>
                 ) : null}
               </div>
 
