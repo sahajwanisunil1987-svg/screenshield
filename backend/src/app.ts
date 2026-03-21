@@ -12,7 +12,8 @@ import router from "./routes/index.js";
 
 export const app = express();
 
-const allowedOrigins = Array.from(new Set([env.FRONTEND_URL, "http://localhost:3000", "http://localhost:3001"]));
+const allowedOrigins = Array.from(new Set([env.FRONTEND_URL, "http://localhost:3000", "http://localhost:3001", "https://www.purjix.com"
+, "https://purjix.com"]));
 
 app.set("trust proxy", 1);
 
