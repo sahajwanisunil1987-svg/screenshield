@@ -98,15 +98,15 @@ export default function MyOrdersPage() {
             <h1 className="font-display text-4xl text-ink">My orders</h1>
             <p className="mt-3 max-w-2xl text-sm text-slate">Review order status, shipment details, invoices, and request cancellations before dispatch locks in.</p>
           </div>
-          <Link href="/account" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-ink transition hover:bg-white">Manage account</Link>
+          <Link href="/account" className="rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm font-semibold text-ink transition hover:border-accent/25 hover:bg-accentSoft">Manage account</Link>
         </div>
         <div className="mt-10 space-y-4">
           {orders.length ? (
             orders.map((order) => (
-              <div key={order.id} className="space-y-5 rounded-[28px] bg-white p-6 shadow-card">
+              <div key={order.id} className="theme-surface space-y-5 rounded-[28px] p-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-ink">{order.orderNumber}</p>
+                    <p className="text-lg font-semibold text-ink">{order.orderNumber}</p>
                     <p className="text-sm text-slate">{formatDate(order.createdAt)}</p>
                   </div>
                   <div className="text-right">
@@ -115,7 +115,7 @@ export default function MyOrdersPage() {
                       <span className="rounded-full bg-accentSoft px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-accent">
                         {order.status}
                       </span>
-                      <span className="rounded-full bg-[#f5f8fb] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate">
+                      <span className="rounded-full border border-slate-200/80 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate">
                         {getCustomerPaymentLabel(order)}
                       </span>
                       {order.cancelRequestStatus === "PENDING" ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">Cancel requested</span> : null}
@@ -129,8 +129,8 @@ export default function MyOrdersPage() {
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   {order.items.map((item) => (
-                    <div key={item.id} className="rounded-2xl bg-[#f5f8fb] p-4">
-                      <p className="font-medium text-ink">{item.productName}</p>
+                    <div key={item.id} className="rounded-2xl border border-slate-200/80 bg-panel p-4 shadow-sm">
+                      <p className="font-medium leading-6 text-ink">{item.productName}</p>
                       <p className="mt-1 text-sm text-slate">SKU {item.productSku}</p>
                       <p className="mt-1 text-sm text-slate">Qty {item.quantity}</p>
                       <p className="mt-2 text-sm font-semibold text-ink">{formatCurrency(item.totalPrice)}</p>
@@ -139,10 +139,10 @@ export default function MyOrdersPage() {
                 </div>
                 {(order.shippingCourier || order.shippingAwb || order.estimatedDeliveryAt || order.adminNotes) ? (
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Courier</p><p className="mt-2 font-semibold text-ink">{order.shippingCourier ?? "Pending"}</p></div>
-                    <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">AWB</p><p className="mt-2 font-semibold text-ink">{order.shippingAwb ?? "Pending"}</p></div>
-                    <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">ETA</p><p className="mt-2 font-semibold text-ink">{order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : "Pending"}</p></div>
-                    <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Ops note</p><p className="mt-2 font-semibold text-ink">{order.adminNotes ?? "No note yet"}</p></div>
+                    <div className="rounded-2xl border border-slate-200/80 bg-panel p-4 text-sm text-slate shadow-sm"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Courier</p><p className="mt-2 font-semibold text-ink">{order.shippingCourier ?? "Pending"}</p></div>
+                    <div className="rounded-2xl border border-slate-200/80 bg-panel p-4 text-sm text-slate shadow-sm"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">AWB</p><p className="mt-2 font-semibold text-ink">{order.shippingAwb ?? "Pending"}</p></div>
+                    <div className="rounded-2xl border border-slate-200/80 bg-panel p-4 text-sm text-slate shadow-sm"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">ETA</p><p className="mt-2 font-semibold text-ink">{order.estimatedDeliveryAt ? formatDate(order.estimatedDeliveryAt) : "Pending"}</p></div>
+                    <div className="rounded-2xl border border-slate-200/80 bg-panel p-4 text-sm text-slate shadow-sm"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Ops note</p><p className="mt-2 font-semibold text-ink">{order.adminNotes ?? "No note yet"}</p></div>
                   </div>
                 ) : null}
                 <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate">
@@ -157,19 +157,19 @@ export default function MyOrdersPage() {
                         type="button"
                         onClick={() => downloadInvoice(order.id, order.orderNumber)}
                         disabled={downloadingId === order.id}
-                        className="inline-flex items-center gap-2 font-semibold text-slate underline disabled:cursor-not-allowed disabled:text-slate/50"
+                        className="inline-flex items-center gap-2 font-semibold text-ink underline decoration-slate-300 underline-offset-4 disabled:cursor-not-allowed disabled:text-slate/50"
                       >
                         <Download className="h-4 w-4" />
                         {downloadingId === order.id ? "Downloading..." : "Download invoice"}
                       </button>
                     ) : null}
                     {(["PENDING", "CONFIRMED"].includes(order.status) && !order.cancelRequestStatus) ? (
-                      <button type="button" onClick={() => requestCancellation(order.id)} className="font-semibold text-amber-700 underline">Request cancellation</button>
+                      <button type="button" onClick={() => requestCancellation(order.id)} className="font-semibold text-amber-700 underline decoration-amber-300 underline-offset-4">Request cancellation</button>
                     ) : null}
                     {(order.status === "DELIVERED" && !order.returnRequestStatus) ? (
-                      <button type="button" onClick={() => requestReturn(order.id)} className="font-semibold text-sky-700 underline">Request return</button>
+                      <button type="button" onClick={() => requestReturn(order.id)} className="font-semibold text-sky-700 underline decoration-sky-300 underline-offset-4">Request return</button>
                     ) : null}
-                    <Link href={`/track-order?orderNumber=${order.orderNumber}`} className="font-semibold text-accent underline">
+                    <Link href={`/track-order?orderNumber=${order.orderNumber}`} className="font-semibold text-accent underline decoration-accent/40 underline-offset-4">
                       Track order
                     </Link>
                   </div>

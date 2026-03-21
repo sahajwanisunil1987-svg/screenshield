@@ -6,11 +6,11 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-ink/90 shadow-[0_18px_40px_rgba(8,17,31,0.18)] backdrop-blur">
       <div className="mx-auto max-w-7xl px-4 py-4 text-white sm:px-6 lg:px-8">
-        <div className="flex flex-wrap items-center gap-4 lg:gap-5">
+        <div className="flex flex-wrap items-center gap-4 lg:flex-nowrap lg:gap-5">
           <Link href="/" className="shrink-0 font-display text-2xl tracking-tight sm:text-[2rem]">
             SpareKart
           </Link>
-          <div className="hidden min-w-0 flex-1 md:block">
+          <div className="hidden min-w-0 flex-1 md:block md:min-w-[320px] lg:min-w-[420px] xl:min-w-[520px]">
             <NavbarSearch
               placeholder="Search by brand, model, part, or SKU"
               buttonLabel="Search"

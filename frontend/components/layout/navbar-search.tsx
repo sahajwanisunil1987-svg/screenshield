@@ -91,10 +91,10 @@ function SearchAutocompleteFallback({
     <button
       type="button"
       onClick={onActivate}
-      className="flex h-[50px] w-full items-center rounded-2xl border border-white/10 bg-white/5 px-4 text-left text-sm text-white/45 transition hover:border-white/20 hover:bg-white/10"
+      className="flex h-[50px] w-full items-center overflow-hidden rounded-2xl border border-white/10 bg-white/5 px-4 text-left text-sm text-white/55 transition hover:border-white/20 hover:bg-white/10"
     >
       <SearchSuggestionIcon />
-      <span className="ml-3">{placeholder}</span>
+      <span className="ml-3 block truncate whitespace-nowrap">{placeholder}</span>
     </button>
   );
 }
