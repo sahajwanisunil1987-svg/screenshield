@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Bell, GitCompareArrows, Heart, LogOut, Menu, Moon, Package, ShoppingBag, Sun, Truck, User2 } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 import { useCompareStore } from "@/store/compare-store";
@@ -53,92 +53,111 @@ export function NavbarControls() {
       });
   }, [token, user?.id, user?.role]);
 
+  const handleLogout = async () => {
+    await api.post("/auth/logout").catch(() => null);
+    clearAuth();
+    setMobileMenuOpen(false);
+    router.replace("/");
+  };
+
   return (
     <>
-      <nav className="ml-auto flex items-center gap-1 text-sm sm:gap-3">
+      <nav className="ml-auto flex items-center gap-2 text-sm">
         <button
           type="button"
           onClick={() => setMobileSearchOpen((current) => !current)}
-          className="rounded-full p-2 hover:bg-white/10 md:hidden"
+          className="rounded-full border border-white/10 bg-white/5 p-2.5 transition hover:bg-white/10 md:hidden"
           aria-label="Toggle search"
         >
           <SearchSuggestionIcon />
         </button>
-        <Link href="/track-order" className="inline-flex items-center gap-2 rounded-full p-2 hover:bg-white/10 sm:px-4 sm:py-2">
-          <Truck className="h-5 w-5 sm:h-4 sm:w-4" />
-          <span className="hidden sm:inline">Track</span>
-        </Link>
-        <Link href="/wishlist" className="relative rounded-full p-2 hover:bg-white/10">
+        <Link
+          href="/wishlist"
+          className="relative rounded-full border border-white/10 bg-white/5 p-2.5 transition hover:bg-white/10 md:hidden"
+          aria-label="Wishlist"
+        >
           <Heart className="h-5 w-5" />
-          <span className="absolute -right-1 -top-1 rounded-full bg-ember px-1.5 text-[10px]">
-            {wishlistCount}
-          </span>
+          <NavCountBadge count={wishlistCount} tone="accent" />
         </Link>
-        <Link href="/cart" className="relative rounded-full p-2 hover:bg-white/10">
+        <Link
+          href="/cart"
+          className="relative rounded-full border border-white/10 bg-white/5 p-2.5 transition hover:bg-white/10 md:hidden"
+          aria-label="Cart"
+        >
           <ShoppingBag className="h-5 w-5" />
-          <span className="absolute -right-1 -top-1 rounded-full bg-accent px-1.5 text-[10px]">
-            {cartCount}
-          </span>
+          <NavCountBadge count={cartCount} tone="accent" />
         </Link>
-        <Link href={user ? "/account" : "/login"} className="inline-flex items-center gap-2 rounded-full p-2 hover:bg-white/10 sm:px-4 sm:py-2">
-          <User2 className="h-5 w-5 sm:hidden" />
-          <span className="hidden sm:inline">{user ? "Account" : "Login"}</span>
+        <Link
+          href={user ? "/account" : "/login"}
+          className="rounded-full border border-white/10 bg-white/5 p-2.5 transition hover:bg-white/10 md:hidden"
+          aria-label={user ? "Account" : "Login"}
+        >
+          <User2 className="h-5 w-5" />
         </Link>
         <button
           type="button"
           onClick={() => setMobileMenuOpen((current) => !current)}
-          className="rounded-full p-2 hover:bg-white/10 md:hidden"
+          className="rounded-full border border-white/10 bg-white/5 p-2.5 transition hover:bg-white/10 md:hidden"
           aria-label="Open menu"
         >
           <Menu className="h-5 w-5" />
         </button>
-        <div className="hidden items-center gap-1 sm:flex sm:gap-3">
-          {user?.role === "CUSTOMER" ? (
-            <>
-              <Link href="/my-orders" className="inline-flex items-center gap-2 rounded-full p-2 hover:bg-white/10 lg:px-4 lg:py-2">
-                <Package className="h-5 w-5 lg:hidden" />
-                <span className="hidden lg:inline">My Orders</span>
-              </Link>
-              <Link href="/notifications" className="relative inline-flex items-center gap-2 rounded-full p-2 hover:bg-white/10 lg:px-4 lg:py-2">
-                <Bell className="h-5 w-5 lg:hidden" />
-                <span className="hidden lg:inline">Notifications</span>
-                {unreadNotifications > 0 ? <span className="absolute -right-1 -top-1 rounded-full bg-ember px-1.5 text-[10px] text-white">{unreadNotifications}</span> : null}
-              </Link>
-            </>
-          ) : null}
-          <Link href="/compare" className="relative rounded-full p-2 hover:bg-white/10">
-            <GitCompareArrows className="h-5 w-5" />
-            <span className="absolute -right-1 -top-1 rounded-full bg-white px-1.5 text-[10px] text-ink">
-              {compareCount}
-            </span>
-          </Link>
-          {user ? (
+
+        <div className="hidden items-center gap-2 md:flex">
+          <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1.5">
+            <IconLink href="/wishlist" label="Wishlist" count={wishlistCount} tone="accent">
+              <Heart className="h-4.5 w-4.5" />
+            </IconLink>
+            <IconLink href="/cart" label="Cart" count={cartCount} tone="accent" emphasize>
+              <ShoppingBag className="h-4.5 w-4.5" />
+            </IconLink>
+            <IconLink href="/compare" label="Compare" count={compareCount} tone="default">
+              <GitCompareArrows className="h-4.5 w-4.5" />
+            </IconLink>
+          </div>
+
+          <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1.5">
+            <TextLink href="/track-order" label="Track">
+              <Truck className="h-4.5 w-4.5" />
+            </TextLink>
+            {user?.role === "CUSTOMER" ? (
+              <>
+                <TextLink href="/my-orders" label="Orders" compact>
+                  <Package className="h-4.5 w-4.5" />
+                </TextLink>
+                <IconLink href="/notifications" label="Alerts" count={unreadNotifications} tone="accent">
+                  <Bell className="h-4.5 w-4.5" />
+                </IconLink>
+              </>
+            ) : null}
+            <TextLink href={user ? "/account" : "/login"} label={user ? "Account" : "Login"} emphasize>
+              <User2 className="h-4.5 w-4.5" />
+            </TextLink>
             <button
               type="button"
-              onClick={async () => {
-                await api.post("/auth/logout").catch(() => null);
-                clearAuth();
-                router.replace("/");
-              }}
-              className="rounded-full p-2 hover:bg-white/10"
-              aria-label="Logout"
+              onClick={toggleTheme}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-white/80 transition hover:bg-white/10 hover:text-white"
+              aria-label="Toggle theme"
             >
-              <LogOut className="h-5 w-5" />
+              {themeHydrated && isDark ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
             </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="rounded-full p-2 hover:bg-white/10"
-            aria-label="Toggle theme"
-          >
-            {themeHydrated && isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </button>
+            {user ? (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-white/80 transition hover:bg-white/10 hover:text-white"
+                aria-label="Logout"
+              >
+                <LogOut className="h-4.5 w-4.5" />
+              </button>
+            ) : null}
+          </div>
         </div>
       </nav>
+
       {mobileSearchOpen ? (
         <div className="basis-full md:hidden">
-          <div className="mt-4">
+          <div className="mt-4 rounded-[24px] border border-white/10 bg-white/5 p-3">
             <NavbarSearch
               placeholder="Search parts or SKU"
               buttonLabel="Go"
@@ -151,50 +170,182 @@ export function NavbarControls() {
           </div>
         </div>
       ) : null}
+
       {mobileMenuOpen ? (
         <div className="basis-full md:hidden">
-          <div className="mt-3 grid grid-cols-4 gap-2 rounded-[24px] border border-white/10 bg-white/5 p-3 text-white">
-            {user?.role === "CUSTOMER" ? (
-              <>
-                <Link href="/my-orders" onClick={() => setMobileMenuOpen(false)} className="flex flex-col items-center gap-2 rounded-2xl p-3 text-xs font-semibold hover:bg-white/10">
-                  <Package className="h-5 w-5" />
-                  <span>Orders</span>
-                </Link>
-                <Link href="/notifications" onClick={() => setMobileMenuOpen(false)} className="relative flex flex-col items-center gap-2 rounded-2xl p-3 text-xs font-semibold hover:bg-white/10">
-                  <Bell className="h-5 w-5" />
-                  <span>Alerts</span>
-                  {unreadNotifications > 0 ? <span className="absolute right-2 top-2 rounded-full bg-ember px-1.5 text-[10px] text-white">{unreadNotifications}</span> : null}
-                </Link>
-              </>
-            ) : null}
-            <Link href="/compare" onClick={() => setMobileMenuOpen(false)} className="relative flex flex-col items-center gap-2 rounded-2xl p-3 text-xs font-semibold hover:bg-white/10">
-              <GitCompareArrows className="h-5 w-5" />
-              <span>Compare</span>
-              <span className="absolute right-2 top-2 rounded-full bg-white px-1.5 text-[10px] text-ink">{compareCount}</span>
-            </Link>
-            <button type="button" onClick={() => { toggleTheme(); setMobileMenuOpen(false); }} className="flex flex-col items-center gap-2 rounded-2xl p-3 text-xs font-semibold hover:bg-white/10">
-              {themeHydrated && isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              <span>Theme</span>
-            </button>
+          <div className="mt-3 space-y-3 rounded-[24px] border border-white/10 bg-white/5 p-3 text-white">
+            <div>
+              <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Shopping</p>
+              <div className="mt-2 grid grid-cols-4 gap-2">
+                <MobileNavLink href="/cart" label="Cart" onClick={() => setMobileMenuOpen(false)} count={cartCount} tone="accent">
+                  <ShoppingBag className="h-5 w-5" />
+                </MobileNavLink>
+                <MobileNavLink href="/wishlist" label="Wishlist" onClick={() => setMobileMenuOpen(false)} count={wishlistCount} tone="accent">
+                  <Heart className="h-5 w-5" />
+                </MobileNavLink>
+                <MobileNavLink href="/compare" label="Compare" onClick={() => setMobileMenuOpen(false)} count={compareCount} tone="default">
+                  <GitCompareArrows className="h-5 w-5" />
+                </MobileNavLink>
+                <MobileNavLink href="/track-order" label="Track" onClick={() => setMobileMenuOpen(false)}>
+                  <Truck className="h-5 w-5" />
+                </MobileNavLink>
+              </div>
+            </div>
+
+            <div>
+              <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Account</p>
+              <div className="mt-2 grid grid-cols-4 gap-2">
+                <MobileNavLink href={user ? "/account" : "/login"} label={user ? "Account" : "Login"} onClick={() => setMobileMenuOpen(false)}>
+                  <User2 className="h-5 w-5" />
+                </MobileNavLink>
+                {user?.role === "CUSTOMER" ? (
+                  <>
+                    <MobileNavLink href="/my-orders" label="Orders" onClick={() => setMobileMenuOpen(false)}>
+                      <Package className="h-5 w-5" />
+                    </MobileNavLink>
+                    <MobileNavLink href="/notifications" label="Alerts" onClick={() => setMobileMenuOpen(false)} count={unreadNotifications} tone="accent">
+                      <Bell className="h-5 w-5" />
+                    </MobileNavLink>
+                  </>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleTheme();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="flex min-h-[78px] flex-col items-center justify-center gap-2 rounded-2xl border border-white/8 bg-white/5 p-3 text-xs font-semibold transition hover:bg-white/10"
+                >
+                  {themeHydrated && isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                  <span>Theme</span>
+                </button>
+              </div>
+            </div>
+
             {user ? (
               <button
                 type="button"
-                onClick={async () => {
-                  await api.post("/auth/logout").catch(() => null);
-                  clearAuth();
-                  setMobileMenuOpen(false);
-                  router.replace("/");
-                }}
-                className="flex flex-col items-center gap-2 rounded-2xl p-3 text-xs font-semibold hover:bg-white/10"
+                onClick={handleLogout}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm font-semibold text-rose-100 transition hover:bg-rose-500/20"
               >
-                <LogOut className="h-5 w-5" />
-                <span>Logout</span>
+                <LogOut className="h-4 w-4" />
+                Logout
               </button>
             ) : null}
           </div>
         </div>
       ) : null}
     </>
+  );
+}
+
+function IconLink({
+  href,
+  label,
+  count,
+  tone,
+  emphasize,
+  children
+}: {
+  href: string;
+  label: string;
+  count?: number;
+  tone: "accent" | "default";
+  emphasize?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`relative inline-flex items-center gap-2 rounded-full px-3 py-2 text-white/80 transition hover:bg-white/10 hover:text-white ${
+        emphasize ? "bg-white text-ink hover:bg-white/90 hover:text-ink" : ""
+      }`}
+      aria-label={label}
+    >
+      {children}
+      <span className="hidden lg:inline text-sm font-semibold">{label}</span>
+      <NavCountBadge count={count} tone={tone} />
+    </Link>
+  );
+}
+
+function TextLink({
+  href,
+  label,
+  children,
+  compact,
+  emphasize
+}: {
+  href: string;
+  label: string;
+  children: ReactNode;
+  compact?: boolean;
+  emphasize?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition ${
+        emphasize
+          ? "bg-white text-ink hover:bg-white/90"
+          : "text-white/80 hover:bg-white/10 hover:text-white"
+      }`}
+    >
+      {children}
+      <span className={compact ? "hidden xl:inline" : "hidden lg:inline"}>{label}</span>
+    </Link>
+  );
+}
+
+function MobileNavLink({
+  href,
+  label,
+  onClick,
+  count,
+  tone,
+  children
+}: {
+  href: string;
+  label: string;
+  onClick: () => void;
+  count?: number;
+  tone?: "accent" | "default";
+  children: ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className="relative flex min-h-[78px] flex-col items-center justify-center gap-2 rounded-2xl border border-white/8 bg-white/5 p-3 text-xs font-semibold transition hover:bg-white/10"
+    >
+      {children}
+      <span>{label}</span>
+      <NavCountBadge count={count} tone={tone ?? "default"} mobile />
+    </Link>
+  );
+}
+
+function NavCountBadge({
+  count,
+  tone,
+  mobile
+}: {
+  count?: number;
+  tone: "accent" | "default";
+  mobile?: boolean;
+}) {
+  if (!count) {
+    return null;
+  }
+
+  return (
+    <span
+      className={`absolute rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${
+        mobile ? "right-2 top-2" : "-right-1 -top-1"
+      } ${tone === "accent" ? "bg-accent text-white" : "bg-white text-ink"}`}
+    >
+      {count}
+    </span>
   );
 }
 
