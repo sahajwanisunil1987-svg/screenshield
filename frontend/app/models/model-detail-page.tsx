@@ -270,20 +270,30 @@ export async function ModelDetailPageContent(params: ModelPageParams) {
 
       <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {products.length ? (
-          <div className="space-y-4">
-            {groupedProducts.map((group) => (
-              <section key={group.title} className="space-y-2.5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg font-semibold text-ink sm:text-xl">{group.title}</h2>
-                  <span className="rounded-full bg-accentSoft px-2.5 py-1 text-[11px] font-semibold text-accent">{group.products.length} part{group.products.length > 1 ? "s" : ""}</span>
-                </div>
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,210px))] justify-start gap-3">
-                  {group.products.map((product) => (
-                    <ModelPartTile key={product.id} product={product} />
-                  ))}
-                </div>
-              </section>
-            ))}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">Repair categories</p>
+              <span className="text-xs text-slate">Swipe or scroll horizontally</span>
+            </div>
+            <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+              <div className="flex min-w-max gap-4">
+                {groupedProducts.map((group) => (
+                  <section key={group.title} className="w-[260px] shrink-0 rounded-[24px] border border-slate-200 bg-white p-3.5 shadow-sm sm:w-[300px]">
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                      <h2 className="text-lg font-semibold text-ink sm:text-xl">{group.title}</h2>
+                      <span className="rounded-full bg-accentSoft px-2.5 py-1 text-[11px] font-semibold text-accent">
+                        {group.products.length} part{group.products.length > 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    <div className="space-y-3">
+                      {group.products.map((product) => (
+                        <ModelPartTile key={product.id} product={product} />
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            </div>
           </div>
         ) : (
           <div className="rounded-[28px] border border-slate-200 bg-white p-6 text-center shadow-card sm:p-8">
