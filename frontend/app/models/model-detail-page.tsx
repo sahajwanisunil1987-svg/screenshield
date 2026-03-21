@@ -92,9 +92,9 @@ function ModelPartTile({ product }: { product: Product }) {
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="group flex h-full flex-col rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:border-accent/20 hover:shadow-card"
+      className="group flex h-full flex-col rounded-[20px] border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-1 hover:border-accent/20 hover:shadow-card"
     >
-      <div className="relative aspect-square overflow-hidden rounded-[18px] bg-slate-100">
+      <div className="relative aspect-square overflow-hidden rounded-2xl bg-slate-100">
         <Image
           src={primaryImage}
           alt={product.name}
@@ -102,13 +102,13 @@ function ModelPartTile({ product }: { product: Product }) {
           className="object-cover transition duration-300 group-hover:scale-105"
         />
       </div>
-      <div className="mt-4 flex flex-1 flex-col">
-        <p className="text-sm font-semibold leading-snug text-ink">{product.name}</p>
-        <p className="mt-1 text-xs text-slate">SKU {product.sku}</p>
-        <div className="mt-3 flex items-center justify-between gap-3">
+      <div className="mt-3 flex flex-1 flex-col">
+        <p className="line-clamp-2 text-sm font-semibold leading-snug text-ink">{product.name}</p>
+        <p className="mt-1 text-[11px] text-slate">SKU {product.sku}</p>
+        <div className="mt-2.5 flex items-center justify-between gap-2">
           <span className="text-sm font-semibold text-ink">{formatCurrency(product.price)}</span>
           <span
-            className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+            className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
               stock > 0 ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
             }`}
           >
@@ -147,10 +147,7 @@ export async function generateModelDetailMetadata(params: ModelPageParams): Prom
 }
 
 export async function ModelDetailPageContent(params: ModelPageParams) {
-  const [models, productsResponse] = await Promise.all([
-    getModels(),
-    getProductsForModel(params.slug)
-  ]);
+  const [models, productsResponse] = await Promise.all([getModels(), getProductsForModel(params.slug)]);
 
   const model = models.find((entry) => entry.slug === params.slug);
 
@@ -202,8 +199,8 @@ export async function ModelDetailPageContent(params: ModelPageParams) {
   return (
     <PageShell>
       <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center gap-2 text-sm text-slate">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate sm:text-sm">
             <Link href="/" className="transition hover:text-ink">Home</Link>
             <ChevronRight className="h-4 w-4" />
             <Link href="/brands" className="transition hover:text-ink">Brands</Link>
@@ -221,16 +218,16 @@ export async function ModelDetailPageContent(params: ModelPageParams) {
             <span className="text-ink">{modelDisplayName} Spare Parts & Accessories</span>
           </div>
 
-          <div className="mt-8 grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
+          <div className="mt-6 grid gap-5 lg:grid-cols-[170px_minmax(0,1fr)] lg:items-start">
             <div className="flex justify-center lg:justify-start">
-              <div className="relative aspect-[4/5] w-[180px] overflow-hidden rounded-[28px] border border-slate-200 bg-slate-950/5 shadow-sm">
+              <div className="relative aspect-[4/5] w-[150px] overflow-hidden rounded-[24px] border border-slate-200 bg-slate-950/5 shadow-sm sm:w-[165px]">
                 {heroImage ? (
                   <Image
                     src={heroImage}
                     alt={`${model.name} reference`}
                     fill
                     className="object-contain p-1"
-                    sizes="180px"
+                    sizes="(min-width: 1024px) 165px, 150px"
                   />
                 ) : (
                   <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-slate">
@@ -242,24 +239,27 @@ export async function ModelDetailPageContent(params: ModelPageParams) {
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-accent">Model spare parts</p>
-              <h1 className="mt-3 font-display text-4xl text-ink sm:text-5xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-accent">Model spare parts</p>
+              <h1 className="mt-2 font-display text-3xl text-ink sm:text-4xl lg:text-[2.8rem]">
                 {modelDisplayName} Spare Parts
               </h1>
-              <div className="mt-5 grid gap-3 text-sm text-slate sm:grid-cols-2 lg:max-w-2xl">
-                <div className="rounded-2xl bg-panel px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Release</p>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate">
+                Browse compatible replacement parts for {modelDisplayName} with quick model-first sorting and repair-focused grouping.
+              </p>
+              <div className="mt-4 grid gap-2.5 text-sm text-slate sm:grid-cols-2 lg:max-w-2xl">
+                <div className="rounded-2xl bg-panel px-3.5 py-2.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate">Release</p>
                   <p className="mt-1 font-medium text-ink">{inferredSpecs.release ?? "Model-specific catalog"}</p>
                 </div>
-                <div className="rounded-2xl bg-panel px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">Display size</p>
+                <div className="rounded-2xl bg-panel px-3.5 py-2.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate">Display size</p>
                   <p className="mt-1 font-medium text-ink">{inferredSpecs.display ?? "Verified fitment range"}</p>
                 </div>
               </div>
-              <div className="mt-6 flex flex-wrap gap-3 text-sm">
-                <span className="rounded-full border border-slate-200 bg-white px-4 py-2 font-medium text-ink">{products.length} listed parts</span>
-                <span className="rounded-full border border-slate-200 bg-white px-4 py-2 font-medium text-ink">{groupedProducts.length} repair groups</span>
-                <Link href={`/products?model=${model.slug}`} className="rounded-full bg-accent px-5 py-2.5 font-semibold text-white transition hover:bg-teal-700">
+              <div className="mt-4 flex flex-wrap gap-2.5 text-sm">
+                <span className="rounded-full border border-slate-200 bg-white px-3.5 py-2 font-medium text-ink">{products.length} listed parts</span>
+                <span className="rounded-full border border-slate-200 bg-white px-3.5 py-2 font-medium text-ink">{groupedProducts.length} repair groups</span>
+                <Link href={`/products?model=${model.slug}`} className="rounded-full bg-accent px-4 py-2 font-semibold text-white transition hover:bg-teal-700">
                   Open filtered catalog
                 </Link>
               </div>
@@ -268,17 +268,20 @@ export async function ModelDetailPageContent(params: ModelPageParams) {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {products.length ? (
-          <div className="space-y-12">
+          <div className="space-y-8">
             {groupedProducts.map((group) => (
-              <section key={group.title}>
-                <div className="mb-6">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Repair category</p>
-                  <h2 className="mt-2 text-3xl font-semibold text-ink">{group.title}</h2>
-                  <p className="mt-2 max-w-3xl text-sm text-slate">{group.description}</p>
+              <section key={group.title} className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">Repair category</p>
+                    <h2 className="mt-1.5 text-2xl font-semibold text-ink sm:text-[1.7rem]">{group.title}</h2>
+                    <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate">{group.description}</p>
+                  </div>
+                  <span className="rounded-full bg-accentSoft px-3 py-1.5 text-xs font-semibold text-accent">{group.products.length} parts</span>
                 </div>
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {group.products.map((product) => (
                     <ModelPartTile key={product.id} product={product} />
                   ))}
@@ -287,7 +290,7 @@ export async function ModelDetailPageContent(params: ModelPageParams) {
             ))}
           </div>
         ) : (
-          <div className="rounded-[32px] border border-slate-200 bg-white p-8 text-center shadow-card">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 text-center shadow-card sm:p-8">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">No mapped parts yet</p>
             <h2 className="mt-3 font-display text-3xl text-ink">We are still building this model catalog.</h2>
             <p className="mt-4 text-sm text-slate">
