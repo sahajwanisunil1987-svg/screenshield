@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { PageShell } from "@/components/layout/page-shell";
 import { fetchApiOrFallback } from "@/lib/server-api";
+import { getPublicAppSettings } from "@/lib/server-settings";
 import { buildMetadata } from "@/lib/seo";
 import { Brand, Category, MobileModel } from "@/types";
 
@@ -75,10 +76,11 @@ export const metadata: Metadata = buildMetadata({
 
 
 export default async function HomePage() {
-  const [brands, categories, models] = await Promise.all([
+  const [brands, categories, models, settings] = await Promise.all([
     fetchApiOrFallback<Brand[]>("/brands", []),
     fetchApiOrFallback<Category[]>("/categories", []),
-    fetchApiOrFallback<MobileModel[]>("/models", [])
+    fetchApiOrFallback<MobileModel[]>("/models", []),
+    getPublicAppSettings()
   ]);
 
   return (
@@ -86,12 +88,12 @@ export default async function HomePage() {
       <section className="bg-hero-grid text-white">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
           <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-teal-200">Mobile spare parts made easy</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-teal-200">{settings.storefront.homeEyebrow}</p>
             <h1 className="mt-4 font-display text-3xl leading-tight sm:text-4xl">
-              Find the right spare part in three quick steps.
+              {settings.storefront.homeTitle}
             </h1>
             <p className="mt-4 max-w-2xl text-sm text-white/72 sm:text-base">
-              Choose the brand, pick the model, then open batteries, displays, charging parts, cameras, and more.
+              {settings.storefront.homeDescription}
             </p>
           </div>
           <div className="mt-8 max-w-5xl">

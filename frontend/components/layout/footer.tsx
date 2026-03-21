@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getPublicAppSettings } from "@/lib/server-settings";
 
 const shopLinks = [
   { href: "/brands", label: "Brands" },
@@ -23,19 +24,22 @@ const supportLinks = [
   { href: "/terms", label: "Terms" }
 ];
 
-export function Footer() {
+export async function Footer() {
+  const settings = await getPublicAppSettings();
+  const { company, storefront, site } = settings;
+
   return (
     <footer className="mt-20 border-t border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_26%),radial-gradient(circle_at_top_right,rgba(249,115,22,0.12),transparent_18%),linear-gradient(180deg,#07111f,#0b1b30)] text-white">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="rounded-[32px] border border-white/10 bg-white/5 p-6 backdrop-blur sm:p-7">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">SpareKart support</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">{storefront.footerEyebrow}</p>
               <h2 className="mt-3 font-display text-3xl leading-tight sm:text-[2.35rem]">
-                Verified spare parts, simpler discovery, faster replacement flow.
+                {storefront.footerTitle}
               </h2>
               <p className="mt-3 text-sm leading-6 text-white/70 sm:text-base">
-                SpareKart helps retail buyers and repair shops find the right part faster with compatibility-first browsing, secure checkout, and India-ready dispatch.
+                {storefront.footerDescription}
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -50,9 +54,9 @@ export function Footer() {
 
           <div className="mt-8 grid gap-6 border-t border-white/10 pt-8 lg:grid-cols-[1.15fr_0.7fr_0.7fr_0.95fr]">
             <div>
-              <h3 className="font-display text-2xl">SpareKart</h3>
+              <h3 className="font-display text-2xl">{site.siteName}</h3>
               <p className="mt-4 max-w-md text-sm leading-6 text-white/70">
-                Premium mobile spare parts with verified quality, secure payments, and workshop-friendly support across India.
+                {storefront.footerDescription}
               </p>
               <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/65">
                 <span className="rounded-full border border-white/10 px-3 py-2">Warranty-backed</span>
@@ -74,18 +78,18 @@ export function Footer() {
                 ))}
               </div>
               <div className="mt-6 rounded-[24px] border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-                <p className="font-semibold text-white">Mister Mobile</p>
-                <p className="mt-2 leading-6 text-white/60">DC hospital near, triveni jaipur 302018</p>
+                <p className="font-semibold text-white">{company.companyName}</p>
+                <p className="mt-2 leading-6 text-white/60">{company.addressLine1}, {company.addressLine2}</p>
                 <p className="mt-3">
                   Email:{" "}
-                  <a href="mailto:sahajwanisunil1987@gmail.com" className="text-white/85 transition hover:text-white">
-                    sahajwanisunil1987@gmail.com
+                  <a href={`mailto:${company.supportEmail}`} className="text-white/85 transition hover:text-white">
+                    {company.supportEmail}
                   </a>
                 </p>
                 <p className="mt-1.5">
                   Phone:{" "}
-                  <a href="tel:+919001554862" className="text-white/85 transition hover:text-white">
-                    +91 9001554862
+                  <a href={`tel:${company.supportPhone.replace(/\s+/g, "")}`} className="text-white/85 transition hover:text-white">
+                    {company.supportPhone}
                   </a>
                 </p>
               </div>
@@ -93,7 +97,7 @@ export function Footer() {
           </div>
 
           <div className="mt-8 flex flex-col gap-3 border-t border-white/10 pt-6 text-sm text-white/50 sm:flex-row sm:items-center sm:justify-between">
-            <p>© 2026 SpareKart. Mobile spare parts for repair shops and retail buyers.</p>
+            <p>© 2026 {site.siteName}. Mobile spare parts for repair shops and retail buyers.</p>
             <div className="flex flex-wrap gap-4 text-white/60">
               <Link href="/privacy-policy" className="transition hover:text-white">Privacy</Link>
               <Link href="/terms" className="transition hover:text-white">Terms</Link>

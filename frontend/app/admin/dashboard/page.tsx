@@ -5,15 +5,35 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AdminGuard } from "@/components/admin/admin-guard";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { DEFAULT_APP_SETTINGS } from "@/lib/app-settings";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
+import type { PublicAppSettings } from "@/types";
 
 type ShippingSettingsForm = {
   shippingFee: string;
   freeShippingThreshold: string;
   codMaxOrderValue: string;
   blockedCodPincodes: string;
+};
+
+type AppSettingsForm = {
+  companyName: string;
+  legalName: string;
+  gstin: string;
+  supportPhone: string;
+  supportEmail: string;
+  addressLine1: string;
+  addressLine2: string;
+  siteName: string;
+  navbarSearchPlaceholder: string;
+  homeEyebrow: string;
+  homeTitle: string;
+  homeDescription: string;
+  footerEyebrow: string;
+  footerTitle: string;
+  footerDescription: string;
 };
 
 export default function AdminDashboardPage() {
@@ -28,6 +48,24 @@ export default function AdminDashboardPage() {
     blockedCodPincodes: "560001, 110001"
   });
   const [isSavingShippingSettings, setIsSavingShippingSettings] = useState(false);
+  const [appSettings, setAppSettings] = useState<AppSettingsForm>({
+    companyName: DEFAULT_APP_SETTINGS.company.companyName,
+    legalName: DEFAULT_APP_SETTINGS.company.legalName,
+    gstin: DEFAULT_APP_SETTINGS.company.gstin,
+    supportPhone: DEFAULT_APP_SETTINGS.company.supportPhone,
+    supportEmail: DEFAULT_APP_SETTINGS.company.supportEmail,
+    addressLine1: DEFAULT_APP_SETTINGS.company.addressLine1,
+    addressLine2: DEFAULT_APP_SETTINGS.company.addressLine2,
+    siteName: DEFAULT_APP_SETTINGS.site.siteName,
+    navbarSearchPlaceholder: DEFAULT_APP_SETTINGS.site.navbarSearchPlaceholder,
+    homeEyebrow: DEFAULT_APP_SETTINGS.storefront.homeEyebrow,
+    homeTitle: DEFAULT_APP_SETTINGS.storefront.homeTitle,
+    homeDescription: DEFAULT_APP_SETTINGS.storefront.homeDescription,
+    footerEyebrow: DEFAULT_APP_SETTINGS.storefront.footerEyebrow,
+    footerTitle: DEFAULT_APP_SETTINGS.storefront.footerTitle,
+    footerDescription: DEFAULT_APP_SETTINGS.storefront.footerDescription
+  });
+  const [isSavingAppSettings, setIsSavingAppSettings] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -63,6 +101,34 @@ export default function AdminDashboardPage() {
       });
   }, [token]);
 
+  useEffect(() => {
+    if (!token) return;
+    api
+      .get<PublicAppSettings>("/admin/settings/app", authHeaders(token))
+      .then((response) => {
+        setAppSettings({
+          companyName: response.data.company.companyName,
+          legalName: response.data.company.legalName,
+          gstin: response.data.company.gstin,
+          supportPhone: response.data.company.supportPhone,
+          supportEmail: response.data.company.supportEmail,
+          addressLine1: response.data.company.addressLine1,
+          addressLine2: response.data.company.addressLine2,
+          siteName: response.data.site.siteName,
+          navbarSearchPlaceholder: response.data.site.navbarSearchPlaceholder,
+          homeEyebrow: response.data.storefront.homeEyebrow,
+          homeTitle: response.data.storefront.homeTitle,
+          homeDescription: response.data.storefront.homeDescription,
+          footerEyebrow: response.data.storefront.footerEyebrow,
+          footerTitle: response.data.storefront.footerTitle,
+          footerDescription: response.data.storefront.footerDescription
+        });
+      })
+      .catch((error) => {
+        toast.error(getApiErrorMessage(error, "Unable to load app settings"));
+      });
+  }, [token]);
+
   const saveShippingSettings = async () => {
     if (!token) return;
     try {
@@ -91,6 +157,62 @@ export default function AdminDashboardPage() {
       toast.error(getApiErrorMessage(error, "Unable to save shipping settings"));
     } finally {
       setIsSavingShippingSettings(false);
+    }
+  };
+
+  const saveAppSettings = async () => {
+    if (!token) return;
+    try {
+      setIsSavingAppSettings(true);
+      const response = await api.patch<PublicAppSettings>(
+        "/admin/settings/app",
+        {
+          company: {
+            companyName: appSettings.companyName,
+            legalName: appSettings.legalName,
+            gstin: appSettings.gstin,
+            supportPhone: appSettings.supportPhone,
+            supportEmail: appSettings.supportEmail,
+            addressLine1: appSettings.addressLine1,
+            addressLine2: appSettings.addressLine2
+          },
+          site: {
+            siteName: appSettings.siteName,
+            navbarSearchPlaceholder: appSettings.navbarSearchPlaceholder
+          },
+          storefront: {
+            homeEyebrow: appSettings.homeEyebrow,
+            homeTitle: appSettings.homeTitle,
+            homeDescription: appSettings.homeDescription,
+            footerEyebrow: appSettings.footerEyebrow,
+            footerTitle: appSettings.footerTitle,
+            footerDescription: appSettings.footerDescription
+          }
+        },
+        authHeaders(token)
+      );
+      setAppSettings({
+        companyName: response.data.company.companyName,
+        legalName: response.data.company.legalName,
+        gstin: response.data.company.gstin,
+        supportPhone: response.data.company.supportPhone,
+        supportEmail: response.data.company.supportEmail,
+        addressLine1: response.data.company.addressLine1,
+        addressLine2: response.data.company.addressLine2,
+        siteName: response.data.site.siteName,
+        navbarSearchPlaceholder: response.data.site.navbarSearchPlaceholder,
+        homeEyebrow: response.data.storefront.homeEyebrow,
+        homeTitle: response.data.storefront.homeTitle,
+        homeDescription: response.data.storefront.homeDescription,
+        footerEyebrow: response.data.storefront.footerEyebrow,
+        footerTitle: response.data.storefront.footerTitle,
+        footerDescription: response.data.storefront.footerDescription
+      });
+      toast.success("App settings updated");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Unable to save app settings"));
+    } finally {
+      setIsSavingAppSettings(false);
     }
   };
 
@@ -293,6 +415,66 @@ export default function AdminDashboardPage() {
                 placeholder="560001, 110001"
               />
             </label>
+          </div>
+        </section>
+
+
+        <section className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">Company and storefront settings</p>
+              <h3 className="mt-2 font-display text-2xl text-white">Control brand name, contact info, and homepage copy</h3>
+              <p className="mt-2 max-w-3xl text-sm text-white/60">
+                These values drive navbar branding, footer contact info, support pages, homepage hero copy, and invoice company details.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={saveAppSettings}
+              disabled={isSavingAppSettings}
+              className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSavingAppSettings ? "Saving..." : "Save app settings"}
+            </button>
+          </div>
+
+          <div className="mt-6 grid gap-6 xl:grid-cols-3">
+            <div className="rounded-[24px] border border-white/10 bg-black/10 p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Company details</p>
+              <div className="mt-4 grid gap-4">
+                <label className="space-y-2 text-sm text-white/70"><span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Company name</span><input value={appSettings.companyName} onChange={(event) => setAppSettings((current) => ({ ...current, companyName: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink" /></label>
+                <label className="space-y-2 text-sm text-white/70"><span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Legal name</span><input value={appSettings.legalName} onChange={(event) => setAppSettings((current) => ({ ...current, legalName: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink" /></label>
+                <label className="space-y-2 text-sm text-white/70"><span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">GSTIN</span><input value={appSettings.gstin} onChange={(event) => setAppSettings((current) => ({ ...current, gstin: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink" /></label>
+                <label className="space-y-2 text-sm text-white/70"><span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Support email</span><input value={appSettings.supportEmail} onChange={(event) => setAppSettings((current) => ({ ...current, supportEmail: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink" /></label>
+                <label className="space-y-2 text-sm text-white/70"><span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Support phone</span><input value={appSettings.supportPhone} onChange={(event) => setAppSettings((current) => ({ ...current, supportPhone: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink" /></label>
+                <label className="space-y-2 text-sm text-white/70"><span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Address line 1</span><input value={appSettings.addressLine1} onChange={(event) => setAppSettings((current) => ({ ...current, addressLine1: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink" /></label>
+                <label className="space-y-2 text-sm text-white/70"><span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Address line 2</span><input value={appSettings.addressLine2} onChange={(event) => setAppSettings((current) => ({ ...current, addressLine2: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink" /></label>
+              </div>
+            </div>
+
+            <div className="rounded-[24px] border border-white/10 bg-black/10 p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Site settings</p>
+              <div className="mt-4 grid gap-4">
+                <label className="space-y-2 text-sm text-white/70"><span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Site name</span><input value={appSettings.siteName} onChange={(event) => setAppSettings((current) => ({ ...current, siteName: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink" /></label>
+                <label className="space-y-2 text-sm text-white/70"><span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Navbar search placeholder</span><input value={appSettings.navbarSearchPlaceholder} onChange={(event) => setAppSettings((current) => ({ ...current, navbarSearchPlaceholder: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink" /></label>
+              </div>
+
+              <p className="mt-8 text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Homepage hero</p>
+              <div className="mt-4 grid gap-4">
+                <label className="space-y-2 text-sm text-white/70"><span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Eyebrow</span><input value={appSettings.homeEyebrow} onChange={(event) => setAppSettings((current) => ({ ...current, homeEyebrow: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink" /></label>
+                <label className="space-y-2 text-sm text-white/70"><span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Title</span><input value={appSettings.homeTitle} onChange={(event) => setAppSettings((current) => ({ ...current, homeTitle: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink" /></label>
+                <label className="space-y-2 text-sm text-white/70"><span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Description</span><textarea value={appSettings.homeDescription} onChange={(event) => setAppSettings((current) => ({ ...current, homeDescription: event.target.value }))} className="min-h-[120px] w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink" /></label>
+              </div>
+            </div>
+
+            <div className="rounded-[24px] border border-white/10 bg-black/10 p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Footer content</p>
+              <div className="mt-4 grid gap-4">
+                <label className="space-y-2 text-sm text-white/70"><span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Eyebrow</span><input value={appSettings.footerEyebrow} onChange={(event) => setAppSettings((current) => ({ ...current, footerEyebrow: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink" /></label>
+                <label className="space-y-2 text-sm text-white/70"><span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Title</span><input value={appSettings.footerTitle} onChange={(event) => setAppSettings((current) => ({ ...current, footerTitle: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink" /></label>
+                <label className="space-y-2 text-sm text-white/70"><span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Description</span><textarea value={appSettings.footerDescription} onChange={(event) => setAppSettings((current) => ({ ...current, footerDescription: event.target.value }))} className="min-h-[140px] w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink" /></label>
+              </div>
+            </div>
           </div>
         </section>
 

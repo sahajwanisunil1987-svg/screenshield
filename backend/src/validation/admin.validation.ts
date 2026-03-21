@@ -74,3 +74,27 @@ export const adminShippingSettingsSchema = z.object({
   codMaxOrderValue: z.coerce.number().min(0),
   blockedCodPincodes: z.array(z.string().min(3)).default([])
 });
+
+export const adminAppSettingsSchema = z.object({
+  company: z.object({
+    companyName: z.string().min(1),
+    legalName: z.string().min(1),
+    gstin: z.string().min(1),
+    supportPhone: z.string().min(1),
+    supportEmail: z.string().email(),
+    addressLine1: z.string().min(1),
+    addressLine2: z.string().min(1)
+  }),
+  site: z.object({
+    siteName: z.string().min(1),
+    navbarSearchPlaceholder: z.string().min(3)
+  }),
+  storefront: z.object({
+    homeEyebrow: z.string().min(1),
+    homeTitle: z.string().min(3),
+    homeDescription: z.string().min(10),
+    footerEyebrow: z.string().min(1),
+    footerTitle: z.string().min(3),
+    footerDescription: z.string().min(10)
+  })
+});

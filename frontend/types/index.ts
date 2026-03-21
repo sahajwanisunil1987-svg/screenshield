@@ -358,3 +358,34 @@ export type ShippingSettings = {
   codMaxOrderValue: number;
   blockedCodPincodes: string[];
 };
+
+
+export type CompanySettings = {
+  companyName: string;
+  legalName: string;
+  gstin: string;
+  supportPhone: string;
+  supportEmail: string;
+  addressLine1: string;
+  addressLine2: string;
+};
+
+export type SiteSettings = {
+  siteName: string;
+  navbarSearchPlaceholder: string;
+};
+
+export type StorefrontSettings = {
+  homeEyebrow: string;
+  homeTitle: string;
+  homeDescription: string;
+  footerEyebrow: string;
+  footerTitle: string;
+  footerDescription: string;
+};
+
+export type PublicAppSettings = {
+  company: CompanySettings;
+  site: SiteSettings;
+  storefront: StorefrontSettings;
+};

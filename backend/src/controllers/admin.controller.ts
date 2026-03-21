@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { generateInvoicePdfBuffer } from "../services/invoice.service.js";
 import { getShippingSettings, updateShippingSettings } from "../services/shipping-settings.service.js";
+import { getPublicAppSettings, updatePublicAppSettings } from "../services/app-settings.service.js";
 import { getSingleParam } from "../utils/helpers.js";
 
 const rangeDaysMap = {
@@ -1279,5 +1280,16 @@ export const getAdminShippingSettings = async (_req: Request, res: Response) => 
 
 export const saveAdminShippingSettings = async (req: Request, res: Response) => {
   const settings = await updateShippingSettings(req.body);
+  res.json(settings);
+};
+
+
+export const getAdminAppSettings = async (_req: Request, res: Response) => {
+  const settings = await getPublicAppSettings();
+  res.json(settings);
+};
+
+export const saveAdminAppSettings = async (req: Request, res: Response) => {
+  const settings = await updatePublicAppSettings(req.body);
   res.json(settings);
 };

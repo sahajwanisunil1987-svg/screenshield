@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { useAppSettings } from "@/hooks/use-app-settings";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ const issueTypes = [
 ] as const;
 
 export function SupportPageClient() {
+  const settings = useAppSettings();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -26,6 +28,7 @@ export function SupportPageClient() {
     kind: "OTHER",
     message: ""
   });
+  const { supportEmail, supportPhone } = settings.company;
 
   const setField = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
 
@@ -63,7 +66,9 @@ export function SupportPageClient() {
           <div className="space-y-4 text-sm leading-7 text-slate sm:text-base">
             <p>Use the same email you used for your SpareKart order so the team can trace the request faster.</p>
             <p>For returns, payments, or shipment delays, add the order number and describe the issue clearly.</p>
-            <p>You can also reach the team directly at <strong>sahajwanisunil1987@gmail.com</strong> or <strong>+91 9001554862</strong>.</p>
+            <p>
+              You can also reach the team directly at <strong>{supportEmail}</strong> or <strong>{supportPhone}</strong>.
+            </p>
           </div>
         </div>
 

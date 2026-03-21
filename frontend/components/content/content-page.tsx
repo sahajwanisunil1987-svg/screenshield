@@ -1,18 +1,19 @@
 import Link from "next/link";
 import { PageShell } from "@/components/layout/page-shell";
+import { getPublicAppSettings } from "@/lib/server-settings";
 
 type ContentSection = {
   title: string;
   body: string[];
 };
 
-export function ContentPage({
+export async function ContentPage({
   eyebrow,
   title,
   intro,
   sections,
-  supportEmail = "support@sparekart.in",
-  supportPhone = "+91 99999 99999"
+  supportEmail,
+  supportPhone
 }: {
   eyebrow: string;
   title: string;
@@ -21,6 +22,10 @@ export function ContentPage({
   supportEmail?: string;
   supportPhone?: string;
 }) {
+  const settings = await getPublicAppSettings();
+  const resolvedSupportEmail = supportEmail ?? settings.company.supportEmail;
+  const resolvedSupportPhone = supportPhone ?? settings.company.supportPhone;
+
   return (
     <PageShell>
       <section className="bg-hero-grid text-white">
@@ -47,16 +52,16 @@ export function ContentPage({
 
         <div className="mt-10 rounded-[28px] border border-slate-200 bg-panel p-6 shadow-card sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Need help?</p>
-          <h2 className="mt-3 font-display text-2xl text-ink">Contact SpareKart support</h2>
+          <h2 className="mt-3 font-display text-2xl text-ink">Contact support</h2>
           <p className="mt-3 text-sm leading-7 text-slate sm:text-base">
-            For order help, warranty questions, or compatibility clarification, contact our support team before placing a replacement order.
+            For order help, warranty questions, or compatibility clarification, contact the support team before placing a replacement order.
           </p>
           <div className="mt-5 flex flex-wrap gap-3 text-sm font-semibold">
-            <a href={`mailto:${supportEmail}`} className="rounded-full bg-accent px-5 py-3 text-white transition hover:bg-teal-700">
-              {supportEmail}
+            <a href={`mailto:${resolvedSupportEmail}`} className="rounded-full bg-accent px-5 py-3 text-white transition hover:bg-teal-700">
+              {resolvedSupportEmail}
             </a>
-            <a href={`tel:${supportPhone.replace(/\s+/g, "")}`} className="rounded-full border border-slate-200 px-5 py-3 text-ink transition hover:bg-white">
-              {supportPhone}
+            <a href={`tel:${resolvedSupportPhone.replace(/\s+/g, "")}`} className="rounded-full border border-slate-200 px-5 py-3 text-ink transition hover:bg-white">
+              {resolvedSupportPhone}
             </a>
             <Link href="/track-order" className="rounded-full border border-slate-200 px-5 py-3 text-ink transition hover:bg-white">
               Track order

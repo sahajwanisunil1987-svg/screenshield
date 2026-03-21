@@ -22,6 +22,7 @@ router.get("/models", catalogController.getModels);
 router.get("/models/by-brand/:brandId", catalogController.getModelsByBrand);
 router.get("/categories", catalogController.getCategories);
 router.get("/settings/shipping", settingsController.getPublicShippingSettings);
+router.get("/settings/app", settingsController.getPublicSettings);
 router.get("/products", searchRateLimiter, validate({ query: productSearchSchema }), catalogController.getProducts);
 router.get("/products/search", searchRateLimiter, validate({ query: productSearchSchema }), catalogController.searchProducts);
 router.get(
