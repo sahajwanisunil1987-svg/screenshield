@@ -62,7 +62,7 @@ export function NavbarControls() {
 
   return (
     <>
-      <nav className="ml-auto flex items-center gap-2 text-sm">
+      <nav className="ml-auto flex items-center gap-1.5 text-sm lg:min-w-0">
         <button
           type="button"
           onClick={() => setMobileSearchOpen((current) => !current)}
@@ -103,8 +103,8 @@ export function NavbarControls() {
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="hidden items-center gap-2 md:flex">
-          <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1.5">
+        <div className="hidden min-w-0 items-center gap-1.5 md:flex">
+          <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1">
             <IconLink href="/wishlist" label="Wishlist" count={wishlistCount} tone="accent">
               <Heart className="h-4.5 w-4.5" />
             </IconLink>
@@ -116,7 +116,7 @@ export function NavbarControls() {
             </IconLink>
           </div>
 
-          <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1.5">
+          <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1">
             <TextLink href="/track-order" label="Track">
               <Truck className="h-4.5 w-4.5" />
             </TextLink>
@@ -136,7 +136,7 @@ export function NavbarControls() {
             <button
               type="button"
               onClick={toggleTheme}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-white/80 transition hover:bg-white/10 hover:text-white"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-white/80 transition hover:bg-white/10 hover:text-white"
               aria-label="Toggle theme"
             >
               {themeHydrated && isDark ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
@@ -145,7 +145,7 @@ export function NavbarControls() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-white/80 transition hover:bg-white/10 hover:text-white"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-white/80 transition hover:bg-white/10 hover:text-white"
                 aria-label="Logout"
               >
                 <LogOut className="h-4.5 w-4.5" />
@@ -257,13 +257,13 @@ function IconLink({
   return (
     <Link
       href={href}
-      className={`relative inline-flex items-center gap-2 rounded-full px-3 py-2 text-white/80 transition hover:bg-white/10 hover:text-white ${
+      className={`relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-2 text-white/80 transition hover:bg-white/10 hover:text-white ${
         emphasize ? "bg-white text-ink hover:bg-white/90 hover:text-ink" : ""
       }`}
       aria-label={label}
     >
       {children}
-      <span className="hidden lg:inline text-sm font-semibold">{label}</span>
+      <span className="hidden xl:inline text-sm font-semibold">{label}</span>
       <NavCountBadge count={count} tone={tone} />
     </Link>
   );
@@ -285,14 +285,14 @@ function TextLink({
   return (
     <Link
       href={href}
-      className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition ${
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-2 text-sm font-semibold transition ${
         emphasize
           ? "bg-white text-ink hover:bg-white/90"
           : "text-white/80 hover:bg-white/10 hover:text-white"
       }`}
     >
       {children}
-      <span className={compact ? "hidden xl:inline" : "hidden lg:inline"}>{label}</span>
+      <span className={compact ? "hidden 2xl:inline" : "hidden xl:inline"}>{label}</span>
     </Link>
   );
 }
