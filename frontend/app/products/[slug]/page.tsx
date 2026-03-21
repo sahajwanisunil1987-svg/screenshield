@@ -12,7 +12,7 @@ import { ProductMobileBar } from "./product-mobile-bar";
 import { buildBreadcrumbStructuredData, buildMetadata, buildProductStructuredData } from "@/lib/seo";
 import { fetchApi } from "@/lib/server-api";
 import { formatCurrency } from "@/lib/utils";
-import { Product, Review } from "@/types";
+import { Product, Review, ShippingSettings } from "@/types";
 
 export const revalidate = 300;
 
@@ -21,9 +21,24 @@ type ProductPayload = {
   relatedProducts: Product[];
 };
 
+const defaultShippingSettings: ShippingSettings = {
+  shippingFee: 79,
+  freeShippingThreshold: 999,
+  codMaxOrderValue: 5000,
+  blockedCodPincodes: ["560001", "110001"]
+};
+
 const getProductPayload = cache((slug: string) =>
   fetchApi<ProductPayload>(`/products/${slug}`, { next: { revalidate: 300 } })
 );
+
+const getShippingSettings = cache(async () => {
+  try {
+    return await fetchApi<ShippingSettings>("/settings/shipping", { next: { revalidate: 300 } });
+  } catch {
+    return defaultShippingSettings;
+  }
+});
 
 const ProductDetailTabs = dynamic(
   () => import("./product-detail-tabs").then((module) => module.ProductDetailTabs),
@@ -43,7 +58,7 @@ const ProductDetailTabs = dynamic(
 );
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const payload = await getProductPayload(params.slug);
+  const [payload, shippingSettings] = await Promise.all([getProductPayload(params.slug), getShippingSettings()]);
   const product = payload.product;
 
   if (!product) {
@@ -81,7 +96,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function ProductDetailsPage({ params }: { params: { slug: string } }) {
-  const payload = await getProductPayload(params.slug);
+  const [payload, shippingSettings] = await Promise.all([getProductPayload(params.slug), getShippingSettings()]);
 
   if (!payload.product) {
     notFound();
@@ -102,7 +117,7 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
   ];
   const trustPoints = [
     { icon: ShieldCheck, title: `${product.warrantyMonths} month warranty` },
-    { icon: Truck, title: "Fast dispatch across India" },
+    { icon: Truck, title: `Dispatch in 24-48 working hours${shippingSettings.freeShippingThreshold > 0 ? ` · Free above INR ${shippingSettings.freeShippingThreshold}` : ""}` },
     { icon: BadgeCheck, title: "Compatibility-first cataloging" }
   ];
 
@@ -188,6 +203,11 @@ export default async function ProductDetailsPage({ params }: { params: { slug: s
                   </div>
                 ))}
               </div>
+              <p className="mt-3 text-xs leading-5 text-white/65">
+                {shippingSettings.shippingFee === 0
+                  ? "Shipping is currently free across eligible orders."
+                  : `Standard shipping ${formatCurrency(shippingSettings.shippingFee)}. Final delivery timeline can vary by city and courier serviceability.`}
+              </p>
             </div>
             <ProductActions product={product} />
           </div>
