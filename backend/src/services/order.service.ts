@@ -1,30 +1,19 @@
 import { OrderStatus, PaymentStatus, Prisma, RequestStatus } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
 import { prisma } from "../lib/prisma.js";
-import { env } from "../config/env.js";
 import { ApiError } from "../utils/api-error.js";
+import { calculateShippingAmount, getShippingSettings, isCodAllowedForShippingSettings } from "./shipping-settings.service.js";
 import { createInvoiceNumber, createOrderNumber } from "../utils/helpers.js";
 
 const decimal = (value: number) => new Prisma.Decimal(value.toFixed(2));
 
 
-const disabledCodPincodes = new Set(
-  (env.COD_DISABLED_PINCODES ?? "")
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter(Boolean)
-);
+const assertCodAllowed = async (postalCode: string | undefined, totalAmount: number, client: OrderTx) => {
+  const shippingSettings = await getShippingSettings(client);
+  const result = isCodAllowedForShippingSettings(postalCode, totalAmount, shippingSettings);
 
-const assertCodAllowed = (postalCode: string | undefined, totalAmount: number) => {
-  if (totalAmount > env.COD_MAX_ORDER_VALUE) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      `Cash on Delivery is available only for orders up to Rs. ${env.COD_MAX_ORDER_VALUE}.`
-    );
-  }
-
-  if (postalCode && disabledCodPincodes.has(postalCode.trim())) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Cash on Delivery is not available for this pincode.");
+  if (!result.allowed) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, result.reason ?? "Cash on Delivery is not available for this order.");
   }
 };
 
@@ -186,12 +175,13 @@ export const createOrder = async (
       };
     });
 
-    const shippingAmount = subtotal > 999 ? 0 : 79;
+    const shippingSettings = await getShippingSettings(tx);
+    const shippingAmount = calculateShippingAmount(subtotal, shippingSettings);
     const taxAmount = orderItems.reduce((sum, item) => sum + item.lineTax, 0);
     const totalAmount = subtotal - discountAmount + shippingAmount + taxAmount;
 
     if (payload.paymentMethod === "COD") {
-      assertCodAllowed((payload.address.postalCode ?? payload.address.pincode) as string | undefined, totalAmount);
+      await assertCodAllowed((payload.address.postalCode ?? payload.address.pincode) as string | undefined, totalAmount, tx);
     }
 
     if (payload.paymentMethod === "COD") {

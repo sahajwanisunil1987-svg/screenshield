@@ -350,3 +350,11 @@ export type PurchaseEntry = {
   vendor: Vendor;
   product: Product;
 };
+
+
+export type ShippingSettings = {
+  shippingFee: number;
+  freeShippingThreshold: number;
+  codMaxOrderValue: number;
+  blockedCodPincodes: string[];
+};

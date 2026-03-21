@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { generateInvoicePdfBuffer } from "../services/invoice.service.js";
+import { getShippingSettings, updateShippingSettings } from "../services/shipping-settings.service.js";
 import { getSingleParam } from "../utils/helpers.js";
 
 const rangeDaysMap = {
@@ -1268,4 +1269,15 @@ export const downloadInvoice = async (req: Request, res: Response) => {
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader("Content-Disposition", `attachment; filename=invoice-${id}.pdf`);
   res.send(buffer);
+};
+
+
+export const getAdminShippingSettings = async (_req: Request, res: Response) => {
+  const settings = await getShippingSettings();
+  res.json(settings);
+};
+
+export const saveAdminShippingSettings = async (req: Request, res: Response) => {
+  const settings = await updateShippingSettings(req.body);
+  res.json(settings);
 };

@@ -67,3 +67,10 @@ export const adminPurchaseCreateSchema = z.object({
   notes: z.string().optional(),
   purchasedAt: z.string().datetime().optional()
 });
+
+export const adminShippingSettingsSchema = z.object({
+  shippingFee: z.coerce.number().min(0),
+  freeShippingThreshold: z.coerce.number().min(0),
+  codMaxOrderValue: z.coerce.number().min(0),
+  blockedCodPincodes: z.array(z.string().min(3)).default([])
+});

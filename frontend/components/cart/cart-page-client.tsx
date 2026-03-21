@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { api, getApiErrorMessage } from "@/lib/api";
 import { calculateOrderPricing } from "@/lib/order-pricing";
+import { useShippingSettings } from "@/hooks/use-shipping-settings";
 import { formatCurrency } from "@/lib/utils";
 import { useCartStore } from "@/store/cart-store";
 
@@ -16,8 +17,9 @@ export function CartPageClient() {
   const { items, updateQty, removeItem, couponCode, couponDiscount, applyCoupon, clearCoupon, hasHydrated } = useCartStore();
   const [couponInput, setCouponInput] = useState(couponCode);
   const [isApplying, setIsApplying] = useState(false);
+  const shippingSettings = useShippingSettings();
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount);
+  const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount, shippingSettings);
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -138,7 +140,7 @@ export function CartPageClient() {
               <Truck className="mt-0.5 h-4 w-4 text-accent" />
               <div>
                 <p className="font-semibold text-ink">Dispatch guidance</p>
-                <p className="mt-1 text-slate">Orders above INR 999 qualify for free shipping. Lower-value orders include dispatch charges.</p>
+                <p className="mt-1 text-slate">{`Orders above INR ${shippingSettings.freeShippingThreshold} qualify for free shipping. Lower-value orders include dispatch charges of ${formatCurrency(shippingSettings.shippingFee)}.`}</p>
               </div>
             </div>
           </div>

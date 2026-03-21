@@ -9,11 +9,25 @@ import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 
+type ShippingSettingsForm = {
+  shippingFee: string;
+  freeShippingThreshold: string;
+  codMaxOrderValue: string;
+  blockedCodPincodes: string;
+};
+
 export default function AdminDashboardPage() {
   const token = useAuthStore((state) => state.token);
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [range, setRange] = useState<"7d" | "30d" | "90d">("30d");
+  const [shippingSettings, setShippingSettings] = useState<ShippingSettingsForm>({
+    shippingFee: "79",
+    freeShippingThreshold: "999",
+    codMaxOrderValue: "5000",
+    blockedCodPincodes: "560001, 110001"
+  });
+  const [isSavingShippingSettings, setIsSavingShippingSettings] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -29,6 +43,56 @@ export default function AdminDashboardPage() {
       })
       .finally(() => setIsLoading(false));
   }, [range, token]);
+
+  useEffect(() => {
+    if (!token) return;
+    api
+      .get("/admin/settings/shipping", authHeaders(token))
+      .then((response) => {
+        setShippingSettings({
+          shippingFee: String(response.data.shippingFee ?? 79),
+          freeShippingThreshold: String(response.data.freeShippingThreshold ?? 999),
+          codMaxOrderValue: String(response.data.codMaxOrderValue ?? 5000),
+          blockedCodPincodes: Array.isArray(response.data.blockedCodPincodes)
+            ? response.data.blockedCodPincodes.join(", ")
+            : ""
+        });
+      })
+      .catch((error) => {
+        toast.error(getApiErrorMessage(error, "Unable to load shipping settings"));
+      });
+  }, [token]);
+
+  const saveShippingSettings = async () => {
+    if (!token) return;
+    try {
+      setIsSavingShippingSettings(true);
+      const response = await api.patch(
+        "/admin/settings/shipping",
+        {
+          shippingFee: Number(shippingSettings.shippingFee || 0),
+          freeShippingThreshold: Number(shippingSettings.freeShippingThreshold || 0),
+          codMaxOrderValue: Number(shippingSettings.codMaxOrderValue || 0),
+          blockedCodPincodes: shippingSettings.blockedCodPincodes
+            .split(",")
+            .map((entry) => entry.trim())
+            .filter(Boolean)
+        },
+        authHeaders(token)
+      );
+      setShippingSettings({
+        shippingFee: String(response.data.shippingFee),
+        freeShippingThreshold: String(response.data.freeShippingThreshold),
+        codMaxOrderValue: String(response.data.codMaxOrderValue),
+        blockedCodPincodes: response.data.blockedCodPincodes.join(", ")
+      });
+      toast.success("Shipping settings updated");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Unable to save shipping settings"));
+    } finally {
+      setIsSavingShippingSettings(false);
+    }
+  };
 
   const stats = useMemo(
     () => [
@@ -174,6 +238,63 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         </div>
+
+        <section className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">Shipping settings</p>
+              <h3 className="mt-2 font-display text-2xl text-white">Control shipping, free-shipping, and COD rules</h3>
+              <p className="mt-2 max-w-3xl text-sm text-white/60">These values drive cart summary, checkout pricing, and backend COD validation together.</p>
+            </div>
+            <button
+              type="button"
+              onClick={saveShippingSettings}
+              disabled={isSavingShippingSettings}
+              className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSavingShippingSettings ? "Saving..." : "Save shipping settings"}
+            </button>
+          </div>
+
+          <div className="mt-6 grid gap-4 lg:grid-cols-4">
+            <label className="space-y-2 text-sm text-white/70">
+              <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Shipping fee</span>
+              <input
+                value={shippingSettings.shippingFee}
+                onChange={(event) => setShippingSettings((current) => ({ ...current, shippingFee: event.target.value }))}
+                className="w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink"
+                inputMode="numeric"
+              />
+            </label>
+            <label className="space-y-2 text-sm text-white/70">
+              <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Free shipping above</span>
+              <input
+                value={shippingSettings.freeShippingThreshold}
+                onChange={(event) => setShippingSettings((current) => ({ ...current, freeShippingThreshold: event.target.value }))}
+                className="w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink"
+                inputMode="numeric"
+              />
+            </label>
+            <label className="space-y-2 text-sm text-white/70">
+              <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">COD max order</span>
+              <input
+                value={shippingSettings.codMaxOrderValue}
+                onChange={(event) => setShippingSettings((current) => ({ ...current, codMaxOrderValue: event.target.value }))}
+                className="w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink"
+                inputMode="numeric"
+              />
+            </label>
+            <label className="space-y-2 text-sm text-white/70">
+              <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Blocked COD pincodes</span>
+              <input
+                value={shippingSettings.blockedCodPincodes}
+                onChange={(event) => setShippingSettings((current) => ({ ...current, blockedCodPincodes: event.target.value }))}
+                className="w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink"
+                placeholder="560001, 110001"
+              />
+            </label>
+          </div>
+        </section>
 
         <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">

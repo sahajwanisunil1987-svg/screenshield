@@ -449,3 +449,14 @@ model SupportTicket {
   @@index([status, createdAt])
   @@index([email, orderNumber])
 }
+
+
+model AppSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}

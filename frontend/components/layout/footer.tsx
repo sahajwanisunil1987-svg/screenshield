@@ -19,6 +19,7 @@ const supportLinks = [
   { href: "/contact", label: "Contact Us" },
   { href: "/returns", label: "Returns" },
   { href: "/privacy-policy", label: "Privacy Policy" },
+  { href: "/shipping-policy", label: "Shipping Policy" },
   { href: "/terms", label: "Terms" }
 ];
 
@@ -97,6 +98,7 @@ export function Footer() {
               <Link href="/privacy-policy" className="transition hover:text-white">Privacy</Link>
               <Link href="/terms" className="transition hover:text-white">Terms</Link>
               <Link href="/returns" className="transition hover:text-white">Returns</Link>
+              <Link href="/shipping-policy" className="transition hover:text-white">Shipping</Link>
             </div>
           </div>
         </div>

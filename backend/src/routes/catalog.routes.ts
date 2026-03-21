@@ -1,5 +1,6 @@
 import { Router } from "express";
 import * as catalogController from "../controllers/catalog.controller.js";
+import * as settingsController from "../controllers/settings.controller.js";
 import { authenticate, requireAdmin } from "../middleware/auth.middleware.js";
 import { searchRateLimiter } from "../middleware/rate-limit.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
@@ -20,6 +21,7 @@ router.get("/brands", catalogController.getBrands);
 router.get("/models", catalogController.getModels);
 router.get("/models/by-brand/:brandId", catalogController.getModelsByBrand);
 router.get("/categories", catalogController.getCategories);
+router.get("/settings/shipping", settingsController.getPublicShippingSettings);
 router.get("/products", searchRateLimiter, validate({ query: productSearchSchema }), catalogController.getProducts);
 router.get("/products/search", searchRateLimiter, validate({ query: productSearchSchema }), catalogController.searchProducts);
 router.get(

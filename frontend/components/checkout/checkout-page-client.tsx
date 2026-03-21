@@ -8,13 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
 import { calculateOrderPricing } from "@/lib/order-pricing";
+import { useShippingSettings } from "@/hooks/use-shipping-settings";
 import { formatCurrency } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 import { useCartStore } from "@/store/cart-store";
 import { User } from "@/types";
 
-const COD_MAX_ORDER_VALUE = 5000;
-const BLOCKED_COD_PINCODES = ["560001", "110001"];
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type FormValues = {
@@ -59,11 +58,12 @@ export function CheckoutPageClient() {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const shippingSettings = useShippingSettings();
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount);
+  const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount, shippingSettings);
   const codAvailable = useMemo(
-    () => total <= COD_MAX_ORDER_VALUE && !BLOCKED_COD_PINCODES.includes(form.postalCode.trim()),
-    [form.postalCode, total]
+    () => total <= shippingSettings.codMaxOrderValue && !shippingSettings.blockedCodPincodes.includes(form.postalCode.trim()),
+    [form.postalCode, shippingSettings, total]
   );
 
   useEffect(() => {
@@ -308,7 +308,7 @@ export function CheckoutPageClient() {
                   Razorpay
                 </label>
               </div>
-              {!codAvailable ? <p className="mt-3 text-sm text-amber-700">COD unavailable for this order because the amount exceeds Rs. {COD_MAX_ORDER_VALUE} or the pincode is restricted.</p> : <p className="mt-3 text-sm text-slate">COD available for this order.</p>}
+              {!codAvailable ? <p className="mt-3 text-sm text-amber-700">COD unavailable for this order because the amount exceeds Rs. {shippingSettings.codMaxOrderValue} or the pincode is restricted.</p> : <p className="mt-3 text-sm text-slate">COD available for this order. Final shipping and tax are already included in the summary below.</p>}
             </div>
             <Button disabled={isSubmitting} className="w-full">
               {isSubmitting ? "Placing order..." : form.paymentMethod === "RAZORPAY" ? "Continue to Razorpay" : "Place order"}
@@ -318,7 +318,7 @@ export function CheckoutPageClient() {
             <h2 className="text-xl font-semibold text-ink">Summary</h2>
             <p className="mt-2 text-sm text-slate">Your default saved address is auto-filled here and refreshed after each successful order.</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Delivery</p><p className="mt-2 font-semibold text-ink">{shipping === 0 ? "Free shipping unlocked" : "Standard dispatch"}</p></div>
+              <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Delivery</p><p className="mt-2 font-semibold text-ink">{shipping === 0 ? "Free shipping unlocked" : "Standard dispatch"}</p><p className="mt-1 text-xs leading-5 text-slate">Most confirmed orders move into dispatch within 24 to 48 working hours.</p></div>
               <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Invoice</p><p className="mt-2 font-semibold text-ink">GST-ready order invoice</p></div>
               <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Support</p><p className="mt-2 font-semibold text-ink">Warranty-backed assistance</p></div>
             </div>
@@ -334,6 +334,7 @@ export function CheckoutPageClient() {
               <div className="flex justify-between"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
               {couponDiscount > 0 ? <div className="mt-2 flex justify-between text-emerald-600"><span>Coupon ({couponCode})</span><span>-{formatCurrency(couponDiscount)}</span></div> : null}
               <div className="mt-2 flex justify-between"><span>Shipping</span><span>{shipping === 0 ? "Free" : formatCurrency(shipping)}</span></div>
+              <p className="mt-2 text-xs leading-5 text-slate">Orders above INR {shippingSettings.freeShippingThreshold} usually qualify for free shipping. Delivery timelines can vary by city and courier serviceability.</p>
               <div className="mt-2 flex justify-between"><span>GST</span><span>{formatCurrency(tax)}</span></div>
               <div className="mt-4 flex justify-between font-semibold text-ink"><span>Total</span><span>{formatCurrency(total)}</span></div>
             </div>
