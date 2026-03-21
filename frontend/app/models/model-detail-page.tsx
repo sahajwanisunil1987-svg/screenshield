@@ -92,9 +92,9 @@ function ModelPartTile({ product }: { product: Product }) {
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="group flex h-full flex-col rounded-[20px] border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-1 hover:border-accent/20 hover:shadow-card"
+      className="group flex h-full flex-col rounded-[18px] border border-slate-200 bg-white p-2.5 shadow-sm transition hover:-translate-y-1 hover:border-accent/20 hover:shadow-card"
     >
-      <div className="relative aspect-square overflow-hidden rounded-2xl bg-slate-100">
+      <div className="relative aspect-square overflow-hidden rounded-[16px] bg-slate-100">
         <Image
           src={primaryImage}
           alt={product.name}
@@ -102,10 +102,10 @@ function ModelPartTile({ product }: { product: Product }) {
           className="object-cover transition duration-300 group-hover:scale-105"
         />
       </div>
-      <div className="mt-3 flex flex-1 flex-col">
+      <div className="mt-2.5 flex flex-1 flex-col">
         <p className="line-clamp-2 text-sm font-semibold leading-snug text-ink">{product.name}</p>
         <p className="mt-1 text-[11px] text-slate">SKU {product.sku}</p>
-        <div className="mt-2.5 flex items-center justify-between gap-2">
+        <div className="mt-2 flex items-center justify-between gap-2">
           <span className="text-sm font-semibold text-ink">{formatCurrency(product.price)}</span>
           <span
             className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
@@ -268,20 +268,19 @@ export async function ModelDetailPageContent(params: ModelPageParams) {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {products.length ? (
-          <div className="space-y-8">
+          <div className="space-y-5">
             {groupedProducts.map((group) => (
-              <section key={group.title} className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-                <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <section key={group.title} className="rounded-[24px] border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">Repair category</p>
-                    <h2 className="mt-1.5 text-2xl font-semibold text-ink sm:text-[1.7rem]">{group.title}</h2>
-                    <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate">{group.description}</p>
+                    <h2 className="mt-1 text-xl font-semibold text-ink sm:text-2xl">{group.title}</h2>
                   </div>
                   <span className="rounded-full bg-accentSoft px-3 py-1.5 text-xs font-semibold text-accent">{group.products.length} parts</span>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                   {group.products.map((product) => (
                     <ModelPartTile key={product.id} product={product} />
                   ))}
