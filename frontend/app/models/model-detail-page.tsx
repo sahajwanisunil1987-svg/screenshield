@@ -270,17 +270,14 @@ export async function ModelDetailPageContent(params: ModelPageParams) {
 
       <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {products.length ? (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {groupedProducts.map((group) => (
-              <section key={group.title} className="rounded-[24px] border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4">
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">Repair category</p>
-                    <h2 className="mt-1 text-xl font-semibold text-ink sm:text-2xl">{group.title}</h2>
-                  </div>
-                  <span className="rounded-full bg-accentSoft px-3 py-1.5 text-xs font-semibold text-accent">{group.products.length} parts</span>
+              <section key={group.title} className="space-y-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-lg font-semibold text-ink sm:text-xl">{group.title}</h2>
+                  <span className="rounded-full bg-accentSoft px-2.5 py-1 text-[11px] font-semibold text-accent">{group.products.length} part{group.products.length > 1 ? "s" : ""}</span>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,210px))] justify-start gap-3">
                   {group.products.map((product) => (
                     <ModelPartTile key={product.id} product={product} />
                   ))}
