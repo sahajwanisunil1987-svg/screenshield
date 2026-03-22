@@ -66,6 +66,7 @@ export default function LoginPage() {
           <form onSubmit={onSubmit} className="mt-8 space-y-4">
             <Input
               placeholder="Email"
+              name="email"
               value={email}
               onChange={(event) => {
                 setEmail(event.target.value);
