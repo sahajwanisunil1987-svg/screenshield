@@ -5,9 +5,15 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "ghost";
 };
 
-export function Button({ className, variant = "primary", ...props }: ButtonProps) {
+export function Button({
+  className,
+  variant = "primary",
+  type = "button",
+  ...props
+}: ButtonProps) {
   return (
     <button
+      type={type}
       className={cn(
         "inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition duration-200",
         variant === "primary" && "bg-accent text-white shadow-[0_16px_35px_rgba(15,118,110,0.24)] hover:bg-teal-700",
