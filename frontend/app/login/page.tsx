@@ -66,7 +66,6 @@ export default function LoginPage() {
           <form onSubmit={onSubmit} className="mt-8 space-y-4">
             <Input
               placeholder="Email"
-              autoComplete="email"
               value={email}
               onChange={(event) => {
                 setEmail(event.target.value);
@@ -81,7 +80,6 @@ export default function LoginPage() {
                 <Input
                   placeholder="Password"
                   type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
                   className="pr-20"
                   value={password}
                   onChange={(event) => {

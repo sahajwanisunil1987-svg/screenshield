@@ -23,11 +23,7 @@ body {
   line-height: 1.5;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  background:
-    radial-gradient(circle at top left, rgba(15, 118, 110, 0.06), transparent 20%),
-    radial-gradient(circle at top right, rgba(249, 115, 22, 0.08), transparent 18%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0)),
-    var(--color-page);
+  background: var(--color-page);
   color: var(--color-ink);
   font-family: Manrope, "Avenir Next", "Segoe UI", sans-serif;
 }
@@ -50,11 +46,7 @@ h6 {
 }
 
 .bg-page-wash {
-  background:
-    radial-gradient(circle at 15% 0%, rgba(15, 118, 110, 0.07), transparent 22%),
-    radial-gradient(circle at 85% 5%, rgba(249, 115, 22, 0.08), transparent 18%),
-    radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.82), transparent 28%),
-    var(--color-page);
+  background: var(--color-page);
 }
 
 .bg-hero-grid {
@@ -160,20 +152,12 @@ html[data-theme="dark"] {
 }
 
 html[data-theme="dark"] body:not(.admin-theme) {
-  background:
-    radial-gradient(circle at top left, rgba(39, 194, 181, 0.12), transparent 20%),
-    radial-gradient(circle at top right, rgba(249, 115, 22, 0.08), transparent 18%),
-    linear-gradient(180deg, rgba(3, 8, 17, 0.28), rgba(3, 8, 17, 0)),
-    var(--color-page);
+  background: var(--color-page);
   color: var(--color-ink);
 }
 
 html[data-theme="dark"] .bg-page-wash {
-  background:
-    radial-gradient(circle at 15% 0%, rgba(39, 194, 181, 0.12), transparent 22%),
-    radial-gradient(circle at 85% 5%, rgba(249, 115, 22, 0.08), transparent 18%),
-    radial-gradient(circle at 50% 35%, rgba(12, 22, 38, 0.72), transparent 28%),
-    var(--color-page);
+  background: var(--color-page);
 }
 
 html[data-theme="dark"] .theme-surface {

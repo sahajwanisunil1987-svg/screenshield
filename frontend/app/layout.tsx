@@ -33,13 +33,14 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1
+  maximumScale: 1,
+  viewportFit: "cover"
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="font-sans" suppressHydrationWarning>
+    <html lang="en">
+      <body className="font-sans">
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
         {children}
         <ClientBootstraps />
