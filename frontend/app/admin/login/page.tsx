@@ -44,7 +44,7 @@ export default function AdminLoginPage() {
     try {
       const response = await api.post("/auth/login", {
         email: email.trim(),
-        password
+        password,
       });
       setAuth(response.data.token, response.data.user);
       router.push("/admin/dashboard");
@@ -66,13 +66,18 @@ export default function AdminLoginPage() {
     >
       <div className="absolute inset-x-0 top-0 mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
         <div>
-          <p className={`text-xs font-semibold uppercase tracking-[0.26em] ${isDark ? "text-cyan-200/80" : "text-accent/80"}`}>
+          <p
+            className={`text-xs font-semibold uppercase tracking-[0.26em] ${
+              isDark ? "text-cyan-200/80" : "text-accent/80"
+            }`}
+          >
             SpareKart Admin
           </p>
           <p className={`mt-2 text-sm ${isDark ? "text-white/55" : "text-slate"}`}>
             Control access for catalog, orders, stock, and pricing.
           </p>
         </div>
+
         <button
           type="button"
           onClick={toggleTheme}
@@ -86,8 +91,10 @@ export default function AdminLoginPage() {
           {isDark ? "Light mode" : "Dark mode"}
         </button>
       </div>
+
       <form
         onSubmit={handleSubmit}
+        autoComplete="on"
         className={`w-full max-w-md rounded-[32px] border p-8 transition-colors duration-300 ${
           isDark
             ? "border-white/10 bg-white/5 text-white shadow-[0_28px_70px_rgba(2,6,23,0.42)]"
@@ -96,7 +103,11 @@ export default function AdminLoginPage() {
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className={`text-xs font-semibold uppercase tracking-[0.24em] ${isDark ? "text-cyan-200/70" : "text-accent/70"}`}>
+            <p
+              className={`text-xs font-semibold uppercase tracking-[0.24em] ${
+                isDark ? "text-cyan-200/70" : "text-accent/70"
+              }`}
+            >
               Secure access
             </p>
             <h1 className="mt-3 font-display text-4xl">Admin login</h1>
@@ -105,11 +116,17 @@ export default function AdminLoginPage() {
             </p>
           </div>
         </div>
+
         <div className="mt-8 space-y-4">
           <div>
             <Input
+              id="admin-email"
+              name="email"
+              type="email"
               placeholder="Admin email"
-              autoComplete="email"
+              autoComplete="username"
+              inputMode="email"
+              spellCheck={false}
               value={email}
               onChange={(event) => {
                 setEmail(event.target.value);
@@ -125,11 +142,15 @@ export default function AdminLoginPage() {
             />
             {errors.email ? <p className="mt-2 text-sm text-rose-400">{errors.email}</p> : null}
           </div>
+
           <div>
             <Input
+              id="admin-password"
+              name="password"
               type="password"
               placeholder="Password"
               autoComplete="current-password"
+              spellCheck={false}
               value={password}
               onChange={(event) => {
                 setPassword(event.target.value);
@@ -145,7 +166,9 @@ export default function AdminLoginPage() {
             />
             {errors.password ? <p className="mt-2 text-sm text-rose-400">{errors.password}</p> : null}
           </div>
+
           <Button
+            type="submit"
             disabled={isSubmitting}
             className={`w-full ${
               isDark
