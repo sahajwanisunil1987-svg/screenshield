@@ -1,8 +1,21 @@
 import axios from "axios";
 import { useAuthStore } from "@/store/auth-store";
 
+const normalizeBaseUrl = (value?: string) => value?.replace(/\/+$/, "");
+const normalizeRelativeUrl = (value?: string) => {
+  if (!value) {
+    return value;
+  }
+
+  if (/^(https?:)?\/\//i.test(value)) {
+    return value;
+  }
+
+  return value.replace(/^\/+/, "");
+};
+
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  baseURL: normalizeBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL),
   withCredentials: true,
   headers: {
     "Content-Type": "application/json"
@@ -11,10 +24,16 @@ export const api = axios.create({
 
 let refreshPromise: Promise<string | null> | null = null;
 
+api.interceptors.request.use((config) => {
+  config.baseURL = normalizeBaseUrl(config.baseURL);
+  config.url = normalizeRelativeUrl(config.url);
+  return config;
+});
+
 export const refreshAccessToken = async () => {
   if (!refreshPromise) {
     refreshPromise = api
-      .post("/auth/refresh")
+      .post("auth/refresh")
       .then((response) => {
         if (response.status === 204 || !response.data?.token) {
           useAuthStore.getState().clearAuth();
