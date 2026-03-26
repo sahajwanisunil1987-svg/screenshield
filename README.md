@@ -1,6 +1,6 @@
 # PurjiX
 
-PurjiX is a production-structured single-vendor e-commerce platform for mobile spare parts. It ships as a TypeScript monorepo with a Next.js 14 storefront/admin frontend and an Express + Prisma backend.
+PurjiX is a production-structured single-vendor e-commerce platform for mobile spare parts. It ships as a TypeScript monorepo with a Next.js storefront/admin frontend and an Express + Prisma backend.
 
 ## Monorepo structure
 
@@ -9,7 +9,6 @@ sparekart/
   frontend/
   backend/
   docs/
-  docker-compose.yml
   README.md
 ```
 
@@ -28,7 +27,7 @@ cp .env.example backend/.env
 cp frontend/.env.example frontend/.env.local
 ```
 
-3. Start PostgreSQL locally or with Docker, then run:
+3. Start PostgreSQL locally, then run:
 
 ```bash
 npm run db:push
@@ -51,12 +50,6 @@ npm run release:schema
 
 Frontend runs at `http://localhost:3000`.
 Backend runs at `http://localhost:4000`.
-
-## Docker
-
-```bash
-docker compose up --build
-```
 
 ## Git setup
 
@@ -142,7 +135,7 @@ After seeding:
 - Razorpay, SMTP, Cloudinary, and WhatsApp webhook integrations are wired for real credentials through environment variables.
 - Invoice generation returns PDF metadata and a downloadable HTML invoice endpoint scaffold.
 - The project uses Prisma with PostgreSQL and includes seed data for brands, models, categories, products, coupons, and users.
-- The repo is prepared for Git, Docker, and Render Blueprint deployment.
+- The repo is prepared for Git and Render Blueprint deployment.
 
 ## Release Flow
 
