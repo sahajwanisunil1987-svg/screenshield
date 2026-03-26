@@ -22,7 +22,8 @@ const links = [
   { href: "/admin/categories", label: "Categories" },
   { href: "/admin/coupons", label: "Coupons" },
   { href: "/admin/reviews", label: "Reviews" },
-  { href: "/admin/users", label: "Users" }
+  { href: "/admin/users", label: "Users" },
+  { href: "/admin/settings", label: "Settings" }
 ];
 
 const mobileLinks = links;
