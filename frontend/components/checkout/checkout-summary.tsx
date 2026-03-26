@@ -9,6 +9,7 @@ type CheckoutSummaryProps = {
   couponCode: string;
   couponDiscount: number;
   shipping: number;
+  freeShippingThreshold: number;
   tax: number;
   total: number;
 };
@@ -19,6 +20,7 @@ export function CheckoutSummary({
   couponCode,
   couponDiscount,
   shipping,
+  freeShippingThreshold,
   tax,
   total
 }: CheckoutSummaryProps) {
@@ -27,7 +29,7 @@ export function CheckoutSummary({
       <h2 className="text-xl font-semibold text-ink">Summary</h2>
       <p className="mt-2 text-sm text-slate">Your default saved address is auto-filled here and refreshed after each successful order.</p>
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Delivery</p><p className="mt-2 font-semibold text-ink">{shipping === 0 ? "Free shipping unlocked" : "Standard dispatch"}</p></div>
+        <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Delivery</p><p className="mt-2 font-semibold text-ink">{shipping === 0 ? `Free shipping above INR ${freeShippingThreshold}` : "Standard dispatch"}</p></div>
         <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Invoice</p><p className="mt-2 font-semibold text-ink">GST-ready order invoice</p></div>
         <div className="rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate">Support</p><p className="mt-2 font-semibold text-ink">Warranty-backed assistance</p></div>
       </div>

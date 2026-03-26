@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { generateInvoicePdfBuffer } from "../services/invoice.service.js";
+import { APP_SETTINGS_ID, appSettingsDefaults, serializeAppSettings } from "../services/app-settings.service.js";
 import { getSingleParam } from "../utils/helpers.js";
 
 const rangeDaysMap = {
@@ -10,29 +11,21 @@ const rangeDaysMap = {
   "90d": 90
 } as const;
 
-const APP_SETTINGS_ID = "default";
-
 export const appSettings = async (_req: Request, res: Response) => {
-  const settings = await prisma.appSetting.upsert({
-    where: { id: APP_SETTINGS_ID },
-    update: {},
-    create: { id: APP_SETTINGS_ID }
-  });
-
-  res.json(settings);
+  res.json(await serializeAppSettings(prisma));
 };
 
 export const updateAppSettings = async (req: Request, res: Response) => {
-  const settings = await prisma.appSetting.upsert({
+  await prisma.appSetting.upsert({
     where: { id: APP_SETTINGS_ID },
     update: req.body,
     create: {
-      id: APP_SETTINGS_ID,
+      ...appSettingsDefaults,
       ...req.body
     }
   });
 
-  res.json(settings);
+  res.json(await serializeAppSettings(prisma));
 };
 
 export const dashboard = async (req: Request, res: Response) => {

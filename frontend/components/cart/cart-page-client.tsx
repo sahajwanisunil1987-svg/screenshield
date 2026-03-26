@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ShieldCheck, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { calculateOrderPricing } from "@/lib/order-pricing";
+import { calculateOrderPricing, defaultPricingSettings, PricingSettings } from "@/lib/order-pricing";
+import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import { useCartStore } from "@/store/cart-store";
 import { CartLineItem } from "@/components/cart/cart-line-item";
@@ -16,9 +17,24 @@ export function CartPageClient() {
   const { items, updateQty, removeItem, couponCode, couponDiscount, applyCoupon, clearCoupon, hasHydrated } = useCartStore();
   const [couponInput, setCouponInput] = useState(couponCode);
   const [isApplying, setIsApplying] = useState(false);
+  const [pricingSettings, setPricingSettings] = useState<PricingSettings>(defaultPricingSettings);
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount);
+  const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount, pricingSettings);
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  useEffect(() => {
+    void api
+      .get("/settings/app")
+      .then((response) => {
+        setPricingSettings({
+          shippingFee: Number(response.data.shippingFee ?? defaultPricingSettings.shippingFee),
+          freeShippingThreshold: Number(response.data.freeShippingThreshold ?? defaultPricingSettings.freeShippingThreshold),
+          codMaxOrderValue: Number(response.data.codMaxOrderValue ?? defaultPricingSettings.codMaxOrderValue),
+          codDisabledPincodes: String(response.data.codDisabledPincodes ?? "")
+        });
+      })
+      .catch(() => null);
+  }, []);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -92,6 +108,7 @@ export function CartPageClient() {
           hasItems={items.length > 0}
           subtotal={subtotal}
           shipping={shipping}
+          freeShippingThreshold={pricingSettings.freeShippingThreshold ?? defaultPricingSettings.freeShippingThreshold}
           tax={tax}
           total={total}
           couponCode={couponCode}

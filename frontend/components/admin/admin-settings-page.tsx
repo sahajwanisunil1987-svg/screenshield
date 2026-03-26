@@ -52,6 +52,10 @@ const defaultSettings = {
   heroHeading: "Mobile spare parts, faster sourcing, cleaner checkout.",
   heroSubheading: "Use admin settings to keep storefront branding and support details consistent.",
   announcementText: "Free shipping above Rs. 999",
+  shippingFee: 79,
+  freeShippingThreshold: 999,
+  codMaxOrderValue: 5000,
+  codDisabledPincodes: "",
   maintenanceMode: false,
   allowGuestCheckout: true,
   showSupportBanner: true
@@ -181,6 +185,14 @@ export function AdminSettingsPage() {
                   className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
                   disabled={isLoading}
                 />
+                <Input
+                  type="number"
+                  value={String(settings.freeShippingThreshold)}
+                  onChange={(event) => updateField("freeShippingThreshold", Number(event.target.value || 0))}
+                  placeholder="Free shipping threshold"
+                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
+                  disabled={isLoading}
+                />
               </div>
 
               <div className="space-y-4 rounded-[24px] border border-white/10 bg-white/5 p-5">
@@ -206,6 +218,14 @@ export function AdminSettingsPage() {
                   className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
                   disabled={isLoading}
                 />
+                <Input
+                  type="number"
+                  value={String(settings.shippingFee)}
+                  onChange={(event) => updateField("shippingFee", Number(event.target.value || 0))}
+                  placeholder="Shipping fee"
+                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
+                  disabled={isLoading}
+                />
               </div>
             </div>
 
@@ -223,6 +243,14 @@ export function AdminSettingsPage() {
                   value={settings.addressLine2}
                   onChange={(event) => updateField("addressLine2", event.target.value)}
                   placeholder="Address line 2"
+                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
+                  disabled={isLoading}
+                />
+                <Input
+                  type="number"
+                  value={String(settings.codMaxOrderValue)}
+                  onChange={(event) => updateField("codMaxOrderValue", Number(event.target.value || 0))}
+                  placeholder="COD max order value"
                   className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
                   disabled={isLoading}
                 />
@@ -245,6 +273,13 @@ export function AdminSettingsPage() {
                   rows={4}
                   disabled={isLoading}
                   className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-teal-300 disabled:opacity-70"
+                />
+                <Input
+                  value={settings.codDisabledPincodes}
+                  onChange={(event) => updateField("codDisabledPincodes", event.target.value)}
+                  placeholder="Blocked COD pincodes (comma separated)"
+                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
+                  disabled={isLoading}
                 />
               </div>
             </div>

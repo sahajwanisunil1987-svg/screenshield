@@ -79,6 +79,10 @@ export const adminAppSettingsSchema = z.object({
   heroHeading: z.string().min(5),
   heroSubheading: z.string().min(5),
   announcementText: z.string().min(2),
+  shippingFee: z.coerce.number().min(0),
+  freeShippingThreshold: z.coerce.number().min(0),
+  codMaxOrderValue: z.coerce.number().min(0),
+  codDisabledPincodes: z.string(),
   maintenanceMode: z.boolean(),
   allowGuestCheckout: z.boolean(),
   showSupportBanner: z.boolean()

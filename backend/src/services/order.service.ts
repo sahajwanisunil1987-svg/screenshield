@@ -4,26 +4,33 @@ import { prisma } from "../lib/prisma.js";
 import { env } from "../config/env.js";
 import { ApiError } from "../utils/api-error.js";
 import { createInvoiceNumber, createOrderNumber } from "../utils/helpers.js";
+import { ensureAppSettings } from "./app-settings.service.js";
 
 const decimal = (value: number) => new Prisma.Decimal(value.toFixed(2));
 
 
-const disabledCodPincodes = new Set(
-  (env.COD_DISABLED_PINCODES ?? "")
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter(Boolean)
-);
+const parseDisabledCodPincodes = (value: string | undefined) =>
+  new Set(
+    (value ?? "")
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+  );
 
-const assertCodAllowed = (postalCode: string | undefined, totalAmount: number) => {
-  if (totalAmount > env.COD_MAX_ORDER_VALUE) {
+const assertCodAllowed = (
+  postalCode: string | undefined,
+  totalAmount: number,
+  codMaxOrderValue: number,
+  codDisabledPincodes: Set<string>
+) => {
+  if (totalAmount > codMaxOrderValue) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      `Cash on Delivery is available only for orders up to Rs. ${env.COD_MAX_ORDER_VALUE}.`
+      `Cash on Delivery is available only for orders up to Rs. ${codMaxOrderValue}.`
     );
   }
 
-  if (postalCode && disabledCodPincodes.has(postalCode.trim())) {
+  if (postalCode && codDisabledPincodes.has(postalCode.trim())) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Cash on Delivery is not available for this pincode.");
   }
 };
@@ -124,6 +131,12 @@ export const createOrder = async (
   }
 
   return prisma.$transaction(async (tx) => {
+    const appSettings = await ensureAppSettings(tx);
+    const shippingFee = Number(appSettings.shippingFee ?? 79);
+    const freeShippingThreshold = Number(appSettings.freeShippingThreshold ?? 999);
+    const codMaxOrderValue = Number(appSettings.codMaxOrderValue ?? env.COD_MAX_ORDER_VALUE);
+    const disabledCodPincodes = parseDisabledCodPincodes(appSettings.codDisabledPincodes || env.COD_DISABLED_PINCODES);
+
     const productIds = payload.items.map((item) => item.productId);
     const products = await tx.product.findMany({
       where: { id: { in: productIds }, isActive: true },
@@ -186,12 +199,17 @@ export const createOrder = async (
       };
     });
 
-    const shippingAmount = subtotal > 999 ? 0 : 79;
+    const shippingAmount = subtotal > freeShippingThreshold ? 0 : shippingFee;
     const taxAmount = orderItems.reduce((sum, item) => sum + item.lineTax, 0);
     const totalAmount = subtotal - discountAmount + shippingAmount + taxAmount;
 
     if (payload.paymentMethod === "COD") {
-      assertCodAllowed((payload.address.postalCode ?? payload.address.pincode) as string | undefined, totalAmount);
+      assertCodAllowed(
+        (payload.address.postalCode ?? payload.address.pincode) as string | undefined,
+        totalAmount,
+        codMaxOrderValue,
+        disabledCodPincodes
+      );
     }
 
     if (payload.paymentMethod === "COD") {

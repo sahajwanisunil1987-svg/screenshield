@@ -5,15 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
-import { calculateOrderPricing } from "@/lib/order-pricing";
+import { calculateOrderPricing, defaultPricingSettings, PricingSettings } from "@/lib/order-pricing";
 import { useAuthStore } from "@/store/auth-store";
 import { useCartStore } from "@/store/cart-store";
 import { User } from "@/types";
 import { CheckoutForm } from "@/components/checkout/checkout-form";
 import { CheckoutSummary } from "@/components/checkout/checkout-summary";
 
-const COD_MAX_ORDER_VALUE = 5000;
-const BLOCKED_COD_PINCODES = ["560001", "110001"];
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type FormValues = {
@@ -52,6 +50,7 @@ export function CheckoutPageClient() {
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
   const setAuth = useAuthStore((state) => state.setAuth);
+  const [pricingSettings, setPricingSettings] = useState<PricingSettings>(defaultPricingSettings);
   const [form, setForm] = useState<FormValues>({
     ...DEFAULT_FORM_VALUES,
     email: user?.email ?? ""
@@ -59,11 +58,35 @@ export function CheckoutPageClient() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount);
-  const codAvailable = useMemo(
-    () => total <= COD_MAX_ORDER_VALUE && !BLOCKED_COD_PINCODES.includes(form.postalCode.trim()),
-    [form.postalCode, total]
+  const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount, pricingSettings);
+  const blockedCodPincodes = useMemo(
+    () =>
+      String(pricingSettings.codDisabledPincodes ?? "")
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter(Boolean),
+    [pricingSettings.codDisabledPincodes]
   );
+  const codAvailable = useMemo(
+    () =>
+      total <= Number(pricingSettings.codMaxOrderValue ?? defaultPricingSettings.codMaxOrderValue) &&
+      !blockedCodPincodes.includes(form.postalCode.trim()),
+    [blockedCodPincodes, form.postalCode, pricingSettings.codMaxOrderValue, total]
+  );
+
+  useEffect(() => {
+    void api
+      .get("/settings/app")
+      .then((response) => {
+        setPricingSettings({
+          shippingFee: Number(response.data.shippingFee ?? defaultPricingSettings.shippingFee),
+          freeShippingThreshold: Number(response.data.freeShippingThreshold ?? defaultPricingSettings.freeShippingThreshold),
+          codMaxOrderValue: Number(response.data.codMaxOrderValue ?? defaultPricingSettings.codMaxOrderValue),
+          codDisabledPincodes: String(response.data.codDisabledPincodes ?? "")
+        });
+      })
+      .catch(() => null);
+  }, []);
 
   useEffect(() => {
     if (!token) {
@@ -253,7 +276,7 @@ export function CheckoutPageClient() {
             errors={errors}
             isSubmitting={isSubmitting}
             codAvailable={codAvailable}
-            codMaxOrderValue={COD_MAX_ORDER_VALUE}
+            codMaxOrderValue={Number(pricingSettings.codMaxOrderValue ?? defaultPricingSettings.codMaxOrderValue)}
             onFieldChange={updateField}
             onSubmit={onSubmit}
           />
@@ -263,6 +286,7 @@ export function CheckoutPageClient() {
             couponCode={couponCode}
             couponDiscount={couponDiscount}
             shipping={shipping}
+            freeShippingThreshold={Number(pricingSettings.freeShippingThreshold ?? defaultPricingSettings.freeShippingThreshold)}
             tax={tax}
             total={total}
           />

@@ -12,6 +12,7 @@ type CartSummaryProps = {
   hasItems: boolean;
   subtotal: number;
   shipping: number;
+  freeShippingThreshold: number;
   tax: number;
   total: number;
   couponCode: string;
@@ -29,6 +30,7 @@ export function CartSummary({
   hasItems,
   subtotal,
   shipping,
+  freeShippingThreshold,
   tax,
   total,
   couponCode,
@@ -55,7 +57,9 @@ export function CartSummary({
           <Truck className="mt-0.5 h-4 w-4 text-accent" />
           <div>
             <p className="font-semibold text-ink">Dispatch guidance</p>
-            <p className="mt-1 text-slate">Orders above INR 999 qualify for free shipping. Lower-value orders include dispatch charges.</p>
+            <p className="mt-1 text-slate">
+              Orders above INR {freeShippingThreshold} qualify for free shipping. Lower-value orders include dispatch charges.
+            </p>
           </div>
         </div>
       </div>
