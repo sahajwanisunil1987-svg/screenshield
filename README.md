@@ -112,6 +112,7 @@ Required frontend env vars:
 - If you want a single-platform deploy elsewhere, split frontend and backend envs the same way as the included Render blueprint.
 - For rollout, rollback, and health checks, see [docs/operations.md](/home/mistermobiletriveni/screen/screenshield/docs/operations.md).
 - For launch gating, see [docs/launch.md](/home/mistermobiletriveni/screen/screenshield/docs/launch.md).
+- For day-to-day feature structure and workflow, see [docs/development-workflow.md](/Users/apple/screenshield/docs/development-workflow.md).
 
 ## Core features
 
