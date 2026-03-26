@@ -266,7 +266,7 @@ export const createOrder = async (
     const order = await tx.order.create({
       data: {
         userId,
-        orderNumber: createOrderNumber(),
+        orderNumber: createOrderNumber(appSettings.orderPrefix ?? "PJX"),
         couponId,
         addressSnapshot: payload.address,
         subtotal: decimal(subtotal),

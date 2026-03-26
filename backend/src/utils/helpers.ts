@@ -9,7 +9,10 @@ export const toSlug = (value: string) =>
 export const getSingleParam = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] : value;
 
-export const createOrderNumber = () => `SK${Date.now().toString().slice(-8)}`;
+export const createOrderNumber = (prefix = "PJX") => {
+  const cleanedPrefix = prefix.trim().toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 6) || "PJX";
+  return `${cleanedPrefix}${Date.now().toString().slice(-8)}`;
+};
 
 export const createInvoiceNumber = () => `INV-${new Date().getFullYear()}-${crypto.randomInt(1000, 9999)}`;
 

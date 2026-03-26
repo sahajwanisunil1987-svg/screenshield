@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { Globe, Layers3, LifeBuoy, Save, ShieldCheck, ShoppingBag } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Globe, Layers3, LifeBuoy, RotateCcw, Save, ShieldCheck, ShoppingBag, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { Button } from "@/components/ui/button";
@@ -47,11 +47,13 @@ const defaultSettings = {
   supportEmail: "support@purjix.com",
   supportPhone: "+91 99999 99999",
   supportWhatsapp: "+91 99999 99999",
+  supportHours: "Mon-Sat, 10 AM to 7 PM",
   addressLine1: "Repair Market, Main Unit",
   addressLine2: "Mumbai, Maharashtra",
   heroHeading: "Mobile spare parts, faster sourcing, cleaner checkout.",
   heroSubheading: "Use admin settings to keep storefront branding and support details consistent.",
   announcementText: "Free shipping above Rs. 999",
+  orderPrefix: "PJX",
   shippingFee: 79,
   freeShippingThreshold: 999,
   codMaxOrderValue: 5000,
@@ -65,6 +67,7 @@ type SettingsState = typeof defaultSettings;
 
 const environmentRows = (settings: SettingsState) => [
   { label: "Brand", value: settings.siteName || "PurjiX" },
+  { label: "Order prefix", value: settings.orderPrefix || "PJX" },
   { label: "Frontend", value: "Next.js storefront/admin" },
   { label: "Backend API", value: process.env.NEXT_PUBLIC_API_BASE_URL ?? "Not configured" },
   { label: "Release mode", value: "GitHub + Vercel + Render" }
@@ -73,6 +76,7 @@ const environmentRows = (settings: SettingsState) => [
 export function AdminSettingsPage() {
   const token = useAuthStore((state) => state.token);
   const [settings, setSettings] = useState<SettingsState>(defaultSettings);
+  const [savedSettings, setSavedSettings] = useState<SettingsState>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -89,7 +93,9 @@ export function AdminSettingsPage() {
       try {
         const response = await api.get("/admin/settings", authHeaders(token));
         if (!cancelled) {
-          setSettings({ ...defaultSettings, ...response.data });
+          const nextSettings = { ...defaultSettings, ...response.data };
+          setSettings(nextSettings);
+          setSavedSettings(nextSettings);
         }
       } catch (error) {
         if (!cancelled) {
@@ -113,6 +119,18 @@ export function AdminSettingsPage() {
     setSettings((current) => ({ ...current, [field]: value }));
   };
 
+  const isDirty = useMemo(() => JSON.stringify(settings) !== JSON.stringify(savedSettings), [savedSettings, settings]);
+
+  const resetToSaved = () => {
+    setSettings(savedSettings);
+    toast.success("Reverted unsaved changes");
+  };
+
+  const resetToDefaults = () => {
+    setSettings(defaultSettings);
+    toast.success("Loaded default settings locally");
+  };
+
   const saveSettings = async () => {
     if (!token) {
       toast.error("Admin session expired");
@@ -122,7 +140,9 @@ export function AdminSettingsPage() {
     setIsSaving(true);
     try {
       const response = await api.put("/admin/settings", settings, authHeaders(token));
-      setSettings({ ...defaultSettings, ...response.data });
+      const nextSettings = { ...defaultSettings, ...response.data };
+      setSettings(nextSettings);
+      setSavedSettings(nextSettings);
       toast.success("Settings saved");
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Unable to save settings"));
@@ -148,17 +168,40 @@ export function AdminSettingsPage() {
                     Update core PurjiX branding, support details, and homepage messaging from one place. Changes now
                     persist through the admin API.
                   </p>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${isDirty ? "bg-amber-500/15 text-amber-100" : "bg-emerald-500/15 text-emerald-100"}`}>
+                      {isDirty ? "Unsaved changes" : "All changes saved"}
+                    </span>
+                    <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/75">
+                      Order prefix: {settings.orderPrefix}
+                    </span>
+                    <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/75">
+                      Free shipping above Rs. {settings.freeShippingThreshold}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <Button
-                type="button"
-                onClick={() => void saveSettings()}
-                disabled={isLoading || isSaving}
-                className="gap-2 self-start whitespace-nowrap"
-              >
-                <Save className="h-4 w-4" />
-                {isSaving ? "Saving..." : "Save settings"}
-              </Button>
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={resetToSaved}
+                  disabled={isLoading || isSaving || !isDirty}
+                  className="gap-2 self-start whitespace-nowrap"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Undo changes
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => void saveSettings()}
+                  disabled={isLoading || isSaving}
+                  className="gap-2 self-start whitespace-nowrap"
+                >
+                  <Save className="h-4 w-4" />
+                  {isSaving ? "Saving..." : "Save settings"}
+                </Button>
+              </div>
             </div>
 
             <div className="mt-8 grid gap-6 lg:grid-cols-2">
@@ -182,6 +225,13 @@ export function AdminSettingsPage() {
                   value={settings.announcementText}
                   onChange={(event) => updateField("announcementText", event.target.value)}
                   placeholder="Announcement banner text"
+                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
+                  disabled={isLoading}
+                />
+                <Input
+                  value={settings.orderPrefix}
+                  onChange={(event) => updateField("orderPrefix", event.target.value.toUpperCase().replace(/\s+/g, ""))}
+                  placeholder="Order prefix"
                   className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
                   disabled={isLoading}
                 />
@@ -215,6 +265,13 @@ export function AdminSettingsPage() {
                   value={settings.supportWhatsapp}
                   onChange={(event) => updateField("supportWhatsapp", event.target.value)}
                   placeholder="WhatsApp number"
+                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
+                  disabled={isLoading}
+                />
+                <Input
+                  value={settings.supportHours}
+                  onChange={(event) => updateField("supportHours", event.target.value)}
+                  placeholder="Support hours"
                   className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
                   disabled={isLoading}
                 />
@@ -386,8 +443,38 @@ export function AdminSettingsPage() {
               <div className="mt-6 space-y-2 text-sm text-white/70">
                 <p>{settings.supportEmail}</p>
                 <p>{settings.supportPhone}</p>
+                <p>{settings.supportHours}</p>
                 <p>{settings.addressLine1}</p>
                 <p>{settings.addressLine2}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.16)] backdrop-blur">
+            <div className="flex items-start gap-4">
+              <div className="rounded-2xl bg-white/10 p-3 text-teal-100">
+                <Sparkles className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/80">Quick actions</p>
+                <h3 className="mt-2 font-display text-2xl text-white">Admin productivity</h3>
+              </div>
+            </div>
+            <div className="mt-6 space-y-3">
+              <button
+                type="button"
+                onClick={resetToDefaults}
+                disabled={isLoading || isSaving}
+                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left text-sm text-white transition hover:bg-white/10 disabled:opacity-70"
+              >
+                <p className="font-semibold">Load system defaults</p>
+                <p className="mt-1 text-white/60">Useful when you want a clean baseline before saving new settings.</p>
+              </button>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
+                <p className="font-semibold text-white">Current shipping summary</p>
+                <p className="mt-2">Shipping fee: Rs. {settings.shippingFee}</p>
+                <p>Free shipping threshold: Rs. {settings.freeShippingThreshold}</p>
+                <p>COD limit: Rs. {settings.codMaxOrderValue}</p>
               </div>
             </div>
           </div>
