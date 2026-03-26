@@ -98,7 +98,7 @@ export const markAllNotificationsRead = async (userId: string) =>
 export const sendOrderConfirmation = async (email: string, orderNumber: string) => {
   await sendMailOrLog({
     to: email,
-    subject: `SpareKart Order ${orderNumber}`,
+    subject: `PurjiX Order ${orderNumber}`,
     html: `<p>Your order <strong>${orderNumber}</strong> has been placed successfully.</p>`
   });
 };
@@ -121,7 +121,7 @@ export const sendWhatsappNotification = async (payload: unknown) => {
 export const sendVerificationEmail = async (email: string, verifyUrl: string) => {
   await sendMailOrLog({
     to: email,
-    subject: "Verify your SpareKart account",
+    subject: "Verify your PurjiX account",
     html: `<p>Verify your account by clicking <a href="${verifyUrl}">this link</a>.</p>`,
     debugUrl: verifyUrl
   });
@@ -130,7 +130,7 @@ export const sendVerificationEmail = async (email: string, verifyUrl: string) =>
 export const sendPasswordResetEmail = async (email: string, resetUrl: string) => {
   await sendMailOrLog({
     to: email,
-    subject: "Reset your SpareKart password",
+    subject: "Reset your PurjiX password",
     html: `<p>Reset your password by clicking <a href="${resetUrl}">this link</a>.</p>`,
     debugUrl: resetUrl
   });
@@ -140,7 +140,7 @@ export const sendPasswordResetEmail = async (email: string, resetUrl: string) =>
 export const sendSupportTicketAcknowledgement = async (email: string, ticketId: string) => {
   await sendMailOrLog({
     to: email,
-    subject: `SpareKart support request ${ticketId}`,
+    subject: `PurjiX support request ${ticketId}`,
     html: `<p>We have received your support request.</p><p>Reference ID: <strong>${ticketId}</strong></p><p>Our team will review it shortly.</p>`
   });
 };

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Product } from "@/types";
 
-const siteName = "SpareKart";
+const siteName = "PurjiX";
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "http://localhost:3000";
 
 export const buildMetadata = ({

@@ -29,12 +29,12 @@ export function Footer() {
         <div className="rounded-[32px] border border-white/10 bg-white/5 p-6 backdrop-blur sm:p-7">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">SpareKart support</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">PurjiX support</p>
               <h2 className="mt-3 font-display text-3xl leading-tight sm:text-[2.35rem]">
                 Verified spare parts, simpler discovery, faster replacement flow.
               </h2>
               <p className="mt-3 text-sm leading-6 text-white/70 sm:text-base">
-                SpareKart helps retail buyers and repair shops find the right part faster with compatibility-first browsing, secure checkout, and India-ready dispatch.
+                PurjiX helps retail buyers and repair shops find the right part faster with compatibility-first browsing, secure checkout, and India-ready dispatch.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -49,7 +49,7 @@ export function Footer() {
 
           <div className="mt-8 grid gap-6 border-t border-white/10 pt-8 lg:grid-cols-[1.15fr_0.7fr_0.7fr_0.95fr]">
             <div>
-              <h3 className="font-display text-2xl">SpareKart</h3>
+              <h3 className="font-display text-2xl">PurjiX</h3>
               <p className="mt-4 max-w-md text-sm leading-6 text-white/70">
                 Premium mobile spare parts with verified quality, secure payments, and workshop-friendly support across India.
               </p>
@@ -92,7 +92,7 @@ export function Footer() {
           </div>
 
           <div className="mt-8 flex flex-col gap-3 border-t border-white/10 pt-6 text-sm text-white/50 sm:flex-row sm:items-center sm:justify-between">
-            <p>© 2026 SpareKart. Mobile spare parts for repair shops and retail buyers.</p>
+            <p>© 2026 PurjiX. Mobile spare parts for repair shops and retail buyers.</p>
             <div className="flex flex-wrap gap-4 text-white/60">
               <Link href="/privacy-policy" className="transition hover:text-white">Privacy</Link>
               <Link href="/terms" className="transition hover:text-white">Terms</Link>

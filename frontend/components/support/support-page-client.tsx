@@ -61,7 +61,7 @@ export function SupportPageClient() {
             <h2 className="mt-3 font-display text-2xl text-ink">What to include</h2>
           </div>
           <div className="space-y-4 text-sm leading-7 text-slate sm:text-base">
-            <p>Use the same email you used for your SpareKart order so the team can trace the request faster.</p>
+            <p>Use the same email you used for your PurjiX order so the team can trace the request faster.</p>
             <p>For returns, payments, or shipment delays, add the order number and describe the issue clearly.</p>
             <p>You can also reach the team directly at <strong>sahajwanisunil1987@gmail.com</strong> or <strong>+91 9001554862</strong>.</p>
           </div>

@@ -23,7 +23,7 @@ const start = async () => {
       JSON.stringify({
         ts: new Date().toISOString(),
         level: "info",
-        message: "SpareKart API started",
+        message: "PurjiX API started",
         port: env.PORT,
         environment: env.NODE_ENV
       })

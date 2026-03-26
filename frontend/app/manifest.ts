@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "SpareKart",
-    short_name: "SpareKart",
+    name: "PurjiX",
+    short_name: "PurjiX",
     description: "Mobile spare parts store with smart search, cart, checkout, and admin tools.",
     start_url: "/",
     display: "standalone",

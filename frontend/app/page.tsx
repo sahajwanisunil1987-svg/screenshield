@@ -1,30 +1,13 @@
 import type { Metadata } from "next";
-import nextDynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
+import { HeroSearch } from "@/components/home/hero-search";
 import { PageShell } from "@/components/layout/page-shell";
 import { fetchApiOrFallback } from "@/lib/server-api";
 import { buildMetadata } from "@/lib/seo";
 import { Brand, Category, MobileModel } from "@/types";
 
 export const revalidate = 300;
-
-const HeroSearch = nextDynamic(
-  () => import("@/components/home/hero-search").then((module) => module.HeroSearch),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="rounded-[32px] border border-white/10 bg-white/8 p-5 backdrop-blur md:p-6">
-        <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto]">
-          <div className="h-20 animate-pulse rounded-2xl bg-white/10" />
-          <div className="h-20 animate-pulse rounded-2xl bg-white/10" />
-          <div className="h-20 animate-pulse rounded-2xl bg-white/10" />
-          <div className="h-12 animate-pulse self-end rounded-full bg-white/10" />
-        </div>
-      </div>
-    )
-  }
-);
 
 
 const BRAND_LOGO_STYLES: Record<string, { wrapper: string; image: string }> = {

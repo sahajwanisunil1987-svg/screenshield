@@ -1,16 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import dynamic from "next/dynamic";
+import { ClientBootstraps } from "@/components/layout/client-bootstraps";
+import { themeBootstrapScript } from "@/lib/theme";
 import "./globals.css";
 
-const ClientBootstraps = dynamic(
-  () => import("@/components/layout/client-bootstraps").then((module) => module.ClientBootstraps),
-  { ssr: false }
-);
-
-const themeBootstrapScript = `(function(){try{var key="sparekart-site-theme";var savedTheme=window.localStorage.getItem(key);var theme=savedTheme==="dark"||savedTheme==="light"?savedTheme:"light";document.documentElement.dataset.theme=theme;document.body.dataset.theme=theme;document.documentElement.style.colorScheme=theme;}catch(e){}})();`;
-
 export const metadata: Metadata = {
-  title: "SpareKart | Mobile Spare Parts Store",
+  title: "PurjiX | Mobile Spare Parts Store",
   description: "Find premium mobile spare parts by brand, model, and part type.",
   manifest: "/manifest.webmanifest",
   other: {
@@ -19,7 +13,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "SpareKart"
+    title: "PurjiX"
   },
   formatDetection: {
     telephone: false

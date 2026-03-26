@@ -4,7 +4,7 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
   title: "Contact",
-  description: "Contact SpareKart for support, compatibility assistance, order help, and business inquiries."
+  description: "Contact PurjiX for support, compatibility assistance, order help, and business inquiries."
 });
 
 const sections = [
@@ -35,7 +35,7 @@ export default function ContactPage() {
   return (
     <ContentPage
       eyebrow="Contact"
-      title="Talk to the SpareKart team"
+      title="Talk to the PurjiX team"
       intro="Reach out at sahajwanisunil1987@gmail.com or +91 9001554862 for pre-order fitment guidance, order support, returns discussion, or workshop-focused buying help."
       sections={sections}
     />

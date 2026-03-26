@@ -8,7 +8,7 @@ export function Navbar() {
       <div className="mx-auto max-w-7xl px-4 py-4 text-white sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center gap-3 lg:flex-nowrap lg:gap-4">
           <Link href="/" className="shrink-0 font-display text-2xl tracking-tight sm:text-[2rem]">
-            SpareKart
+            PurjiX
           </Link>
           <div className="hidden min-w-0 flex-1 md:block md:min-w-[260px] lg:min-w-[320px] xl:min-w-[420px]">
             <NavbarSearch

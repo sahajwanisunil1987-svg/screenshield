@@ -219,7 +219,7 @@ export function TrackOrderPageClient() {
     <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
         <div className="theme-surface rounded-[36px] p-8 shadow-card">
           <h1 className="font-display text-4xl text-ink">Track your order</h1>
-          <p className="mt-3 max-w-2xl text-sm text-slate">Enter your SpareKart order number to check the latest processing stage, shipment fields, and payment state.</p>
+          <p className="mt-3 max-w-2xl text-sm text-slate">Enter your PurjiX order number to check the latest processing stage, shipment fields, and payment state.</p>
           <div className="mt-6 grid gap-3 rounded-[28px] bg-panel p-4 text-sm text-slate md:grid-cols-3">
             <div className="theme-surface rounded-2xl p-4"><PackageSearch className="h-5 w-5 text-accent" /><p className="mt-3 font-semibold text-ink">Order visibility</p><p className="mt-1 text-slate">Track order progression from placement to final delivery.</p></div>
             <div className="theme-surface rounded-2xl p-4"><Truck className="h-5 w-5 text-accent" /><p className="mt-3 font-semibold text-ink">Dispatch clarity</p><p className="mt-1 text-slate">See courier, AWB, and ETA as soon as the ops team updates them.</p></div>

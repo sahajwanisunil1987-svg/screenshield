@@ -12,33 +12,35 @@ import { Brand, MobileModel } from "@/types";
 export const revalidate = 300;
 
 type BrandPageProps = {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 };
 
 const getBrands = cache(() => fetchApi<Brand[]>("/brands", { next: { revalidate: 1800 } }));
 const getModels = cache(() => fetchApi<MobileModel[]>("/models", { next: { revalidate: 1800 } }));
 
 export async function generateMetadata({ params }: BrandPageProps): Promise<Metadata> {
+  const { slug } = await params;
   const brands = await getBrands();
-  const brand = brands.find((entry) => entry.slug === params.slug);
+  const brand = brands.find((entry) => entry.slug === slug);
 
   if (!brand) {
     return buildMetadata({
       title: "Brand Not Found",
-      description: "The requested brand could not be found in the SpareKart catalog."
+      description: "The requested brand could not be found in the PurjiX catalog."
     });
   }
 
   return buildMetadata({
     title: `${brand.name} Spare Parts`,
-    description: `Browse ${brand.name} models and jump directly into compatible spare parts on SpareKart.`
+    description: `Browse ${brand.name} models and jump directly into compatible spare parts on PurjiX.`
   });
 }
 
 export default async function BrandPage({ params }: BrandPageProps) {
+  const { slug } = await params;
   const [brands, models] = await Promise.all([getBrands(), getModels()]);
 
-  const brand = brands.find((entry) => entry.slug === params.slug);
+  const brand = brands.find((entry) => entry.slug === slug);
 
   if (!brand) {
     notFound();

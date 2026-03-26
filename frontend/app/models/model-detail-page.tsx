@@ -127,14 +127,14 @@ export async function generateModelDetailMetadata(params: ModelPageParams): Prom
   if (model && params.brandSlug && model.brand?.slug !== params.brandSlug) {
     return buildMetadata({
       title: "Model Not Found",
-      description: "The requested SpareKart model page could not be found."
+      description: "The requested PurjiX model page could not be found."
     });
   }
 
   if (!model) {
     return buildMetadata({
       title: "Model Not Found",
-      description: "The requested SpareKart model page could not be found."
+      description: "The requested PurjiX model page could not be found."
     });
   }
 

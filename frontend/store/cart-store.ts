@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Product } from "@/types";
 
-type CartItem = {
+export type CartItem = {
   product: Product;
   quantity: number;
 };

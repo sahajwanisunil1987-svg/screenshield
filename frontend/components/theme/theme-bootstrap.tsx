@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-
-const STORAGE_KEY = "sparekart-site-theme";
+import { THEME_STORAGE_KEY } from "@/lib/theme";
 
 export function ThemeBootstrap() {
   useEffect(() => {
-    const savedTheme = window.localStorage.getItem(STORAGE_KEY);
+    const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
     const theme = savedTheme === "dark" || savedTheme === "light" ? savedTheme : "light";
     document.documentElement.dataset.theme = theme;
     document.body.dataset.theme = theme;

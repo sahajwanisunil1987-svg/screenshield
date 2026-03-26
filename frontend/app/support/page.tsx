@@ -4,7 +4,7 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
   title: "Support",
-  description: "Raise support requests for orders, returns, payments, and product inquiries on SpareKart."
+  description: "Raise support requests for orders, returns, payments, and product inquiries on PurjiX."
 });
 
 export default function SupportPage() {

@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { ProductsResults } from "@/components/catalog/products-results";
 import { PageShell } from "@/components/layout/page-shell";
-import { EmptyState } from "@/components/ui/empty-state";
-import { ProductCardServer } from "@/components/products/product-card-server";
 import { CatalogFiltersForm } from "@/components/products/catalog-filters-form";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { buildMetadata } from "@/lib/seo";
@@ -11,33 +9,49 @@ import { Brand, Category, MobileModel, ProductListResponse } from "@/types";
 
 export const revalidate = 300;
 
+type ProductsSearchParams = {
+  brand?: string;
+  model?: string;
+  category?: string;
+  search?: string;
+  page?: string;
+  sort?: string;
+};
+
+type ProductsPageProps = {
+  searchParams: Promise<ProductsSearchParams>;
+};
+
 export async function generateMetadata({
   searchParams
-}: {
-  searchParams: { brand?: string; model?: string; category?: string; search?: string; page?: string; sort?: string };
-}): Promise<Metadata> {
-  const segments = [searchParams.brand, searchParams.model, searchParams.category, searchParams.search].filter(Boolean);
+}: ProductsPageProps): Promise<Metadata> {
+  const resolvedSearchParams = await searchParams;
+  const segments = [
+    resolvedSearchParams.brand,
+    resolvedSearchParams.model,
+    resolvedSearchParams.category,
+    resolvedSearchParams.search
+  ].filter(Boolean);
   const titleBase = segments.length ? `${segments.join(" / ")} Parts` : "Mobile Spare Parts Catalog";
-  const title = searchParams.page ? `${titleBase} Page ${searchParams.page}` : titleBase;
+  const title = resolvedSearchParams.page ? `${titleBase} Page ${resolvedSearchParams.page}` : titleBase;
   const description = segments.length
-    ? `Browse SpareKart results for ${segments.join(", ")} with SSR-friendly filters, compatible spare parts, and SKU-aware product discovery.`
-    : "Browse the SpareKart mobile spare parts catalog with brand, model, category, and keyword filters.";
+    ? `Browse PurjiX results for ${segments.join(", ")} with SSR-friendly filters, compatible spare parts, and SKU-aware product discovery.`
+    : "Browse the PurjiX mobile spare parts catalog with brand, model, category, and keyword filters.";
 
   return buildMetadata({ title, description });
 }
 
 export default async function ProductsPage({
   searchParams
-}: {
-  searchParams: { brand?: string; model?: string; category?: string; search?: string; page?: string; sort?: string };
-}) {
+}: ProductsPageProps) {
+  const resolvedSearchParams = await searchParams;
   const params = new URLSearchParams();
-  if (searchParams.brand) params.set("brand", searchParams.brand);
-  if (searchParams.model) params.set("model", searchParams.model);
-  if (searchParams.category) params.set("category", searchParams.category);
-  if (searchParams.search) params.set("search", searchParams.search);
-  if (searchParams.sort) params.set("sort", searchParams.sort);
-  if (searchParams.page) params.set("page", searchParams.page);
+  if (resolvedSearchParams.brand) params.set("brand", resolvedSearchParams.brand);
+  if (resolvedSearchParams.model) params.set("model", resolvedSearchParams.model);
+  if (resolvedSearchParams.category) params.set("category", resolvedSearchParams.category);
+  if (resolvedSearchParams.search) params.set("search", resolvedSearchParams.search);
+  if (resolvedSearchParams.sort) params.set("sort", resolvedSearchParams.sort);
+  if (resolvedSearchParams.page) params.set("page", resolvedSearchParams.page);
 
   const [products, brands, models, categories] = await Promise.all([
     fetchApi<ProductListResponse>(`/products?${params.toString()}`, { next: { revalidate: 300 } }),
@@ -47,10 +61,10 @@ export default async function ProductsPage({
   ]);
 
   const activeFilters = [
-    searchParams.brand ? { key: "brand", label: searchParams.brand } : null,
-    searchParams.model ? { key: "model", label: searchParams.model } : null,
-    searchParams.category ? { key: "category", label: searchParams.category } : null,
-    searchParams.search ? { key: "search", label: searchParams.search } : null
+    resolvedSearchParams.brand ? { key: "brand", label: resolvedSearchParams.brand } : null,
+    resolvedSearchParams.model ? { key: "model", label: resolvedSearchParams.model } : null,
+    resolvedSearchParams.category ? { key: "category", label: resolvedSearchParams.category } : null,
+    resolvedSearchParams.search ? { key: "search", label: resolvedSearchParams.search } : null
   ].filter(Boolean) as Array<{ key: string; label: string }>;
 
   const buildPageHref = (nextPage: number) => {
@@ -74,19 +88,14 @@ export default async function ProductsPage({
   };
 
   const currentPage = products.pagination.page;
-  const totalPages = products.pagination.pages;
   const totalProducts = products.pagination.total;
   const startResult = totalProducts ? (currentPage - 1) * products.pagination.limit + 1 : 0;
   const endResult = totalProducts ? startResult + products.items.length - 1 : 0;
-  const heroSummary = searchParams.search
-    ? `Search results for "${searchParams.search}" across verified spare parts.`
+  const heroSummary = resolvedSearchParams.search
+    ? `Search results for "${resolvedSearchParams.search}" across verified spare parts.`
     : activeFilters.length
       ? "Filtered catalog tuned to your selected brand, model, and part type."
       : "Browse our full spare-parts inventory with compatibility-aware product discovery.";
-  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1).filter((page) =>
-    page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1
-  );
-
   return (
     <PageShell>
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -122,92 +131,21 @@ export default async function ProductsPage({
             brands={brands}
             models={models}
             categories={categories}
-            selectedBrand={searchParams.brand}
-            selectedModel={searchParams.model}
-            selectedCategory={searchParams.category}
-            search={searchParams.search}
-            sort={searchParams.sort}
+            selectedBrand={resolvedSearchParams.brand}
+            selectedModel={resolvedSearchParams.model}
+            selectedCategory={resolvedSearchParams.category}
+            search={resolvedSearchParams.search}
+            sort={resolvedSearchParams.sort}
           />
         </div>
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            {activeFilters.length ? (
-              activeFilters.map((filter) => (
-                <Link
-                  key={`${filter.key}-${filter.label}`}
-                  href={buildFilterRemovalHref(filter.key)}
-                  className="rounded-full bg-accentSoft px-4 py-2 text-sm font-semibold text-ink transition hover:bg-[#cfeee6] dark:text-white"
-                >
-                  {filter.label} ×
-                </Link>
-              ))
-            ) : (
-              <span className="rounded-full bg-white px-4 py-2 text-sm text-slate shadow-card">
-                All catalog items
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-slate">
-            Showing {startResult}-{endResult} of {products.pagination.total} result(s)
-          </p>
-        </div>
-        <div className="mt-10">
-          {products.items.length ? (
-            <>
-              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                {products.items.map((product) => (
-                  <ProductCardServer key={product.id} product={product} />
-                ))}
-              </div>
-              {totalPages > 1 ? (
-                <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-                  <Link
-                    href={buildPageHref(Math.max(currentPage - 1, 1))}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      currentPage === 1
-                        ? "pointer-events-none border border-slate-200 text-slate-300"
-                        : "border border-slate-200 text-ink hover:bg-accentSoft"
-                    }`}
-                  >
-                    Previous
-                  </Link>
-                  {pageNumbers.map((page, index) => {
-                    const previousPage = pageNumbers[index - 1];
-                    const showGap = previousPage && page - previousPage > 1;
-
-                    return (
-                      <div key={page} className="flex items-center gap-3">
-                        {showGap ? <span className="text-slate">…</span> : null}
-                        <Link
-                          href={buildPageHref(page)}
-                          className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                            page === currentPage
-                              ? "bg-accent text-white"
-                              : "border border-slate-200 text-ink hover:bg-accentSoft"
-                          }`}
-                        >
-                          {page}
-                        </Link>
-                      </div>
-                    );
-                  })}
-                  <Link
-                    href={buildPageHref(Math.min(currentPage + 1, totalPages))}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      currentPage === totalPages
-                        ? "pointer-events-none border border-slate-200 text-slate-300"
-                        : "border border-slate-200 text-ink hover:bg-accentSoft"
-                    }`}
-                  >
-                    Next
-                  </Link>
-                </div>
-              ) : null}
-            </>
-          ) : (
-            <EmptyState title="No products found" description="Try changing the selected brand, model, or part type filters." />
-          )}
-        </div>
+        <ProductsResults
+          products={products}
+          activeFilters={activeFilters}
+          startResult={startResult}
+          endResult={endResult}
+          buildFilterRemovalHref={buildFilterRemovalHref}
+          buildPageHref={buildPageHref}
+        />
       </div>
     </PageShell>
   );

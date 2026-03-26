@@ -47,7 +47,7 @@ export function ContentPage({
 
         <div className="mt-10 rounded-[28px] border border-slate-200 bg-panel p-6 shadow-card sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Need help?</p>
-          <h2 className="mt-3 font-display text-2xl text-ink">Contact SpareKart support</h2>
+          <h2 className="mt-3 font-display text-2xl text-ink">Contact PurjiX support</h2>
           <p className="mt-3 text-sm leading-7 text-slate sm:text-base">
             For order help, warranty questions, or compatibility clarification, contact our support team before placing a replacement order.
           </p>

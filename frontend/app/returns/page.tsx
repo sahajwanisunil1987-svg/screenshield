@@ -4,7 +4,7 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
   title: "Returns and Refunds",
-  description: "Read SpareKart return, refund, replacement, and damaged-delivery policy for mobile spare parts orders."
+  description: "Read PurjiX return, refund, replacement, and damaged-delivery policy for mobile spare parts orders."
 });
 
 const sections = [
@@ -25,7 +25,7 @@ const sections = [
   {
     title: "Refund and replacement handling",
     body: [
-      "Where a return is approved, SpareKart may offer a replacement, store resolution, or refund depending on stock availability and issue type.",
+      "Where a return is approved, PurjiX may offer a replacement, store resolution, or refund depending on stock availability and issue type.",
       "Refund timelines can vary based on the original payment method and banking partner processing."
     ]
   }

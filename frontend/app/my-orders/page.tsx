@@ -181,7 +181,7 @@ export default function MyOrdersPage() {
               </div>
             ))
           ) : (
-            <EmptyState title="No orders yet" description="Your confirmed SpareKart purchases will show up here." />
+            <EmptyState title="No orders yet" description="Your confirmed PurjiX purchases will show up here." />
           )}
         </div>
       </div>

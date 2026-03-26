@@ -1,6 +1,6 @@
-# SpareKart
+# PurjiX
 
-SpareKart is a production-structured single-vendor e-commerce platform for mobile spare parts. It ships as a TypeScript monorepo with a Next.js 14 storefront/admin frontend and an Express + Prisma backend.
+PurjiX is a production-structured single-vendor e-commerce platform for mobile spare parts. It ships as a TypeScript monorepo with a Next.js 14 storefront/admin frontend and an Express + Prisma backend.
 
 ## Monorepo structure
 
@@ -66,7 +66,7 @@ Initialize and commit the repo:
 git init
 git checkout -b main
 git add .
-git commit -m "Initial SpareKart monorepo"
+git commit -m "Initial PurjiX monorepo"
 ```
 
 Then add your remote and push:

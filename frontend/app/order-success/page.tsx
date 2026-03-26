@@ -3,11 +3,15 @@ import { CheckCircle2, PackageCheck, ReceiptText, Truck } from "lucide-react";
 import { PageShell } from "@/components/layout/page-shell";
 import { OrderSuccessActions } from "./order-success-actions";
 
-export default function OrderSuccessPage({
+type OrderSuccessPageProps = {
+  searchParams: Promise<{ orderNumber?: string }>;
+};
+
+export default async function OrderSuccessPage({
   searchParams
-}: {
-  searchParams: { orderNumber?: string };
-}) {
+}: OrderSuccessPageProps) {
+  const resolvedSearchParams = await searchParams;
+
   return (
     <PageShell>
       <div className="mx-auto max-w-3xl px-4 py-24 text-center sm:px-6 lg:px-8">
@@ -16,9 +20,9 @@ export default function OrderSuccessPage({
             <CheckCircle2 className="h-8 w-8" />
           </div>
           <p className="mt-6 text-sm font-semibold uppercase tracking-[0.3em] text-accent">Order placed</p>
-          <h1 className="mt-4 font-display text-5xl text-ink">Thank you for shopping with SpareKart</h1>
+          <h1 className="mt-4 font-display text-5xl text-ink">Thank you for shopping with PurjiX</h1>
           <p className="mt-5 text-sm text-slate">
-            Your order number is <span className="font-semibold text-ink">{searchParams.orderNumber ?? "generated after checkout"}</span>.
+            Your order number is <span className="font-semibold text-ink">{resolvedSearchParams?.orderNumber ?? "generated after checkout"}</span>.
           </p>
           <div className="mt-8 grid gap-3 text-left sm:grid-cols-3">
             <div className="rounded-[24px] bg-[#f5f8fb] p-5">
@@ -37,7 +41,7 @@ export default function OrderSuccessPage({
               <p className="mt-1 text-sm text-slate">Use your order number any time to check shipment progress.</p>
             </div>
           </div>
-          <OrderSuccessActions orderNumber={searchParams.orderNumber} />
+          <OrderSuccessActions orderNumber={resolvedSearchParams?.orderNumber} />
         </div>
       </div>
     </PageShell>

@@ -53,7 +53,7 @@ export function AdminShell({ title, children }: { title: string; children: React
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-teal-200/90">Control Room</p>
-              <h1 className="mt-1 font-display text-xl">SpareKart Admin</h1>
+              <h1 className="mt-1 font-display text-xl">PurjiX Admin</h1>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -99,7 +99,7 @@ export function AdminShell({ title, children }: { title: string; children: React
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-teal-200/90">Control Room</p>
-              <h1 className="mt-3 font-display text-2xl">SpareKart Admin</h1>
+              <h1 className="mt-3 font-display text-2xl">PurjiX Admin</h1>
             </div>
             <button
               type="button"
