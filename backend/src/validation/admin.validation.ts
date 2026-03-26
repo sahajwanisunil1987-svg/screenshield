@@ -67,3 +67,19 @@ export const adminPurchaseCreateSchema = z.object({
   notes: z.string().optional(),
   purchasedAt: z.string().datetime().optional()
 });
+
+export const adminAppSettingsSchema = z.object({
+  siteName: z.string().min(2),
+  legalName: z.string().min(2),
+  supportEmail: z.string().email(),
+  supportPhone: z.string().min(5),
+  supportWhatsapp: z.string().min(5),
+  addressLine1: z.string().min(2),
+  addressLine2: z.string().min(2),
+  heroHeading: z.string().min(5),
+  heroSubheading: z.string().min(5),
+  announcementText: z.string().min(2),
+  maintenanceMode: z.boolean(),
+  allowGuestCheckout: z.boolean(),
+  showSupportBanner: z.boolean()
+});

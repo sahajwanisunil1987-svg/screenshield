@@ -2,7 +2,7 @@ import { Router } from "express";
 import * as adminController from "../controllers/admin.controller.js";
 import { authenticate, requireAdmin } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
-import { adminAccountingSchema, adminDashboardSchema, adminInventoryListSchema, adminInvoiceListSchema, adminPurchaseCreateSchema, adminPurchaseListSchema, adminUserListSchema, adminVendorCreateSchema } from "../validation/admin.validation.js";
+import { adminAccountingSchema, adminAppSettingsSchema, adminDashboardSchema, adminInventoryListSchema, adminInvoiceListSchema, adminPurchaseCreateSchema, adminPurchaseListSchema, adminUserListSchema, adminVendorCreateSchema } from "../validation/admin.validation.js";
 import { idParamSchema } from "../validation/common.js";
 import { inventoryUpdateSchema } from "../validation/order.validation.js";
 
@@ -20,5 +20,7 @@ router.get("/admin/users", authenticate, requireAdmin, validate({ query: adminUs
 router.get("/admin/users/:id", authenticate, requireAdmin, validate({ params: idParamSchema }), adminController.userDetail);
 router.get("/admin/invoices", authenticate, requireAdmin, validate({ query: adminInvoiceListSchema }), adminController.invoices);
 router.get("/admin/orders/:id/invoice", authenticate, requireAdmin, adminController.downloadInvoice);
+router.get("/admin/settings", authenticate, requireAdmin, adminController.appSettings);
+router.put("/admin/settings", authenticate, requireAdmin, validate({ body: adminAppSettingsSchema }), adminController.updateAppSettings);
 
 export default router;

@@ -10,6 +10,31 @@ const rangeDaysMap = {
   "90d": 90
 } as const;
 
+const APP_SETTINGS_ID = "default";
+
+export const appSettings = async (_req: Request, res: Response) => {
+  const settings = await prisma.appSetting.upsert({
+    where: { id: APP_SETTINGS_ID },
+    update: {},
+    create: { id: APP_SETTINGS_ID }
+  });
+
+  res.json(settings);
+};
+
+export const updateAppSettings = async (req: Request, res: Response) => {
+  const settings = await prisma.appSetting.upsert({
+    where: { id: APP_SETTINGS_ID },
+    update: req.body,
+    create: {
+      id: APP_SETTINGS_ID,
+      ...req.body
+    }
+  });
+
+  res.json(settings);
+};
+
 export const dashboard = async (req: Request, res: Response) => {
   const range = String(req.query.range ?? "30d") as keyof typeof rangeDaysMap;
   const days = rangeDaysMap[range] ?? 30;

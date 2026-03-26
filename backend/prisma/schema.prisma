@@ -195,6 +195,25 @@ model User {
   @@index([email, role])
 }
 
+model AppSetting {
+  id                 String   @id @default("default")
+  siteName           String   @default("PurjiX")
+  legalName          String   @default("PurjiX Mobile Spare Parts")
+  supportEmail       String   @default("support@purjix.com")
+  supportPhone       String   @default("+91 99999 99999")
+  supportWhatsapp    String   @default("+91 99999 99999")
+  addressLine1       String   @default("Repair Market, Main Unit")
+  addressLine2       String   @default("Mumbai, Maharashtra")
+  heroHeading        String   @default("Mobile spare parts, faster sourcing, cleaner checkout.")
+  heroSubheading     String   @default("Use admin settings to keep storefront branding and support details consistent.")
+  announcementText   String   @default("Free shipping above Rs. 999")
+  maintenanceMode    Boolean  @default(false)
+  allowGuestCheckout Boolean  @default(true)
+  showSupportBanner  Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
 model Address {
   id          String   @id @default(cuid())
   userId      String
