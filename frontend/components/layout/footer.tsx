@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 
 const shopLinks = [
   { href: "/brands", label: "Brands" },
@@ -22,7 +26,50 @@ const supportLinks = [
   { href: "/terms", label: "Terms" }
 ];
 
+type FooterSettings = {
+  siteName?: string;
+  supportEmail?: string;
+  supportPhone?: string;
+  supportHours?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+};
+
+const footerFallbackSettings: Required<FooterSettings> = {
+  siteName: "PurjiX",
+  supportEmail: "support@purjix.com",
+  supportPhone: "+91 99999 99999",
+  supportHours: "Mon-Sat, 10 AM to 7 PM",
+  addressLine1: "Repair Market, Main Unit",
+  addressLine2: "Mumbai, Maharashtra"
+};
+
 export function Footer() {
+  const [settings, setSettings] = useState(footerFallbackSettings);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const response = await api.get("/settings/app");
+        if (!cancelled) {
+          setSettings({ ...footerFallbackSettings, ...response.data });
+        }
+      } catch {
+        if (!cancelled) {
+          setSettings(footerFallbackSettings);
+        }
+      }
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <footer className="mt-20 border-t border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_26%),radial-gradient(circle_at_top_right,rgba(249,115,22,0.12),transparent_18%),linear-gradient(180deg,#07111f,#0b1b30)] text-white">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -73,20 +120,22 @@ export function Footer() {
                 ))}
               </div>
               <div className="mt-6 rounded-[24px] border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-                <p className="font-semibold text-white">Mister Mobile</p>
-                <p className="mt-2 leading-6 text-white/60">DC hospital near, triveni jaipur 302018</p>
+                <p className="font-semibold text-white">{settings.siteName} Support Desk</p>
+                <p className="mt-2 leading-6 text-white/60">{settings.addressLine1}</p>
+                <p className="leading-6 text-white/60">{settings.addressLine2}</p>
                 <p className="mt-3">
                   Email:{" "}
-                  <a href="mailto:sahajwanisunil1987@gmail.com" className="text-white/85 transition hover:text-white">
-                    sahajwanisunil1987@gmail.com
+                  <a href={`mailto:${settings.supportEmail}`} className="text-white/85 transition hover:text-white">
+                    {settings.supportEmail}
                   </a>
                 </p>
                 <p className="mt-1.5">
                   Phone:{" "}
-                  <a href="tel:+919001554862" className="text-white/85 transition hover:text-white">
-                    +91 9001554862
+                  <a href={`tel:${settings.supportPhone.replace(/\s+/g, "")}`} className="text-white/85 transition hover:text-white">
+                    {settings.supportPhone}
                   </a>
                 </p>
+                <p className="mt-1.5 text-white/60">Hours: {settings.supportHours}</p>
               </div>
             </div>
           </div>
