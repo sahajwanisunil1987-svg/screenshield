@@ -5,7 +5,7 @@ PurjiX is a production-structured single-vendor e-commerce platform for mobile s
 ## Monorepo structure
 
 ```text
-sparekart/
+purjix/
   frontend/
   backend/
   docs/
@@ -80,8 +80,8 @@ Current production split:
 
 This repo includes [render.yaml](/Users/apple/screenshield/render.yaml) for backend and database setup:
 
-- `sparekart-backend` as a Node web service
-- `sparekart-postgres` as the managed PostgreSQL database
+- `purjix-backend` as a Node web service
+- `purjix-postgres` as the managed PostgreSQL database
 
 After a backend deploy that changes Prisma schema, open the Render backend shell and run:
 

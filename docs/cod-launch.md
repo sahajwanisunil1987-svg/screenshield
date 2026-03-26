@@ -1,4 +1,4 @@
-# SpareKart COD Launch Checklist
+# PurjiX COD Launch Checklist
 
 ## Before Launch
 

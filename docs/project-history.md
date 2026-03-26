@@ -1,7 +1,7 @@
 # Project History
 
 ## Overview
-- Project: SpareKart
+- Project: PurjiX
 - Type: Mobile spare parts ecommerce platform with admin operations
 - Frontend: Next.js
 - Backend: Node.js/Express + Prisma/PostgreSQL
@@ -12,7 +12,7 @@
 ## Deployment and Hosting
 - Frontend was moved to Vercel and backend kept on Render.
 - Render frontend was deprecated after Vercel stabilized.
-- Live frontend URL set to `https://sparekart-gamma.vercel.app`
+- Live frontend URL set to `https://www.purjix.com`
 - Live backend URL set to `https://sparekart-backend.onrender.com`
 - CORS and production env alignment were fixed for the Vercel frontend origin.
 

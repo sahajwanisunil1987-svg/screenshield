@@ -1,4 +1,4 @@
-# SpareKart Operations Runbook
+# PurjiX Operations Runbook
 
 ## Render Service Setup
 

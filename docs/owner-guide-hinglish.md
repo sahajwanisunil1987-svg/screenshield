@@ -1,7 +1,7 @@
-# SpareKart Owner Guide (Hinglish)
+# PurjiX Owner Guide (Hinglish)
 
 ## 1. Introduction
-Yeh guide SpareKart app ke owner ke liye hai. Isme aapko website chalane, products manage karne, orders process karne, COD track karne, invoice dekhne, accounting samajhne, aur basic admin operations karne ka simple Hinglish flow diya gaya hai.
+Yeh guide PurjiX app ke owner ke liye hai. Isme aapko website chalane, products manage karne, orders process karne, COD track karne, invoice dekhne, accounting samajhne, aur basic admin operations karne ka simple Hinglish flow diya gaya hai.
 
 Current live setup:
 - Frontend: Vercel
@@ -9,9 +9,9 @@ Current live setup:
 - Database: Render PostgreSQL
 
 Useful links:
-- Website: `https://sparekart-gamma.vercel.app`
+- Website: `https://www.purjix.com`
 - Backend health: `https://sparekart-backend.onrender.com/api/health`
-- Admin login: `https://sparekart-gamma.vercel.app/admin/login`
+- Admin login: `https://www.purjix.com/admin/login`
 
 ## 2. App Mein Kya-Kya Hai
 App ke 2 main parts hain:
@@ -35,7 +35,7 @@ App ke 2 main parts hain:
 
 ## 3. Owner Daily Login Flow
 1. Browser mein admin login open karo:
-- `https://sparekart-gamma.vercel.app/admin/login`
+- `https://www.purjix.com/admin/login`
 
 2. Apne admin credentials se login karo.
 

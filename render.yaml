@@ -1,12 +1,12 @@
 databases:
-  - name: sparekart-postgres
+  - name: purjix-postgres
     plan: free
-    databaseName: sparekart
-    user: sparekart
+    databaseName: purjix
+    user: purjix
 
 services:
   - type: web
-    name: sparekart-backend
+    name: purjix-backend
     runtime: node
     rootDir: backend
     plan: free
@@ -22,11 +22,11 @@ services:
         value: 10000
       - key: DATABASE_URL
         fromDatabase:
-          name: sparekart-postgres
+          name: purjix-postgres
           property: connectionString
       - key: DIRECT_URL
         fromDatabase:
-          name: sparekart-postgres
+          name: purjix-postgres
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
@@ -54,7 +54,7 @@ services:
         sync: false
 
   - type: web
-    name: sparekart-frontend
+    name: purjix-frontend
     runtime: node
     rootDir: frontend
     plan: free

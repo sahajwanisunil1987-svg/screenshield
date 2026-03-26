@@ -1,4 +1,4 @@
-# SpareKart Architecture
+# PurjiX Architecture
 
 - `frontend`: Next.js 14 App Router storefront and admin UI.
 - `backend`: Express API with Prisma/PostgreSQL.

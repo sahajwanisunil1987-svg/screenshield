@@ -1,4 +1,4 @@
-# SpareKart Go-Live Checklist
+# PurjiX Go-Live Checklist
 
 ## Critical
 
@@ -184,4 +184,3 @@ Mark each item `PASS` or `FAIL` during final release validation.
 - [ ] Failed payment does not mark order paid
 - [ ] Duplicate payment callback does not corrupt status
 - [ ] COD restrictions behave as expected
-

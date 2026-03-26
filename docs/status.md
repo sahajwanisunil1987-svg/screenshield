@@ -1,8 +1,8 @@
-# SpareKart Project Status
+# PurjiX Project Status
 
 ## Current Status
 
-SpareKart has completed the planned implementation sequence:
+PurjiX has completed the planned implementation sequence:
 
 - `P1`: complete
 - `P2`: complete
