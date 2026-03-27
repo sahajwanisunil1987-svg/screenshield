@@ -138,6 +138,15 @@ export type BulkProductImportResponse = {
   results: BulkProductImportResult[];
 };
 
+export type BulkSkuCheckResponse = {
+  existing: Array<{
+    id: string;
+    sku: string;
+    name: string;
+    slug: string;
+  }>;
+};
+
 export type Review = {
   id: string;
   rating: number;

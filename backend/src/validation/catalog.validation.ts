@@ -135,6 +135,10 @@ export const productBulkSchema = z.object({
   items: z.array(bulkProductRowSchema).min(1).max(100)
 });
 
+export const productBulkSkuCheckSchema = z.object({
+  skus: z.array(z.string().min(1)).min(1).max(100)
+});
+
 export const productSearchSchema = z.object({
   brand: z.string().optional(),
   model: z.string().optional(),

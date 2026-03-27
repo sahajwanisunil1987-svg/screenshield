@@ -10,6 +10,7 @@ import {
   categorySchema,
   modelSchema,
   productBulkSchema,
+  productBulkSkuCheckSchema,
   productSchema,
   productSearchSchema,
   productSuggestionSchema
@@ -99,6 +100,13 @@ router.delete(
   catalogController.deleteCategory
 );
 
+router.post(
+  "/admin/products/bulk/check-skus",
+  authenticate,
+  requireAdmin,
+  validate({ body: productBulkSkuCheckSchema }),
+  catalogController.checkBulkProductSkus
+);
 router.post(
   "/admin/products/bulk",
   authenticate,

@@ -1,10 +1,11 @@
 "use client";
 
-import { ChangeEvent, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
-import { BulkProductImportResponse } from "@/types";
+import { BulkProductImportResponse, BulkSkuCheckResponse } from "@/types";
 
 type AdminProductBulkUploadProps = {
   token?: string | null;
@@ -314,7 +315,9 @@ const buildBulkPayload = (rows: CsvImportRow[]) => ({
 export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUploadProps) {
   const [csvText, setCsvText] = useState(templateRows);
   const [uploading, setUploading] = useState(false);
+  const [checkingSkus, setCheckingSkus] = useState(false);
   const [lastResult, setLastResult] = useState<BulkProductImportResponse | null>(null);
+  const [existingSkuMap, setExistingSkuMap] = useState<Record<string, { id: string; name: string; slug: string }>>({});
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const csvAnalysis = useMemo(() => analyzeCsv(csvText), [csvText]);
 
@@ -328,6 +331,84 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
       failed: lastResult.results.filter((entry) => entry.status === "FAILED").slice(0, 5)
     };
   }, [lastResult]);
+
+  useEffect(() => {
+    if (!token) {
+      setExistingSkuMap({});
+      return;
+    }
+
+    const skus = Array.from(
+      new Set(
+        csvAnalysis.validRows
+          .map((row) => row.data.sku?.trim())
+          .filter((sku): sku is string => Boolean(sku))
+      )
+    );
+
+    if (!skus.length) {
+      setExistingSkuMap({});
+      return;
+    }
+
+    let cancelled = false;
+    setCheckingSkus(true);
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const response = await api.post<BulkSkuCheckResponse>(
+          "/admin/products/bulk/check-skus",
+          { skus },
+          authHeaders(token)
+        );
+
+        if (cancelled) {
+          return;
+        }
+
+        const mapped = response.data.existing.reduce<Record<string, { id: string; name: string; slug: string }>>((accumulator, item) => {
+          accumulator[item.sku.toLowerCase()] = {
+            id: item.id,
+            name: item.name,
+            slug: item.slug
+          };
+          return accumulator;
+        }, {});
+
+        setExistingSkuMap(mapped);
+      } catch {
+        if (!cancelled) {
+          setExistingSkuMap({});
+        }
+      } finally {
+        if (!cancelled) {
+          setCheckingSkus(false);
+        }
+      }
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [csvAnalysis.validRows, token]);
+
+  const existingSkuRows = useMemo(
+    () =>
+      csvAnalysis.validRows
+        .filter((row) => Boolean(existingSkuMap[row.data.sku?.trim().toLowerCase()]))
+        .map((row) => ({
+          rowNumber: row.rowNumber,
+          sku: row.data.sku.trim(),
+          product: existingSkuMap[row.data.sku.trim().toLowerCase()]!
+        })),
+    [csvAnalysis.validRows, existingSkuMap]
+  );
+
+  const safeValidRows = useMemo(() => {
+    const blockedSkus = new Set(existingSkuRows.map((entry) => entry.sku.toLowerCase()));
+    return csvAnalysis.validRows.filter((row) => !blockedSkus.has(row.data.sku.trim().toLowerCase()));
+  }, [csvAnalysis.validRows, existingSkuRows]);
 
   const handleTemplateDownload = () => {
     const blob = new Blob([templateRows], { type: "text/csv;charset=utf-8;" });
@@ -358,13 +439,13 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
 
     try {
       setUploading(true);
-      if (!csvAnalysis.validRows.length) {
+      if (!safeValidRows.length) {
         throw new Error("No valid rows found. Fix the highlighted CSV issues first.");
       }
 
-      if (csvAnalysis.invalidRows.length) {
+      if (csvAnalysis.invalidRows.length || existingSkuRows.length) {
         const confirmed = window.confirm(
-          `Import ${csvAnalysis.validRows.length} valid rows and skip ${csvAnalysis.invalidRows.length} invalid rows?`
+          `Import ${safeValidRows.length} safe rows and skip ${csvAnalysis.invalidRows.length + existingSkuRows.length} blocked rows?`
         );
 
         if (!confirmed) {
@@ -373,14 +454,14 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
         }
       }
 
-      const payload = buildBulkPayload(csvAnalysis.validRows);
+      const payload = buildBulkPayload(safeValidRows);
       const response = await api.post<BulkProductImportResponse>("/admin/products/bulk", payload, authHeaders(token));
       setLastResult(response.data);
       onImported();
 
-      if (response.data.failedCount > 0 || csvAnalysis.invalidRows.length > 0) {
+      if (response.data.failedCount > 0 || csvAnalysis.invalidRows.length > 0 || existingSkuRows.length > 0) {
         toast.warning(
-          `Imported ${response.data.createdCount} products. ${response.data.failedCount + csvAnalysis.invalidRows.length} rows need attention.`
+          `Imported ${response.data.createdCount} products. ${response.data.failedCount + csvAnalysis.invalidRows.length + existingSkuRows.length} rows need attention.`
         );
       } else {
         toast.success(`${response.data.createdCount} products imported successfully.`);
@@ -437,11 +518,11 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
             </div>
             <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-3">
               <p className="text-[11px] uppercase tracking-[0.16em] text-white/45">Valid</p>
-              <p className="mt-2 font-display text-2xl text-emerald-100">{csvAnalysis.validRows.length}</p>
+              <p className="mt-2 font-display text-2xl text-emerald-100">{safeValidRows.length}</p>
             </div>
             <div className="rounded-2xl border border-rose-400/20 bg-rose-500/10 p-3">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-white/45">Invalid</p>
-              <p className="mt-2 font-display text-2xl text-rose-100">{csvAnalysis.invalidRows.length}</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-white/45">Blocked</p>
+              <p className="mt-2 font-display text-2xl text-rose-100">{csvAnalysis.invalidRows.length + existingSkuRows.length}</p>
             </div>
           </div>
 
@@ -472,6 +553,29 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
               CSV pre-check passed. All rows are ready for import.
             </div>
           )}
+
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/65">
+            {checkingSkus ? "Checking existing SKUs in catalog..." : `${existingSkuRows.length} row(s) match existing catalog SKUs and will be skipped.`}
+          </div>
+
+          {existingSkuRows.length ? (
+            <div className="mt-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-white/45">Existing SKU conflicts</p>
+              <div className="mt-2 space-y-2 text-sm text-white/70">
+                {existingSkuRows.slice(0, 5).map((entry) => (
+                  <div key={`${entry.rowNumber}-${entry.sku}`} className="rounded-2xl border border-amber-400/20 bg-amber-500/10 px-3 py-2">
+                    Row {entry.rowNumber} · {entry.sku} already exists as{" "}
+                    <Link href={`/admin/products/edit/${entry.product.id}`} className="font-semibold text-amber-100 underline">
+                      {entry.product.name}
+                    </Link>
+                  </div>
+                ))}
+                {existingSkuRows.length > 5 ? (
+                  <div className="text-xs text-white/45">+{existingSkuRows.length - 5} more existing SKU conflict(s) hidden</div>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
 
           {lastResult ? (
             <div className="mt-5 space-y-4">

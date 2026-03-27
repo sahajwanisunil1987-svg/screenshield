@@ -825,6 +825,28 @@ export const createProductsBulk = async (payload: { items: BulkProductImportPayl
   };
 };
 
+export const checkExistingProductSkus = async (payload: { skus: string[] }) => {
+  const normalizedSkus = Array.from(new Set(payload.skus.map((sku) => sku.trim()).filter(Boolean)));
+
+  const existing = await prisma.product.findMany({
+    where: {
+      sku: {
+        in: normalizedSkus
+      }
+    },
+    select: {
+      id: true,
+      sku: true,
+      name: true,
+      slug: true
+    }
+  });
+
+  return {
+    existing
+  };
+};
+
 export const updateProduct = async (id: string, payload: Parameters<typeof createProduct>[0]) => {
   await prisma.productImage.deleteMany({ where: { productId: id } });
   await prisma.productCompatibility.deleteMany({ where: { productId: id } });
