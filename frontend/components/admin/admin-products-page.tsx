@@ -36,6 +36,14 @@ const readinessState = (product: Product) => {
   return { label: "Ready", chip: "bg-emerald-500/15 text-emerald-200" };
 };
 
+const isCatalogReady = (product: Product) => {
+  const stock = product.inventory?.stock ?? product.stock;
+  const hasImages = (product.images?.length ?? 0) > 0;
+  const lowStockLimit = product.inventory?.lowStockLimit ?? 5;
+
+  return product.isActive && hasImages && stock > lowStockLimit;
+};
+
 export function AdminProductsPageClient() {
   const token = useAuthStore((state) => state.token);
   const [data, setData] = useState<Product[]>([]);
@@ -103,7 +111,7 @@ export function AdminProductsPageClient() {
     lowStock: data.filter((product) => (product.inventory?.stock ?? product.stock) <= (product.inventory?.lowStockLimit ?? 5)).length,
     missingMedia: data.filter((product) => (product.images?.length ?? 0) === 0).length,
     inactive: data.filter((product) => !product.isActive).length,
-    ready: data.filter((product) => readinessState(product).label === "Ready").length
+    ready: data.filter((product) => isCatalogReady(product)).length
   }), [data]);
 
   return (
@@ -198,8 +206,8 @@ export function AdminProductsPageClient() {
         <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
           <div className="space-y-4">
             {visibleProducts.map((product) => (
-              <div key={product.id} className="flex flex-col gap-4 border-b border-white/10 pb-4 text-base xl:flex-row xl:items-center xl:justify-between">
-                <div className="min-w-0">
+              <div key={product.id} className="grid gap-4 border-b border-white/10 pb-4 text-base xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+                <div className="min-w-0 pr-0 xl:pr-6">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-semibold text-white">{product.name}</p>
                     <span className={`rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${readinessState(product).chip}`}>
@@ -217,7 +225,7 @@ export function AdminProductsPageClient() {
                     <span>{product.videoUrl ? "Video added" : "No video"}</span>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center xl:justify-end">
+                <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center xl:justify-end xl:self-start">
                   <Link href={`/products/${product.slug}`} className="rounded-full border border-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white/80 transition hover:bg-white/10">
                     Open live
                   </Link>

@@ -864,8 +864,9 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
         <textarea
           value={csvText}
           onChange={(event) => setCsvText(event.target.value)}
-          className="min-h-[260px] w-full rounded-[24px] border border-white/10 bg-black/20 px-4 py-4 text-sm text-white placeholder:text-white/35"
+          className="min-h-[260px] w-full rounded-[24px] border border-white/10 bg-black/20 px-4 py-4 font-mono text-xs leading-6 text-white placeholder:text-white/35"
           spellCheck={false}
+          wrap="off"
           placeholder="Paste CSV here or upload a file."
         />
 
