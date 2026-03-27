@@ -71,29 +71,34 @@ export default async function HomePage() {
   return (
     <PageShell>
       <section className="bg-hero-grid text-white">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
           <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-teal-200">Mobile spare parts made easy</p>
-            <h1 className="mt-4 font-display text-3xl leading-tight sm:text-4xl">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-teal-200 sm:text-sm">Mobile spare parts made easy</p>
+            <h1 className="mt-3 font-display text-[2.35rem] leading-[1.02] sm:mt-4 sm:text-4xl">
               Find the right spare part in three quick steps.
             </h1>
-            <p className="mt-4 max-w-2xl text-sm text-white/72 sm:text-base">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/72 sm:mt-4 sm:text-base">
               Choose the brand, pick the model, then open batteries, displays, charging parts, cameras, and more.
             </p>
+            <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80 sm:mt-5 sm:text-xs">
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Brand to model flow</span>
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Repair-shop friendly</span>
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Fast part discovery</span>
+            </div>
           </div>
-          <div className="mt-8 max-w-5xl">
+          <div className="mt-6 max-w-5xl sm:mt-8">
             <HeroSearch brands={brands} models={models} categories={categories} />
           </div>
         </div>
       </section>
       {homeSponsor ? <SponsorBanner sponsor={homeSponsor} /> : null}
       <section className="bg-page-wash">
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6 sm:py-10 lg:px-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-teal-700/80">Brands</p>
-              <h2 className="mt-3 font-display text-3xl text-ink sm:text-4xl">Start from the brand</h2>
-              <p className="mt-3 max-w-2xl text-sm text-slate sm:text-base">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-teal-700/80 sm:text-sm">Brands</p>
+              <h2 className="mt-2.5 font-display text-[2rem] text-ink sm:mt-3 sm:text-4xl">Start from the brand</h2>
+              <p className="mt-2.5 max-w-2xl text-sm leading-6 text-slate sm:mt-3 sm:text-base">
                 Open the brand catalog first, choose the model next, then jump straight into the right spare part.
               </p>
             </div>
@@ -105,7 +110,7 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
             {brands.map((brand) => {
               const logoStyle = BRAND_LOGO_STYLES[brand.slug] ?? {
                 wrapper: "bg-transparent border border-white/0",

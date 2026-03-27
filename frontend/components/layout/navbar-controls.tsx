@@ -65,7 +65,10 @@ export function NavbarControls() {
       <nav className="ml-auto flex items-center gap-1.5 text-sm lg:min-w-0">
         <button
           type="button"
-          onClick={() => setMobileSearchOpen((current) => !current)}
+          onClick={() => {
+            setMobileMenuOpen(false);
+            setMobileSearchOpen((current) => !current);
+          }}
           className="rounded-full border border-white/10 bg-white/5 p-2.5 transition hover:bg-white/10 md:hidden"
           aria-label="Toggle search"
         >
@@ -96,7 +99,10 @@ export function NavbarControls() {
         </Link>
         <button
           type="button"
-          onClick={() => setMobileMenuOpen((current) => !current)}
+          onClick={() => {
+            setMobileSearchOpen(false);
+            setMobileMenuOpen((current) => !current);
+          }}
           className="rounded-full border border-white/10 bg-white/5 p-2.5 transition hover:bg-white/10 md:hidden"
           aria-label="Open menu"
         >
@@ -157,7 +163,8 @@ export function NavbarControls() {
 
       {mobileSearchOpen ? (
         <div className="basis-full md:hidden">
-          <div className="mt-4 rounded-[24px] border border-white/10 bg-white/5 p-3">
+          <div className="mt-3 rounded-[24px] border border-white/10 bg-white/5 p-3 shadow-[0_20px_40px_rgba(8,17,31,0.24)]">
+            <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Quick product search</p>
             <NavbarSearch
               placeholder="Search parts or SKU"
               buttonLabel="Go"
@@ -176,7 +183,7 @@ export function NavbarControls() {
           <div className="mt-3 space-y-3 rounded-[24px] border border-white/10 bg-white/5 p-3 text-white">
             <div>
               <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Shopping</p>
-              <div className="mt-2 grid grid-cols-4 gap-2">
+              <div className="mt-2 grid grid-cols-2 gap-2">
                 <MobileNavLink href="/cart" label="Cart" onClick={() => setMobileMenuOpen(false)} count={cartCount} tone="accent">
                   <ShoppingBag className="h-5 w-5" />
                 </MobileNavLink>
@@ -194,7 +201,7 @@ export function NavbarControls() {
 
             <div>
               <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Account</p>
-              <div className="mt-2 grid grid-cols-4 gap-2">
+              <div className="mt-2 grid grid-cols-2 gap-2">
                 <MobileNavLink href={user ? "/account" : "/login"} label={user ? "Account" : "Login"} onClick={() => setMobileMenuOpen(false)}>
                   <User2 className="h-5 w-5" />
                 </MobileNavLink>
