@@ -267,6 +267,46 @@ const resolveCategoryId = async (categoryId?: string, categoryName?: string) => 
   throw new Error(`Category not found for "${categoryName ?? categoryId ?? "unknown"}"`);
 };
 
+const findBrandByReference = (reference?: string) => {
+  if (!reference) {
+    return null;
+  }
+
+  return prisma.brand.findFirst({
+    where: {
+      OR: [{ id: reference }, { slug: toSlug(reference) }, { name: { equals: reference, mode: "insensitive" } }]
+    },
+    select: { id: true, name: true }
+  });
+};
+
+const findCategoryByReference = (reference?: string) => {
+  if (!reference) {
+    return null;
+  }
+
+  return prisma.category.findFirst({
+    where: {
+      OR: [{ id: reference }, { slug: toSlug(reference) }, { name: { equals: reference, mode: "insensitive" } }]
+    },
+    select: { id: true, name: true }
+  });
+};
+
+const findModelByReference = (reference?: string, brandId?: string) => {
+  if (!reference) {
+    return null;
+  }
+
+  return prisma.mobileModel.findFirst({
+    where: {
+      ...(brandId ? { brandId } : {}),
+      OR: [{ id: reference }, { slug: toSlug(reference) }, { name: { equals: reference, mode: "insensitive" } }]
+    },
+    select: { id: true, name: true }
+  });
+};
+
 const resolveModelId = async (modelId?: string, modelName?: string, brandId?: string) => {
   if (modelId) {
     const model = await prisma.mobileModel.findUnique({
@@ -845,6 +885,47 @@ export const checkExistingProductSkus = async (payload: { skus: string[] }) => {
   return {
     existing
   };
+};
+
+export const checkBulkProductReferences = async (payload: {
+  rows: Array<{ rowNumber: number; sku: string; brand: string; model: string; category: string }>;
+}) => {
+  const issues: Array<{ rowNumber: number; sku: string; message: string }> = [];
+
+  for (const row of payload.rows) {
+    const brand = await findBrandByReference(row.brand);
+
+    if (!brand) {
+      issues.push({
+        rowNumber: row.rowNumber,
+        sku: row.sku,
+        message: `Brand "${row.brand}" not found in admin data.`
+      });
+      continue;
+    }
+
+    const category = await findCategoryByReference(row.category);
+
+    if (!category) {
+      issues.push({
+        rowNumber: row.rowNumber,
+        sku: row.sku,
+        message: `Category "${row.category}" not found in admin data.`
+      });
+    }
+
+    const model = await findModelByReference(row.model, brand.id);
+
+    if (!model) {
+      issues.push({
+        rowNumber: row.rowNumber,
+        sku: row.sku,
+        message: `Model "${row.model}" not found under brand "${brand.name}".`
+      });
+    }
+  }
+
+  return { issues };
 };
 
 export const updateProduct = async (id: string, payload: Parameters<typeof createProduct>[0]) => {

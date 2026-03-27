@@ -139,6 +139,18 @@ export const productBulkSkuCheckSchema = z.object({
   skus: z.array(z.string().min(1)).min(1).max(100)
 });
 
+export const productBulkReferenceCheckSchema = z.object({
+  rows: z.array(
+    z.object({
+      rowNumber: z.coerce.number().int().min(1),
+      sku: z.string().min(1),
+      brand: z.string().min(1),
+      model: z.string().min(1),
+      category: z.string().min(1)
+    })
+  ).min(1).max(100)
+});
+
 export const productSearchSchema = z.object({
   brand: z.string().optional(),
   model: z.string().optional(),

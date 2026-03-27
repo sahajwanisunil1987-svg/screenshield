@@ -5,7 +5,7 @@ import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
-import { BulkProductImportResponse, BulkSkuCheckResponse } from "@/types";
+import { BulkProductImportResponse, BulkReferenceCheckResponse, BulkSkuCheckResponse } from "@/types";
 
 type AdminProductBulkUploadProps = {
   token?: string | null;
@@ -316,8 +316,10 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
   const [csvText, setCsvText] = useState(templateRows);
   const [uploading, setUploading] = useState(false);
   const [checkingSkus, setCheckingSkus] = useState(false);
+  const [checkingReferences, setCheckingReferences] = useState(false);
   const [lastResult, setLastResult] = useState<BulkProductImportResponse | null>(null);
   const [existingSkuMap, setExistingSkuMap] = useState<Record<string, { id: string; name: string; slug: string }>>({});
+  const [referenceIssues, setReferenceIssues] = useState<CsvValidationIssue[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const csvAnalysis = useMemo(() => analyzeCsv(csvText), [csvText]);
 
@@ -393,6 +395,61 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
     };
   }, [csvAnalysis.validRows, token]);
 
+  useEffect(() => {
+    if (!token) {
+      setReferenceIssues([]);
+      return;
+    }
+
+    const rows = csvAnalysis.validRows
+      .map((row) => ({
+        rowNumber: row.rowNumber,
+        sku: row.data.sku?.trim(),
+        brand: row.data.brand?.trim(),
+        model: row.data.model?.trim(),
+        category: row.data.category?.trim()
+      }))
+      .filter(
+        (row): row is { rowNumber: number; sku: string; brand: string; model: string; category: string } =>
+          Boolean(row.sku && row.brand && row.model && row.category)
+      );
+
+    if (!rows.length) {
+      setReferenceIssues([]);
+      return;
+    }
+
+    let cancelled = false;
+    setCheckingReferences(true);
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const response = await api.post<BulkReferenceCheckResponse>(
+          "/admin/products/bulk/check-references",
+          { rows },
+          authHeaders(token)
+        );
+
+        if (!cancelled) {
+          setReferenceIssues(response.data.issues);
+        }
+      } catch {
+        if (!cancelled) {
+          setReferenceIssues([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setCheckingReferences(false);
+        }
+      }
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [csvAnalysis.validRows, token]);
+
   const existingSkuRows = useMemo(
     () =>
       csvAnalysis.validRows
@@ -405,10 +462,28 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
     [csvAnalysis.validRows, existingSkuMap]
   );
 
+  const referenceIssueRows = useMemo(() => {
+    const issueMap = new Map<number, CsvValidationIssue[]>();
+
+    for (const issue of referenceIssues) {
+      const current = issueMap.get(issue.rowNumber) ?? [];
+      current.push(issue);
+      issueMap.set(issue.rowNumber, current);
+    }
+
+    return issueMap;
+  }, [referenceIssues]);
+
+  const blockedReferenceRowCount = referenceIssueRows.size;
+
   const safeValidRows = useMemo(() => {
     const blockedSkus = new Set(existingSkuRows.map((entry) => entry.sku.toLowerCase()));
-    return csvAnalysis.validRows.filter((row) => !blockedSkus.has(row.data.sku.trim().toLowerCase()));
-  }, [csvAnalysis.validRows, existingSkuRows]);
+    const blockedReferenceRows = new Set(referenceIssues.map((issue) => issue.rowNumber));
+
+    return csvAnalysis.validRows.filter(
+      (row) => !blockedSkus.has(row.data.sku.trim().toLowerCase()) && !blockedReferenceRows.has(row.rowNumber)
+    );
+  }, [csvAnalysis.validRows, existingSkuRows, referenceIssues]);
 
   const handleTemplateDownload = () => {
     const blob = new Blob([templateRows], { type: "text/csv;charset=utf-8;" });
@@ -443,9 +518,9 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
         throw new Error("No valid rows found. Fix the highlighted CSV issues first.");
       }
 
-      if (csvAnalysis.invalidRows.length || existingSkuRows.length) {
+      if (csvAnalysis.invalidRows.length || existingSkuRows.length || blockedReferenceRowCount) {
         const confirmed = window.confirm(
-          `Import ${safeValidRows.length} safe rows and skip ${csvAnalysis.invalidRows.length + existingSkuRows.length} blocked rows?`
+          `Import ${safeValidRows.length} safe rows and skip ${csvAnalysis.invalidRows.length + existingSkuRows.length + blockedReferenceRowCount} blocked rows?`
         );
 
         if (!confirmed) {
@@ -459,9 +534,9 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
       setLastResult(response.data);
       onImported();
 
-      if (response.data.failedCount > 0 || csvAnalysis.invalidRows.length > 0 || existingSkuRows.length > 0) {
+      if (response.data.failedCount > 0 || csvAnalysis.invalidRows.length > 0 || existingSkuRows.length > 0 || blockedReferenceRowCount > 0) {
         toast.warning(
-          `Imported ${response.data.createdCount} products. ${response.data.failedCount + csvAnalysis.invalidRows.length + existingSkuRows.length} rows need attention.`
+          `Imported ${response.data.createdCount} products. ${response.data.failedCount + csvAnalysis.invalidRows.length + existingSkuRows.length + blockedReferenceRowCount} rows need attention.`
         );
       } else {
         toast.success(`${response.data.createdCount} products imported successfully.`);
@@ -522,7 +597,7 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
             </div>
             <div className="rounded-2xl border border-rose-400/20 bg-rose-500/10 p-3">
               <p className="text-[11px] uppercase tracking-[0.16em] text-white/45">Blocked</p>
-              <p className="mt-2 font-display text-2xl text-rose-100">{csvAnalysis.invalidRows.length + existingSkuRows.length}</p>
+              <p className="mt-2 font-display text-2xl text-rose-100">{csvAnalysis.invalidRows.length + existingSkuRows.length + blockedReferenceRowCount}</p>
             </div>
           </div>
 
@@ -572,6 +647,30 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
                 ))}
                 {existingSkuRows.length > 5 ? (
                   <div className="text-xs text-white/45">+{existingSkuRows.length - 5} more existing SKU conflict(s) hidden</div>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/65">
+            {checkingReferences
+              ? "Checking brand, model, and category references..."
+              : `${blockedReferenceRowCount} row(s) have missing brand/model/category references and will be skipped.`}
+          </div>
+
+          {referenceIssues.length ? (
+            <div className="mt-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-white/45">Reference issues</p>
+              <div className="mt-2 space-y-2 text-sm text-white/70">
+                {Array.from(referenceIssueRows.entries())
+                  .slice(0, 5)
+                  .map(([rowNumber, issues]) => (
+                    <div key={rowNumber} className="rounded-2xl border border-amber-400/20 bg-amber-500/10 px-3 py-2">
+                      Row {rowNumber} · {(issues[0]?.sku ?? "-")} · {issues.map((issue) => issue.message).join(" ")}
+                    </div>
+                  ))}
+                {referenceIssueRows.size > 5 ? (
+                  <div className="text-xs text-white/45">+{referenceIssueRows.size - 5} more reference issue row(s) hidden</div>
                 ) : null}
               </div>
             </div>

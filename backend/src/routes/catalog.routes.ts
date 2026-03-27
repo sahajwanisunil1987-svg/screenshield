@@ -10,6 +10,7 @@ import {
   categorySchema,
   modelSchema,
   productBulkSchema,
+  productBulkReferenceCheckSchema,
   productBulkSkuCheckSchema,
   productSchema,
   productSearchSchema,
@@ -100,6 +101,13 @@ router.delete(
   catalogController.deleteCategory
 );
 
+router.post(
+  "/admin/products/bulk/check-references",
+  authenticate,
+  requireAdmin,
+  validate({ body: productBulkReferenceCheckSchema }),
+  catalogController.checkBulkProductReferences
+);
 router.post(
   "/admin/products/bulk/check-skus",
   authenticate,

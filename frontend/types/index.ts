@@ -147,6 +147,14 @@ export type BulkSkuCheckResponse = {
   }>;
 };
 
+export type BulkReferenceCheckResponse = {
+  issues: Array<{
+    rowNumber: number;
+    sku: string;
+    message: string;
+  }>;
+};
+
 export type Review = {
   id: string;
   rating: number;

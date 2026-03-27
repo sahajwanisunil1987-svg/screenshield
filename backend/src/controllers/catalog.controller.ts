@@ -111,6 +111,10 @@ export const checkBulkProductSkus = async (req: Request, res: Response) => {
   res.status(StatusCodes.OK).json(await catalogService.checkExistingProductSkus(req.body));
 };
 
+export const checkBulkProductReferences = async (req: Request, res: Response) => {
+  res.status(StatusCodes.OK).json(await catalogService.checkBulkProductReferences(req.body));
+};
+
 export const updateProduct = async (req: Request, res: Response) => {
   res.json(await catalogService.updateProduct(getSingleParam(req.params.id)!, req.body));
 };
