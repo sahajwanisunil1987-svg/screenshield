@@ -122,11 +122,11 @@ const bulkProductRowSchema = z.object({
     });
   }
 
-  if (value.hasVariants) {
+  if (value.hasVariants && (!value.variants || value.variants.length === 0)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      path: ["hasVariants"],
-      message: "Bulk upload currently supports standard products only"
+      path: ["variants"],
+      message: "Add at least one variant when variants are enabled"
     });
   }
 });

@@ -46,7 +46,15 @@ const templateHeaders = [
   "isFeatured",
   "isActive",
   "compatibleModels",
-  "specifications"
+  "specifications",
+  "hasVariants",
+  "variantLabel",
+  "variantSku",
+  "variantPrice",
+  "variantComparePrice",
+  "variantStock",
+  "variantImageUrl",
+  "variantIsDefault"
 ];
 
 const templateRows = [
@@ -71,7 +79,75 @@ const templateRows = [
     "true",
     "true",
     "OPPO A59 5G",
-    "quality=Original;grade=A+;includes=Display combo"
+    "quality=Original;grade=A+;includes=Display combo",
+    "false",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+  ].join(","),
+  [
+    "iPhone 13 Back Panel",
+    "IP13-BP-001",
+    "Apple",
+    "iPhone 13",
+    "Back Panel",
+    "1499",
+    "8",
+    "Back panel for iPhone 13 with color variants.",
+    "Replacement iPhone 13 back panel with precise fit and matching finish options.",
+    "https://example.com/iphone13-back-panel.jpg",
+    "",
+    "1",
+    "18",
+    "851770",
+    "R2-B",
+    "",
+    "false",
+    "true",
+    "iPhone 13",
+    "quality=OEM;finish=Gloss",
+    "true",
+    "Blue",
+    "IP13-BP-001-BLU",
+    "1499",
+    "",
+    "5",
+    "https://example.com/iphone13-back-panel-blue.jpg",
+    "true"
+  ].join(","),
+  [
+    "iPhone 13 Back Panel",
+    "IP13-BP-001",
+    "Apple",
+    "iPhone 13",
+    "Back Panel",
+    "1499",
+    "8",
+    "Back panel for iPhone 13 with color variants.",
+    "Replacement iPhone 13 back panel with precise fit and matching finish options.",
+    "https://example.com/iphone13-back-panel.jpg",
+    "",
+    "1",
+    "18",
+    "851770",
+    "R2-B",
+    "",
+    "false",
+    "true",
+    "iPhone 13",
+    "quality=OEM;finish=Gloss",
+    "true",
+    "Midnight",
+    "IP13-BP-001-MID",
+    "1499",
+    "",
+    "3",
+    "https://example.com/iphone13-back-panel-midnight.jpg",
+    "false"
   ].join(",")
 ].join("\n");
 
@@ -120,6 +196,8 @@ const parseSpecifications = (value?: string) => {
 };
 
 const requiredColumns = ["name", "sku", "brand", "model", "category", "price", "stock", "shortDescription", "description", "imageUrls"];
+
+const variantColumns = ["variantLabel", "variantSku", "variantPrice", "variantStock"];
 
 const detectDelimiter = (headerLine: string) => {
   if (headerLine.includes("\t")) {
@@ -210,11 +288,24 @@ const analyzeCsv = (csvText: string) => {
   const missingColumns = requiredColumns.filter((column) => !headers.includes(column));
   const rows = parseCsv(csvText);
   const issues: CsvValidationIssue[] = [];
-  const seenSkus = new Map<string, number>();
+  const seenSkus = new Map<string, { rowNumber: number; hasVariants: boolean }>();
+  const seenVariantSkus = new Map<string, number>();
+  const variantGroupMeta = new Map<
+    string,
+    {
+      rowNumber: number;
+      name: string;
+      brand: string;
+      model: string;
+      category: string;
+      hasVariants: boolean;
+    }
+  >();
 
   for (const row of rows) {
     const sku = row.data.sku?.trim() || "-";
     const imageUrls = parsePipeList(row.data.imageUrls);
+    const hasVariants = parseBoolean(row.data.hasVariants);
 
     if (!row.data.name?.trim()) {
       issues.push({ rowNumber: row.rowNumber, sku, message: "Missing product name." });
@@ -257,14 +348,82 @@ const analyzeCsv = (csvText: string) => {
     }
 
     const normalizedSku = sku.toLowerCase();
-    if (sku !== "-" && seenSkus.has(normalizedSku)) {
-      issues.push({
-        rowNumber: row.rowNumber,
-        sku,
-        message: `Duplicate SKU in file. Also seen on row ${seenSkus.get(normalizedSku)}.`
-      });
+    const previousSku = sku !== "-" ? seenSkus.get(normalizedSku) : null;
+
+    if (hasVariants) {
+      for (const column of variantColumns) {
+        if (!row.data[column]?.trim()) {
+          issues.push({ rowNumber: row.rowNumber, sku, message: `${column} is required for variant rows.` });
+        }
+      }
+
+      if (row.data.variantPrice?.trim() && (!Number.isFinite(Number(row.data.variantPrice)) || Number(row.data.variantPrice) <= 0)) {
+        issues.push({ rowNumber: row.rowNumber, sku, message: "Variant price must be greater than 0." });
+      }
+
+      if (row.data.variantStock?.trim() && (!Number.isFinite(Number(row.data.variantStock)) || Number(row.data.variantStock) < 0)) {
+        issues.push({ rowNumber: row.rowNumber, sku, message: "Variant stock must be 0 or higher." });
+      }
+
+      const variantSku = row.data.variantSku?.trim();
+      if (variantSku) {
+        const normalizedVariantSku = variantSku.toLowerCase();
+        if (seenVariantSkus.has(normalizedVariantSku)) {
+          issues.push({
+            rowNumber: row.rowNumber,
+            sku,
+            message: `Duplicate variant SKU in file. Also seen on row ${seenVariantSkus.get(normalizedVariantSku)}.`
+          });
+        } else {
+          seenVariantSkus.set(normalizedVariantSku, row.rowNumber);
+        }
+      }
+    }
+
+    if (previousSku) {
+      if (!hasVariants || !previousSku.hasVariants) {
+        issues.push({
+          rowNumber: row.rowNumber,
+          sku,
+          message: `Duplicate SKU in file. Also seen on row ${previousSku.rowNumber}.`
+        });
+      }
     } else if (sku !== "-") {
-      seenSkus.set(normalizedSku, row.rowNumber);
+      seenSkus.set(normalizedSku, { rowNumber: row.rowNumber, hasVariants });
+    }
+
+    if (sku !== "-") {
+      const previousMeta = variantGroupMeta.get(normalizedSku);
+      const currentMeta = {
+        rowNumber: row.rowNumber,
+        name: row.data.name?.trim() ?? "",
+        brand: row.data.brand?.trim() ?? "",
+        model: row.data.model?.trim() ?? "",
+        category: row.data.category?.trim() ?? "",
+        hasVariants
+      };
+
+      if (!previousMeta) {
+        variantGroupMeta.set(normalizedSku, currentMeta);
+      } else {
+        if (previousMeta.hasVariants !== currentMeta.hasVariants) {
+          issues.push({
+            rowNumber: row.rowNumber,
+            sku,
+            message: `SKU group mixes variant and non-variant rows. Match row ${previousMeta.rowNumber}.`
+          });
+        }
+
+        for (const field of ["name", "brand", "model", "category"] as const) {
+          if (previousMeta[field] !== currentMeta[field]) {
+            issues.push({
+              rowNumber: row.rowNumber,
+              sku,
+              message: `Variant rows must keep the same ${field} as row ${previousMeta.rowNumber}.`
+            });
+          }
+        }
+      }
     }
   }
 
@@ -291,38 +450,65 @@ const analyzeCsv = (csvText: string) => {
 };
 
 const buildBulkPayload = (rows: CsvImportRow[]) => ({
-  items: rows.map((row) => {
-    const imageUrls = parsePipeList(row.data.imageUrls);
+  items: Array.from(
+    rows.reduce<Map<string, CsvImportRow[]>>((accumulator, row) => {
+      const normalizedSku = row.data.sku.trim().toLowerCase();
+      const current = accumulator.get(normalizedSku) ?? [];
+      current.push(row);
+      accumulator.set(normalizedSku, current);
+      return accumulator;
+    }, new Map()).values()
+  ).map((groupRows) => {
+    const firstRow = groupRows[0]!;
+    const imageUrls = parsePipeList(firstRow.data.imageUrls);
 
     if (!imageUrls.length) {
-      throw new Error(`Row ${row.rowNumber}: add at least one image URL in imageUrls.`);
+      throw new Error(`Row ${firstRow.rowNumber}: add at least one image URL in imageUrls.`);
     }
 
+    const hasVariants = parseBoolean(firstRow.data.hasVariants);
+    const variants = hasVariants
+      ? groupRows.map((row, index) => ({
+          label: row.data.variantLabel,
+          sku: row.data.variantSku,
+          price: parseRequiredNumber(row.data.variantPrice || row.data.price, 0),
+          comparePrice: parseOptionalNumber(row.data.variantComparePrice),
+          stock: parseRequiredNumber(row.data.variantStock || "0", 0),
+          imageUrl: row.data.variantImageUrl || null,
+          isDefault: row.data.variantIsDefault ? parseBoolean(row.data.variantIsDefault) : index === 0,
+          isActive: true
+        }))
+      : [];
+
+    const defaultVariant = variants.find((variant) => variant.isDefault) ?? variants[0];
+    const totalVariantStock = variants.reduce((sum, variant) => sum + variant.stock, 0);
+
     return {
-      rowNumber: row.rowNumber,
-      name: row.data.name,
-      sku: row.data.sku,
-      brand: row.data.brand,
-      model: row.data.model,
-      category: row.data.category,
-      price: parseRequiredNumber(row.data.price, 0),
-      stock: parseRequiredNumber(row.data.stock, 0),
-      shortDescription: row.data.shortDescription,
-      description: row.data.description,
-      comparePrice: parseOptionalNumber(row.data.comparePrice),
-      warrantyMonths: parseRequiredNumber(row.data.warrantyMonths || "6", 6),
-      gstRate: parseRequiredNumber(row.data.gstRate || "18", 18),
-      hsnCode: row.data.hsnCode || null,
-      warehouseCode: row.data.warehouseCode || undefined,
-      videoUrl: row.data.videoUrl || null,
-      isFeatured: parseBoolean(row.data.isFeatured),
-      isActive: row.data.isActive ? parseBoolean(row.data.isActive) : true,
-      compatibleModels: parsePipeList(row.data.compatibleModels),
-      specifications: parseSpecifications(row.data.specifications),
-      hasVariants: false,
+      rowNumber: firstRow.rowNumber,
+      name: firstRow.data.name,
+      sku: firstRow.data.sku,
+      brand: firstRow.data.brand,
+      model: firstRow.data.model,
+      category: firstRow.data.category,
+      price: hasVariants ? (defaultVariant?.price ?? parseRequiredNumber(firstRow.data.price, 0)) : parseRequiredNumber(firstRow.data.price, 0),
+      stock: hasVariants ? totalVariantStock : parseRequiredNumber(firstRow.data.stock, 0),
+      shortDescription: firstRow.data.shortDescription,
+      description: firstRow.data.description,
+      comparePrice: hasVariants ? (defaultVariant?.comparePrice ?? null) : parseOptionalNumber(firstRow.data.comparePrice),
+      warrantyMonths: parseRequiredNumber(firstRow.data.warrantyMonths || "6", 6),
+      gstRate: parseRequiredNumber(firstRow.data.gstRate || "18", 18),
+      hsnCode: firstRow.data.hsnCode || null,
+      warehouseCode: firstRow.data.warehouseCode || undefined,
+      videoUrl: firstRow.data.videoUrl || null,
+      isFeatured: parseBoolean(firstRow.data.isFeatured),
+      isActive: firstRow.data.isActive ? parseBoolean(firstRow.data.isActive) : true,
+      compatibleModels: parsePipeList(firstRow.data.compatibleModels),
+      specifications: parseSpecifications(firstRow.data.specifications),
+      hasVariants,
+      variants,
       images: imageUrls.map((url, index) => ({
         url,
-        alt: `${row.data.name} image ${index + 1}`
+        alt: `${firstRow.data.name} image ${index + 1}`
       }))
     };
   })
@@ -511,6 +697,15 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
   }, [referenceIssues]);
 
   const blockedReferenceRowCount = referenceIssueRows.size;
+  const invalidVariantGroupSkus = useMemo(
+    () =>
+      new Set(
+        csvAnalysis.invalidRows
+          .filter((row) => parseBoolean(row.data.hasVariants) && row.data.sku?.trim())
+          .map((row) => row.data.sku.trim().toLowerCase())
+      ),
+    [csvAnalysis.invalidRows]
+  );
 
   const safeValidRows = useMemo(() => {
     const blockedSkus =
@@ -518,9 +713,12 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
     const blockedReferenceRows = new Set(referenceIssues.map((issue) => issue.rowNumber));
 
     return csvAnalysis.validRows.filter(
-      (row) => !blockedSkus.has(row.data.sku.trim().toLowerCase()) && !blockedReferenceRows.has(row.rowNumber)
+      (row) =>
+        !blockedSkus.has(row.data.sku.trim().toLowerCase()) &&
+        !blockedReferenceRows.has(row.rowNumber) &&
+        !invalidVariantGroupSkus.has(row.data.sku.trim().toLowerCase())
     );
-  }, [csvAnalysis.validRows, existingSkuRows, importMode, referenceIssues]);
+  }, [csvAnalysis.validRows, existingSkuRows, importMode, invalidVariantGroupSkus, referenceIssues]);
 
   const handleTemplateDownload = () => {
     const blob = new Blob([templateRows], { type: "text/csv;charset=utf-8;" });
@@ -616,7 +814,8 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
           <p className="text-sm font-semibold text-white">Bulk product upload</p>
           <p className="mt-2 text-sm text-white/60">
             Upload many standard products at once with CSV, or paste rows directly from Google Sheets. Use brand,
-            model, and category names as they already exist in admin. Variants are not included in this first version.
+            model, and category names as they already exist in admin. Variant products can use multiple rows with the
+            same base SKU and separate variant columns.
           </p>
           <p className="mt-3 text-xs text-white/45">
             Template columns: {templateHeaders.join(", ")}
@@ -680,7 +879,7 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
             <li>`specifications` format: `key=value;key2=value2`.</li>
             <li>You can copy rows straight from Google Sheets and paste them here.</li>
             <li>`Update existing by SKU` is best for export, edit in sheet, and re-import workflow.</li>
-            <li>Keep this importer for standard products. Variants can be added later from edit screens.</li>
+            <li>For variant products, repeat the same base SKU on multiple rows and fill `variant*` columns.</li>
           </ul>
 
           {csvAnalysis.issues.length ? (

@@ -801,10 +801,6 @@ export const createProductsBulk = async (payload: {
     const rowNumber = item.rowNumber ?? index + 2;
 
     try {
-      if (item.hasVariants) {
-        throw new Error("Variant products are not supported in bulk upload yet");
-      }
-
       const brandId = await resolveBrandId(item.brandId, item.brand);
       const modelId = await resolveModelId(item.modelId, item.model, brandId);
       const categoryId = await resolveCategoryId(item.categoryId, item.category);
@@ -827,7 +823,7 @@ export const createProductsBulk = async (payload: {
         shortDescription: item.shortDescription,
         description: item.description,
         specifications: item.specifications,
-        hasVariants: false,
+        hasVariants: item.hasVariants,
         price: item.price,
         comparePrice: item.comparePrice ?? null,
         warrantyMonths: item.warrantyMonths,
@@ -841,6 +837,7 @@ export const createProductsBulk = async (payload: {
         videoUrl: item.videoUrl ?? null,
         isFeatured: item.isFeatured,
         isActive: item.isActive,
+        variants: item.variants ?? [],
         images: item.images
       };
 
@@ -882,13 +879,18 @@ export const createProductsBulk = async (payload: {
   };
 };
 
-export const exportProductsForBulkEditing = async () => {
+type ExportProductRow = Record<string, string | number>;
+
+export const exportProductsForBulkEditing = async (): Promise<ExportProductRow[]> => {
   const products = await prisma.product.findMany({
     include: {
       brand: true,
       model: true,
       category: true,
       images: { orderBy: { sortOrder: "asc" } },
+      variants: {
+        orderBy: variantOrderBy
+      },
       compatibilityModels: {
         include: { model: true },
         orderBy: { model: { name: "asc" } }
@@ -898,30 +900,57 @@ export const exportProductsForBulkEditing = async () => {
     orderBy: [{ updatedAt: "desc" }]
   });
 
-  return products.map((product) => ({
-    name: product.name,
-    sku: product.sku,
-    brand: product.brand.name,
-    model: product.model.name,
-    category: product.category.name,
-    price: Number(product.price),
-    stock: product.inventory?.stock ?? product.stock,
-    shortDescription: product.shortDescription,
-    description: product.description,
-    imageUrls: product.images.map((image) => image.url).join("|"),
-    comparePrice: product.comparePrice ? Number(product.comparePrice) : "",
-    warrantyMonths: product.warrantyMonths,
-    gstRate: product.gstRate ? Number(product.gstRate) : 18,
-    hsnCode: product.hsnCode ?? "",
-    warehouseCode: product.inventory?.warehouseCode ?? "",
-    videoUrl: product.videoUrl ?? "",
-    isFeatured: product.isFeatured ? "true" : "false",
-    isActive: product.isActive ? "true" : "false",
-    compatibleModels: product.compatibilityModels.map((entry) => entry.model.name).join("|"),
-    specifications: Object.entries(product.specifications ?? {})
-      .map(([key, value]) => `${key}=${value}`)
-      .join(";")
-  }));
+  return products.flatMap<ExportProductRow>((product) => {
+    const baseRow: ExportProductRow = {
+      name: product.name,
+      sku: product.sku,
+      brand: product.brand.name,
+      model: product.model.name,
+      category: product.category.name,
+      price: Number(product.price),
+      stock: product.inventory?.stock ?? product.stock,
+      shortDescription: product.shortDescription,
+      description: product.description,
+      imageUrls: product.images.map((image) => image.url).join("|"),
+      comparePrice: product.comparePrice ? Number(product.comparePrice) : "",
+      warrantyMonths: product.warrantyMonths,
+      gstRate: product.gstRate ? Number(product.gstRate) : 18,
+      hsnCode: product.hsnCode ?? "",
+      warehouseCode: product.inventory?.warehouseCode ?? "",
+      videoUrl: product.videoUrl ?? "",
+      isFeatured: product.isFeatured ? "true" : "false",
+      isActive: product.isActive ? "true" : "false",
+      compatibleModels: product.compatibilityModels.map((entry) => entry.model.name).join("|"),
+      specifications: Object.entries(product.specifications ?? {})
+        .map(([key, value]) => `${key}=${value}`)
+        .join(";"),
+      hasVariants: product.hasVariants ? "true" : "false"
+    };
+
+    if (!product.hasVariants || !product.variants.length) {
+      return [{
+        ...baseRow,
+        variantLabel: "",
+        variantSku: "",
+        variantPrice: "",
+        variantComparePrice: "",
+        variantStock: "",
+        variantImageUrl: "",
+        variantIsDefault: ""
+      }];
+    }
+
+    return product.variants.map((variant) => ({
+      ...baseRow,
+      variantLabel: variant.label,
+      variantSku: variant.sku,
+      variantPrice: Number(variant.price),
+      variantComparePrice: variant.comparePrice ? Number(variant.comparePrice) : "",
+      variantStock: variant.stock,
+      variantImageUrl: variant.imageUrl ?? "",
+      variantIsDefault: variant.isDefault ? "true" : "false"
+    }));
+  });
 };
 
 export const checkExistingProductSkus = async (payload: { skus: string[] }) => {
