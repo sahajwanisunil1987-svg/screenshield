@@ -11,7 +11,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     fetchApiOrFallback<Brand[]>("/brands", [], { next: { revalidate: 1800 } }),
     fetchApiOrFallback<Category[]>("/categories", [], { next: { revalidate: 1800 } }),
     fetchApiOrFallback<MobileModel[]>("/models", [], { next: { revalidate: 1800 } }),
-    fetchApiOrFallback<ProductListResponse>("/products?limit=500", { items: [], pagination: { page: 1, limit: 500, total: 0, pages: 0 } }, { next: { revalidate: 300 } })
+    fetchApiOrFallback<ProductListResponse>("/products?limit=40", { items: [], pagination: { page: 1, limit: 40, total: 0, pages: 0 } }, { next: { revalidate: 300 } })
   ]);
 
   const now = new Date();

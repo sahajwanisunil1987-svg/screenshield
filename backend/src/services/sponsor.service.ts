@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { toSlug } from "../utils/helpers.js";
 
@@ -49,30 +50,79 @@ const isActiveForNow = (startAt: Date | null, endAt: Date | null, now: Date) => 
   return true;
 };
 
-export const listSponsorAds = () =>
-  prisma.sponsorAd.findMany({
-    orderBy: [{ isActive: "desc" }, { priority: "desc" }, { updatedAt: "desc" }]
-  });
+let sponsorTableAvailable: boolean | null = null;
+
+const hasSponsorTable = async () => {
+  if (sponsorTableAvailable !== null) {
+    return sponsorTableAvailable;
+  }
+
+  const result = await prisma.$queryRaw<Array<{ table_name: string | null }>>(
+    Prisma.sql`SELECT to_regclass('public."SponsorAd"')::text AS table_name`
+  );
+
+  sponsorTableAvailable = Boolean(result[0]?.table_name);
+  return sponsorTableAvailable;
+};
+
+const isMissingSponsorTable = (error: unknown) =>
+  error instanceof Prisma.PrismaClientKnownRequestError &&
+  error.code === "P2021" &&
+  error.message.includes("SponsorAd");
+
+export const listSponsorAds = async () => {
+  if (!(await hasSponsorTable())) {
+    return [];
+  }
+
+  try {
+    return await prisma.sponsorAd.findMany({
+      orderBy: [{ isActive: "desc" }, { priority: "desc" }, { updatedAt: "desc" }]
+    });
+  } catch (error) {
+    if (isMissingSponsorTable(error)) {
+      return [];
+    }
+
+    throw error;
+  }
+};
 
 export const getSponsorByPlacement = async (placement: SponsorPlacement) => {
   const now = new Date();
-  const candidates = await prisma.sponsorAd.findMany({
-    where: {
-      placement,
-      isActive: true
-    },
-    orderBy: [{ priority: "desc" }, { updatedAt: "desc" }]
-  });
+  let candidates;
+
+  if (!(await hasSponsorTable())) {
+    return null;
+  }
+
+  try {
+    candidates = await prisma.sponsorAd.findMany({
+      where: {
+        placement,
+        isActive: true
+      },
+      orderBy: [{ priority: "desc" }, { updatedAt: "desc" }]
+    });
+  } catch (error) {
+    if (isMissingSponsorTable(error)) {
+      return null;
+    }
+
+    throw error;
+  }
 
   return candidates.find((entry) => isActiveForNow(entry.startAt, entry.endAt, now)) ?? null;
 };
 
 export const createSponsorAd = async (input: SponsorInput) => {
+  sponsorTableAvailable = true;
   const data = normalizeSponsorInput(input);
   return prisma.sponsorAd.create({ data });
 };
 
 export const updateSponsorAd = async (id: string, input: SponsorInput) => {
+  sponsorTableAvailable = true;
   const data = normalizeSponsorInput(input);
   return prisma.sponsorAd.update({
     where: { id },
@@ -81,20 +131,39 @@ export const updateSponsorAd = async (id: string, input: SponsorInput) => {
 };
 
 export const deleteSponsorAd = async (id: string) => {
+  sponsorTableAvailable = true;
   await prisma.sponsorAd.delete({ where: { id } });
 };
 
 export const getSponsorBySlug = async (slug: string) =>
-  prisma.sponsorAd.findUnique({
-    where: { slug }
-  });
+  (await hasSponsorTable())
+    ? prisma.sponsorAd.findUnique({
+        where: { slug }
+      }).catch((error) => {
+        if (isMissingSponsorTable(error)) {
+          sponsorTableAvailable = false;
+          return null;
+        }
+
+        throw error;
+      })
+    : null;
 
 export const recordSponsorClick = async (slug: string) =>
-  prisma.sponsorAd.update({
-    where: { slug },
-    data: {
-      clickCount: {
-        increment: 1
-      }
-    }
-  });
+  (await hasSponsorTable())
+    ? prisma.sponsorAd.update({
+        where: { slug },
+        data: {
+          clickCount: {
+            increment: 1
+          }
+        }
+      }).catch((error) => {
+        if (isMissingSponsorTable(error)) {
+          sponsorTableAvailable = false;
+          return null;
+        }
+
+        throw error;
+      })
+    : null;

@@ -37,5 +37,9 @@ export const getSponsorBySlug = async (req: Request, res: Response) => {
 
 export const trackSponsorClick = async (req: Request, res: Response) => {
   const sponsor = await sponsorService.recordSponsorClick(getSingleParam(req.params.slug)!);
+  if (!sponsor) {
+    return res.status(StatusCodes.NOT_FOUND).json({ message: "Sponsor not found" });
+  }
+
   return res.json({ ok: true, targetUrl: sponsor.targetUrl });
 };
