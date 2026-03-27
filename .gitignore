@@ -12,3 +12,4 @@ uploads
 .DS_Store
 .vercel
 .env*.local
+.local-run
