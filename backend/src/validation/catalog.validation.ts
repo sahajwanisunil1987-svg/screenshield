@@ -68,6 +68,73 @@ export const productSchema = z.object({
   }
 });
 
+const bulkProductRowSchema = z.object({
+  rowNumber: z.coerce.number().int().min(1).optional(),
+  name: z.string().min(3),
+  sku: z.string().min(3),
+  hsnCode: z.string().max(20).optional().nullable(),
+  gstRate: z.coerce.number().min(0).max(100).default(18),
+  shortDescription: z.string().min(10),
+  description: z.string().min(20),
+  specifications: z.record(z.string(), z.string()).default({}),
+  hasVariants: z.boolean().default(false),
+  price: z.coerce.number().positive(),
+  comparePrice: z.coerce.number().positive().optional().nullable(),
+  warrantyMonths: z.coerce.number().min(0).default(6),
+  brandId: z.string().min(1).optional(),
+  brand: z.string().min(1).optional(),
+  modelId: z.string().min(1).optional(),
+  model: z.string().min(1).optional(),
+  compatibleModelIds: z.array(z.string().min(1)).default([]).optional(),
+  compatibleModels: z.array(z.string().min(1)).default([]).optional(),
+  categoryId: z.string().min(1).optional(),
+  category: z.string().min(1).optional(),
+  stock: z.coerce.number().min(0).default(0),
+  lowStockLimit: z.coerce.number().min(0).max(999).default(5).optional(),
+  warehouseCode: z.string().max(50).optional(),
+  videoUrl: z.string().url().optional().nullable(),
+  isFeatured: z.boolean().default(false),
+  isActive: z.boolean().default(true),
+  variants: z.array(productVariantSchema).default([]).optional(),
+  images: z.array(z.object({ url: z.string().url(), alt: z.string().optional() })).min(1).max(7)
+}).superRefine((value, ctx) => {
+  if (!value.brandId && !value.brand) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["brand"],
+      message: "Brand or brandId is required"
+    });
+  }
+
+  if (!value.modelId && !value.model) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["model"],
+      message: "Model or modelId is required"
+    });
+  }
+
+  if (!value.categoryId && !value.category) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["category"],
+      message: "Category or categoryId is required"
+    });
+  }
+
+  if (value.hasVariants) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["hasVariants"],
+      message: "Bulk upload currently supports standard products only"
+    });
+  }
+});
+
+export const productBulkSchema = z.object({
+  items: z.array(bulkProductRowSchema).min(1).max(100)
+});
+
 export const productSearchSchema = z.object({
   brand: z.string().optional(),
   model: z.string().optional(),

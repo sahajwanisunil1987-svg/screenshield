@@ -9,6 +9,7 @@ import {
   brandSchema,
   categorySchema,
   modelSchema,
+  productBulkSchema,
   productSchema,
   productSearchSchema,
   productSuggestionSchema
@@ -98,6 +99,13 @@ router.delete(
   catalogController.deleteCategory
 );
 
+router.post(
+  "/admin/products/bulk",
+  authenticate,
+  requireAdmin,
+  validate({ body: productBulkSchema }),
+  catalogController.createProductsBulk
+);
 router.post("/admin/products", authenticate, requireAdmin, validate({ body: productSchema }), catalogController.createProduct);
 router.put(
   "/admin/products/:id",

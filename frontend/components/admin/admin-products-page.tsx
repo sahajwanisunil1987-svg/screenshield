@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AdminGuard } from "@/components/admin/admin-guard";
+import { AdminProductBulkUpload } from "@/components/admin/admin-product-bulk-upload";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { Button } from "@/components/ui/button";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
@@ -191,6 +192,9 @@ export function AdminProductsPageClient() {
             </select>
           </div>
         </div>
+
+        <AdminProductBulkUpload token={token} onImported={load} />
+
         <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
           <div className="space-y-4">
             {visibleProducts.map((product) => (

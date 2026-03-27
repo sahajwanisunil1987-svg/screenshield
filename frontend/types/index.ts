@@ -123,6 +123,21 @@ export type PaginatedResponse<T> = {
   };
 };
 
+export type BulkProductImportResult = {
+  rowNumber: number;
+  status: "CREATED" | "FAILED";
+  name: string;
+  sku: string;
+  productId?: string;
+  message?: string;
+};
+
+export type BulkProductImportResponse = {
+  createdCount: number;
+  failedCount: number;
+  results: BulkProductImportResult[];
+};
+
 export type Review = {
   id: string;
   rating: number;

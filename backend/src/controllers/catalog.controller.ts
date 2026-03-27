@@ -103,6 +103,10 @@ export const createProduct = async (req: Request, res: Response) => {
   res.status(StatusCodes.CREATED).json(await catalogService.createProduct(req.body));
 };
 
+export const createProductsBulk = async (req: Request, res: Response) => {
+  res.status(StatusCodes.OK).json(await catalogService.createProductsBulk(req.body));
+};
+
 export const updateProduct = async (req: Request, res: Response) => {
   res.json(await catalogService.updateProduct(getSingleParam(req.params.id)!, req.body));
 };

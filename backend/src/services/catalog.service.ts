@@ -128,6 +128,37 @@ type ProductDraftPayload = {
   variants?: ProductVariantPayload[];
 };
 
+type BulkProductImportPayload = {
+  rowNumber?: number;
+  name: string;
+  sku: string;
+  hsnCode?: string | null;
+  gstRate: number;
+  shortDescription: string;
+  description: string;
+  specifications: Record<string, string>;
+  hasVariants: boolean;
+  price: number;
+  comparePrice?: number | null;
+  warrantyMonths: number;
+  brandId?: string;
+  brand?: string;
+  modelId?: string;
+  model?: string;
+  compatibleModelIds?: string[];
+  compatibleModels?: string[];
+  categoryId?: string;
+  category?: string;
+  stock: number;
+  lowStockLimit?: number;
+  warehouseCode?: string;
+  videoUrl?: string | null;
+  isFeatured: boolean;
+  isActive: boolean;
+  variants?: ProductVariantPayload[];
+  images: { url: string; alt?: string }[];
+};
+
 const normalizeVariants = (variants: ProductVariantPayload[] = []) => {
   if (!variants.length) {
     return [];
@@ -179,6 +210,105 @@ const variantOrderBy: Prisma.ProductVariantOrderByWithRelationInput[] = [
   { isDefault: "desc" },
   { label: "asc" }
 ];
+
+const resolveBrandId = async (brandId?: string, brandName?: string) => {
+  if (brandId) {
+    const brand = await prisma.brand.findUnique({
+      where: { id: brandId },
+      select: { id: true }
+    });
+
+    if (brand) {
+      return brand.id;
+    }
+  }
+
+  if (brandName) {
+    const brand = await prisma.brand.findFirst({
+      where: {
+        OR: [{ slug: toSlug(brandName) }, { name: { equals: brandName, mode: "insensitive" } }]
+      },
+      select: { id: true }
+    });
+
+    if (brand) {
+      return brand.id;
+    }
+  }
+
+  throw new Error(`Brand not found for "${brandName ?? brandId ?? "unknown"}"`);
+};
+
+const resolveCategoryId = async (categoryId?: string, categoryName?: string) => {
+  if (categoryId) {
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+      select: { id: true }
+    });
+
+    if (category) {
+      return category.id;
+    }
+  }
+
+  if (categoryName) {
+    const category = await prisma.category.findFirst({
+      where: {
+        OR: [{ slug: toSlug(categoryName) }, { name: { equals: categoryName, mode: "insensitive" } }]
+      },
+      select: { id: true }
+    });
+
+    if (category) {
+      return category.id;
+    }
+  }
+
+  throw new Error(`Category not found for "${categoryName ?? categoryId ?? "unknown"}"`);
+};
+
+const resolveModelId = async (modelId?: string, modelName?: string, brandId?: string) => {
+  if (modelId) {
+    const model = await prisma.mobileModel.findUnique({
+      where: { id: modelId },
+      select: { id: true }
+    });
+
+    if (model) {
+      return model.id;
+    }
+  }
+
+  if (modelName) {
+    const model = await prisma.mobileModel.findFirst({
+      where: {
+        ...(brandId ? { brandId } : {}),
+        OR: [{ slug: toSlug(modelName) }, { name: { equals: modelName, mode: "insensitive" } }]
+      },
+      select: { id: true }
+    });
+
+    if (model) {
+      return model.id;
+    }
+  }
+
+  throw new Error(`Model not found for "${modelName ?? modelId ?? "unknown"}"`);
+};
+
+const formatBulkProductError = (error: unknown) => {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === "P2002") {
+      return "Duplicate value found. Please check SKU and unique fields.";
+    }
+  }
+
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
+  return "Unable to import this row";
+};
 
 export const listProducts = async (query: {
   brand?: string;
@@ -611,6 +741,88 @@ export const createProduct = async (payload: {
       }
     }
   });
+};
+
+export const createProductsBulk = async (payload: { items: BulkProductImportPayload[] }) => {
+  const results: Array<{
+    rowNumber: number;
+    status: "CREATED" | "FAILED";
+    name: string;
+    sku: string;
+    productId?: string;
+    message?: string;
+  }> = [];
+
+  for (const [index, item] of payload.items.entries()) {
+    const rowNumber = item.rowNumber ?? index + 2;
+
+    try {
+      if (item.hasVariants) {
+        throw new Error("Variant products are not supported in bulk upload yet");
+      }
+
+      const brandId = await resolveBrandId(item.brandId, item.brand);
+      const modelId = await resolveModelId(item.modelId, item.model, brandId);
+      const categoryId = await resolveCategoryId(item.categoryId, item.category);
+
+      const compatibleReferences = Array.from(
+        new Set([...(item.compatibleModelIds ?? []), ...(item.compatibleModels ?? [])].filter(Boolean))
+      );
+
+      const compatibleModelIds = (
+        await Promise.all(
+          compatibleReferences.map((reference) => resolveModelId(reference, reference, brandId).catch(() => null))
+        )
+      ).filter((value): value is string => Boolean(value));
+
+      const createdProduct = await createProduct({
+        name: item.name,
+        sku: item.sku,
+        hsnCode: item.hsnCode ?? null,
+        gstRate: item.gstRate,
+        shortDescription: item.shortDescription,
+        description: item.description,
+        specifications: item.specifications,
+        hasVariants: false,
+        price: item.price,
+        comparePrice: item.comparePrice ?? null,
+        warrantyMonths: item.warrantyMonths,
+        brandId,
+        modelId,
+        compatibleModelIds,
+        categoryId,
+        stock: item.stock,
+        lowStockLimit: item.lowStockLimit,
+        warehouseCode: item.warehouseCode,
+        videoUrl: item.videoUrl ?? null,
+        isFeatured: item.isFeatured,
+        isActive: item.isActive,
+        images: item.images
+      });
+
+      results.push({
+        rowNumber,
+        status: "CREATED",
+        name: createdProduct.name,
+        sku: createdProduct.sku,
+        productId: createdProduct.id
+      });
+    } catch (error) {
+      results.push({
+        rowNumber,
+        status: "FAILED",
+        name: item.name,
+        sku: item.sku,
+        message: formatBulkProductError(error)
+      });
+    }
+  }
+
+  return {
+    createdCount: results.filter((result) => result.status === "CREATED").length,
+    failedCount: results.filter((result) => result.status === "FAILED").length,
+    results
+  };
 };
 
 export const updateProduct = async (id: string, payload: Parameters<typeof createProduct>[0]) => {
