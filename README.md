@@ -51,6 +51,23 @@ npm run release:schema
 Frontend runs at `http://localhost:3000`.
 Backend runs at `http://localhost:4000`.
 
+## Local workflow
+
+Start and stop both apps together:
+
+```bash
+npm run local:start
+npm run local:stop
+```
+
+To refresh local data from the live database:
+
+```bash
+LIVE_CONFIRMATION="DELETE_LOCAL_AND_PULL_LIVE" LIVE_DATABASE_URL="your_render_db_url" npm run db:pull-live
+```
+
+This command is intentionally guarded because it overwrites your local database with a production snapshot.
+
 ## Git setup
 
 Initialize and commit the repo:

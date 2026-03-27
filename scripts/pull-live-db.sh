@@ -51,6 +51,15 @@ read_local_database_url() {
 
 LIVE_URL_RAW="${LIVE_DATABASE_URL:-${PRODUCTION_DATABASE_URL:-}}"
 LOCAL_URL_RAW="$(read_local_database_url || true)"
+LIVE_CONFIRMATION="${LIVE_CONFIRMATION:-}"
+
+if [ "$LIVE_CONFIRMATION" != "DELETE_LOCAL_AND_PULL_LIVE" ]; then
+  echo "Refusing to touch databases without explicit confirmation."
+  echo "This command overwrites your local database with a live snapshot."
+  echo "Run it like this:"
+  echo '  LIVE_CONFIRMATION="DELETE_LOCAL_AND_PULL_LIVE" LIVE_DATABASE_URL="postgresql://..." npm run db:pull-live'
+  exit 1
+fi
 
 if [ -z "${LIVE_URL_RAW:-}" ]; then
   echo "Missing LIVE_DATABASE_URL."

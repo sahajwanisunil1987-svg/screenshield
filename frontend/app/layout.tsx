@@ -3,9 +3,15 @@ import { ClientBootstraps } from "@/components/layout/client-bootstraps";
 import { themeBootstrapScript } from "@/lib/theme";
 import "./globals.css";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "PurjiX | Mobile Spare Parts Store",
   description: "Find premium mobile spare parts by brand, model, and part type.",
+  alternates: {
+    canonical: "/"
+  },
   manifest: "/manifest.webmanifest",
   other: {
     "mobile-web-app-capable": "yes"

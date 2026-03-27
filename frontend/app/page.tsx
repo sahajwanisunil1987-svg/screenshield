@@ -50,9 +50,9 @@ const BRAND_LOGO_STYLES: Record<string, { wrapper: string; image: string }> = {
 };
 
 export const metadata: Metadata = buildMetadata({
-  title: "Mobile Spare Parts Store",
+  title: "PurjiX Mobile Spare Parts",
   description:
-    "Find mobile spare parts by brand, model, and part type with clear discovery, warranty-backed parts, and fast India-wide dispatch."
+    "PurjiX helps you find mobile spare parts by brand, model, and part type with fast discovery, warranty-backed sourcing, and India-wide dispatch."
 });
 
 
