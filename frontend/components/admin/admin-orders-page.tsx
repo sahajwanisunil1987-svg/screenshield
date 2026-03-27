@@ -162,6 +162,32 @@ const opsSummary = useMemo(() => ({
     const draft = drafts[order.id];
     if (!draft) return;
 
+    const summaryChanges: string[] = [];
+    if (draft.status !== order.status) {
+      summaryChanges.push(`status: ${order.status} -> ${draft.status}`);
+    }
+    if (draft.paymentStatus !== order.paymentStatus) {
+      summaryChanges.push(`payment: ${order.paymentStatus} -> ${draft.paymentStatus}`);
+    }
+    if ((draft.shippingCourier || "") !== (order.shippingCourier ?? "")) {
+      summaryChanges.push("courier updated");
+    }
+    if ((draft.shippingAwb || "") !== (order.shippingAwb ?? "")) {
+      summaryChanges.push("AWB updated");
+    }
+    if ((draft.estimatedDeliveryAt || "") !== (order.estimatedDeliveryAt ? String(order.estimatedDeliveryAt).slice(0, 10) : "")) {
+      summaryChanges.push("ETA updated");
+    }
+
+    if (summaryChanges.length) {
+      const confirmed = window.confirm(
+        `Save operations for ${order.orderNumber}?\n\n${summaryChanges.join("\n")}`
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+
     try {
       const response = await api.patch<AdminOrder>(`/admin/orders/${order.id}/status`, {
         status: draft.status,

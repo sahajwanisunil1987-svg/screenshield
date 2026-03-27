@@ -313,6 +313,12 @@ export default function AdminCouponsPage() {
                   <button
                     className="text-red-400"
                     onClick={async () => {
+                      const confirmed = window.confirm(
+                        `Delete coupon "${coupon.code}"? This action cannot be undone.`
+                      );
+                      if (!confirmed) {
+                        return;
+                      }
                       try {
                         setDeletingId(coupon.id);
                         await api.delete(`/admin/coupons/${coupon.id}`, authHeaders(token));

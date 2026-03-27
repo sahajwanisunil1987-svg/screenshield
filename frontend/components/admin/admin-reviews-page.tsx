@@ -205,6 +205,12 @@ export function AdminReviewsPageClient() {
                     disabled={busyReviewId === review.id}
                     onClick={async () => {
                       if (!token) return;
+                      const confirmed = window.confirm(
+                        `Delete this review for "${review.product.name}"? This action cannot be undone.`
+                      );
+                      if (!confirmed) {
+                        return;
+                      }
                       setBusyReviewId(review.id);
                       try {
                         await api.delete(`/admin/reviews/${review.id}`, authHeaders(token));

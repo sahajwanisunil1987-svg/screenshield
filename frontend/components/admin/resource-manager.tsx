@@ -249,6 +249,12 @@ export function ResourceManager({
                   <button
                     className="text-red-400"
                     onClick={async () => {
+                      const confirmed = window.confirm(
+                        `Delete "${String(item.name ?? item.code ?? "item")}"? This action cannot be undone.`
+                      );
+                      if (!confirmed) {
+                        return;
+                      }
                       try {
                         await api.delete(`${deleteBaseUrl}/${item.id}`, authHeaders(token));
                         toast.success("Deleted");

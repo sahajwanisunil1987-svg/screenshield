@@ -121,6 +121,22 @@ export function AdminSettingsPage() {
 
   const isDirty = useMemo(() => JSON.stringify(settings) !== JSON.stringify(savedSettings), [savedSettings, settings]);
 
+  useEffect(() => {
+    if (!isDirty) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isDirty]);
+
   const resetToSaved = () => {
     setSettings(savedSettings);
     toast.success("Reverted unsaved changes");
@@ -135,6 +151,18 @@ export function AdminSettingsPage() {
     if (!token) {
       toast.error("Admin session expired");
       return;
+    }
+
+    if (settings.maintenanceMode !== savedSettings.maintenanceMode) {
+      const confirmed = window.confirm(
+        settings.maintenanceMode
+          ? "Turn ON maintenance mode? Public storefront users will see the maintenance screen."
+          : "Turn OFF maintenance mode? Public storefront will become live again."
+      );
+
+      if (!confirmed) {
+        return;
+      }
     }
 
     setIsSaving(true);

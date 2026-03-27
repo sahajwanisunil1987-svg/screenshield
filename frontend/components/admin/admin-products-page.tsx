@@ -226,6 +226,14 @@ export function AdminProductsPageClient() {
                   <button
                     className="rounded-full border border-rose-400/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-rose-200 transition hover:bg-rose-500/10"
                     onClick={async () => {
+                      const confirmed = window.confirm(
+                        product.hasVariants
+                          ? `Delete "${product.name}"? This product has variants and the entire product with all options will be deleted. This action cannot be undone.`
+                          : `Delete "${product.name}"? This action cannot be undone.`
+                      );
+                      if (!confirmed) {
+                        return;
+                      }
                       try {
                         await api.delete(`/admin/products/${product.id}`, authHeaders(token));
                         toast.success("Product deleted");
