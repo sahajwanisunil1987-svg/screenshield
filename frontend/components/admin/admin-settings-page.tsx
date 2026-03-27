@@ -70,7 +70,7 @@ const environmentRows = (settings: SettingsState) => [
   { label: "Order prefix", value: settings.orderPrefix || "PJX" },
   { label: "Frontend", value: "Next.js storefront/admin" },
   { label: "Backend API", value: process.env.NEXT_PUBLIC_API_BASE_URL ?? "Not configured" },
-  { label: "Release mode", value: "GitHub + Vercel + Render" }
+  { label: "Release mode", value: "GitHub + Render" }
 ];
 
 export function AdminSettingsPage() {

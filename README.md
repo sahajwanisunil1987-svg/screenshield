@@ -109,7 +109,7 @@ npm run prisma:generate
 
 - `NEXT_PUBLIC_API_BASE_URL` should point to the public backend base URL ending in `/api`.
 - `FRONTEND_URL` should exactly match the public frontend domain used by customers.
-- If you move the frontend fully to Render, remove the old Vercel production domain from your active setup to avoid deploy confusion.
+- Frontend production is expected to run from Render alongside the Render backend and database.
 - The current Render setup uses free plans as a starting point. Upgrade before production traffic.
 - Email, Cloudinary, and Razorpay are wired but require real credentials.
 - For rollout, rollback, and health checks, see [docs/operations.md](/home/mistermobiletriveni/screen/screenshield/docs/operations.md).

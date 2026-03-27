@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Check, ChevronsUpDown, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +17,7 @@ type SearchComboboxProps = {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
+  name?: string;
 };
 
 export function SearchCombobox({
@@ -25,8 +26,10 @@ export function SearchCombobox({
   options,
   value,
   onChange,
-  disabled
+  disabled,
+  name
 }: SearchComboboxProps) {
+  const inputId = useId();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -65,10 +68,14 @@ export function SearchCombobox({
 
   return (
     <div ref={wrapperRef} className="relative">
-      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-white/60">{label}</label>
+      <label htmlFor={inputId} className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
+        {label}
+      </label>
       <div className="relative">
         <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate" />
         <input
+          id={inputId}
+          name={name ?? label.toLowerCase().replace(/\s+/g, "-")}
           value={query}
           disabled={disabled}
           onFocus={() => setOpen(true)}

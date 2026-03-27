@@ -66,6 +66,7 @@ export function HeroSearch({ brands, models, categories }: HeroSearchProps) {
       <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto]">
         <SearchCombobox
           label="Brand"
+          name="brand"
           placeholder="Select brand"
           options={brands.map((brand) => ({
             label: brand.name,
@@ -77,6 +78,7 @@ export function HeroSearch({ brands, models, categories }: HeroSearchProps) {
         />
         <SearchCombobox
           label="Model"
+          name="model"
           placeholder={brandSlug ? "Select model" : "Choose brand first"}
           options={filteredModels.map((model) => ({
             label: model.name,
@@ -89,6 +91,7 @@ export function HeroSearch({ brands, models, categories }: HeroSearchProps) {
         />
         <SearchCombobox
           label="Part Type"
+          name="category"
           placeholder={modelSlug ? "Select part type" : "Choose model first"}
           options={categories.map((category) => ({
             label: category.name,

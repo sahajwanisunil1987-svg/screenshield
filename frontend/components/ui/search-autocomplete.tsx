@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyboardEvent, useEffect, useRef, useState } from "react";
+import { KeyboardEvent, useEffect, useId, useRef, useState } from "react";
 import { Clock3, Search, TrendingUp } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,7 @@ type SearchAutocompleteProps = {
   inputClassName?: string;
   labelClassName?: string;
   dropdownClassName?: string;
+  name?: string;
 };
 
 export function SearchAutocomplete({
@@ -37,8 +38,10 @@ export function SearchAutocomplete({
   category,
   inputClassName,
   labelClassName,
-  dropdownClassName
+  dropdownClassName,
+  name
 }: SearchAutocompleteProps) {
+  const inputId = useId();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -143,13 +146,16 @@ export function SearchAutocomplete({
   return (
     <div ref={wrapperRef} className="relative">
       {label ? (
-        <label className={cn("mb-2 block text-xs font-semibold uppercase tracking-[0.22em]", labelClassName)}>
+        <label htmlFor={inputId} className={cn("mb-2 block text-xs font-semibold uppercase tracking-[0.22em]", labelClassName)}>
           {label}
         </label>
       ) : null}
       <div className="relative">
         <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate" />
         <input
+          id={inputId}
+          name={name ?? "search"}
+          aria-label={label ?? placeholder}
           value={value}
           onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
             if (event.key === "Enter") {
