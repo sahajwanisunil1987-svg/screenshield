@@ -71,17 +71,32 @@ git push -u origin main
 
 ## Deployment
 
-Current production split:
-- Frontend: Vercel
+Recommended production setup:
+- Frontend: Render
 - Backend: Render
 - Database: Render PostgreSQL
 
 ### Render
 
-This repo includes [render.yaml](/Users/apple/screenshield/render.yaml) for backend and database setup:
+This repo includes [render.yaml](/Users/apple/screenshield/render.yaml) for full Render deployment:
 
+- `purjix-frontend` as the Next.js frontend web service
 - `purjix-backend` as a Node web service
 - `purjix-postgres` as the managed PostgreSQL database
+
+Set these env vars on Render before going live:
+
+- Frontend
+  - `NEXT_PUBLIC_API_BASE_URL=https://your-backend-service.onrender.com/api`
+  - `NEXT_PUBLIC_SITE_URL=https://your-frontend-service.onrender.com`
+  - `NEXT_PUBLIC_RAZORPAY_KEY_ID=...`
+- Backend
+  - `FRONTEND_URL=https://your-frontend-service.onrender.com`
+  - `JWT_SECRET=...`
+  - `RAZORPAY_KEY_ID=...`
+  - `RAZORPAY_KEY_SECRET=...`
+  - `CLOUDINARY_*`
+  - `SMTP_*`
 
 After a backend deploy that changes Prisma schema, open the Render backend shell and run:
 
@@ -90,26 +105,13 @@ npm run prisma:push
 npm run prisma:generate
 ```
 
-### Vercel
-
-Frontend should be deployed from the `frontend` root directory with:
-
-- Framework: `Next.js`
-- Root Directory: `frontend`
-- Build Command: `npm run build`
-- Install Command: `npm install`
-
-Required frontend env vars:
-- `NEXT_PUBLIC_API_BASE_URL`
-- `NEXT_PUBLIC_SITE_URL`
-- `NEXT_PUBLIC_RAZORPAY_KEY_ID`
-
 ### Notes for production
 
 - `NEXT_PUBLIC_API_BASE_URL` should point to the public backend base URL ending in `/api`.
+- `FRONTEND_URL` should exactly match the public frontend domain used by customers.
+- If you move the frontend fully to Render, remove the old Vercel production domain from your active setup to avoid deploy confusion.
 - The current Render setup uses free plans as a starting point. Upgrade before production traffic.
 - Email, Cloudinary, and Razorpay are wired but require real credentials.
-- If you want a single-platform deploy elsewhere, split frontend and backend envs the same way as the included Render blueprint.
 - For rollout, rollback, and health checks, see [docs/operations.md](/home/mistermobiletriveni/screen/screenshield/docs/operations.md).
 - For launch gating, see [docs/launch.md](/home/mistermobiletriveni/screen/screenshield/docs/launch.md).
 - For day-to-day feature structure and workflow, see [docs/development-workflow.md](/Users/apple/screenshield/docs/development-workflow.md).
