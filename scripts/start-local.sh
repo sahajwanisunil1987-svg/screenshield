@@ -35,6 +35,10 @@ fi
 
 cd "$ROOT_DIR"
 
+echo "Syncing local database schema..."
+npm --workspace backend run prisma:push >"$RUN_DIR/prisma-push.log" 2>&1
+npm --workspace backend run prisma:generate >"$RUN_DIR/prisma-generate.log" 2>&1 || true
+
 nohup env \
   NEXT_PUBLIC_API_BASE_URL="http://localhost:4000/api" \
   NEXT_PUBLIC_SITE_URL="http://localhost:3000" \
