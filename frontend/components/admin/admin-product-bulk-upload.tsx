@@ -195,6 +195,19 @@ const parseSpecifications = (value?: string) => {
   return specs;
 };
 
+const buildTimestampSuffix = () => {
+  const date = new Date();
+  const parts = [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+    String(date.getHours()).padStart(2, "0"),
+    String(date.getMinutes()).padStart(2, "0")
+  ];
+
+  return parts.join("");
+};
+
 const requiredColumns = ["name", "sku", "brand", "model", "category", "price", "stock", "shortDescription", "description", "imageUrls"];
 
 const variantColumns = ["variantLabel", "variantSku", "variantPrice", "variantStock"];
@@ -725,7 +738,7 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "purjix-google-sheets-template.csv";
+    anchor.download = `purjix-google-sheets-template-${buildTimestampSuffix()}.csv`;
     anchor.click();
     URL.revokeObjectURL(url);
     toast.success("Google Sheets template downloaded.");
@@ -744,7 +757,7 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = "purjix-products-sheet-ready.csv";
+      anchor.download = `purjix-products-sheet-ready-${buildTimestampSuffix()}.csv`;
       anchor.click();
       URL.revokeObjectURL(url);
       toast.success("Sheet-ready product export downloaded.");
