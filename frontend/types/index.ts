@@ -206,6 +206,8 @@ export type Order = {
   totalAmount: number;
   status: string;
   paymentStatus: string;
+  paymentRetryCount?: number;
+  paymentExpiresAt?: string | null;
   createdAt: string;
   updatedAt?: string;
   shippingCourier?: string | null;

@@ -29,6 +29,30 @@ export default function MyOrdersPage() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [retryingOrderId, setRetryingOrderId] = useState<string | null>(null);
 
+  const getRetriesLeft = (order: Order) => {
+    const used = Number(order.paymentRetryCount ?? 0);
+    return Math.max(3 - used, 0);
+  };
+
+  const getPaymentWindowLabel = (order: Order) => {
+    if (!order.paymentExpiresAt) {
+      return null;
+    }
+
+    const expiry = new Date(order.paymentExpiresAt);
+    if (Number.isNaN(expiry.getTime())) {
+      return null;
+    }
+
+    const remainingMs = expiry.getTime() - Date.now();
+    if (remainingMs <= 0) {
+      return "Payment window expired"
+    }
+
+    const remainingMinutes = Math.ceil(remainingMs / 60000);
+    return `Pay within ${remainingMinutes} min`;
+  };
+
   useEffect(() => {
     if (!token) return;
     api
@@ -215,6 +239,11 @@ export default function MyOrdersPage() {
                       {order.returnRequestStatus === "PENDING" ? <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">Return requested</span> : null}
                       {order.returnRequestStatus === "APPROVED" ? <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">Return approved</span> : null}
                       {order.returnRequestStatus === "REJECTED" ? <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-rose-700">Return declined</span> : null}
+                      {getPaymentWindowLabel(order) ? (
+                        <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">
+                          {getPaymentWindowLabel(order)}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -244,14 +273,19 @@ export default function MyOrdersPage() {
                   </div>
                   <div className="flex flex-wrap items-center gap-4">
                     {(["PENDING", "FAILED"].includes(order.paymentStatus) && !["CANCELLED"].includes(order.status)) ? (
-                      <button
-                        type="button"
-                        onClick={() => retryPayment(order)}
-                        disabled={retryingOrderId === order.id}
-                        className="font-semibold text-accent underline decoration-accent/40 underline-offset-4 disabled:cursor-not-allowed disabled:text-slate"
-                      >
-                        {retryingOrderId === order.id ? "Opening Razorpay..." : "Pay now"}
-                      </button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => retryPayment(order)}
+                          disabled={retryingOrderId === order.id}
+                          className="font-semibold text-accent underline decoration-accent/40 underline-offset-4 disabled:cursor-not-allowed disabled:text-slate"
+                        >
+                          {retryingOrderId === order.id ? "Opening Razorpay..." : "Pay now"}
+                        </button>
+                        <span className="text-xs text-slate">
+                          {getRetriesLeft(order)} retry{getRetriesLeft(order) === 1 ? "" : "ies"} left
+                        </span>
+                      </div>
                     ) : null}
                     {order.invoice?.invoiceNumber ? (
                       <button

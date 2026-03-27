@@ -44,37 +44,150 @@ export function CheckoutForm({
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Delivery details</p>
         <p className="mt-2 text-sm text-slate">Use a complete serviceable address so dispatch and GST invoice details stay correct.</p>
       </div>
-      <Input placeholder="Full name" value={form.fullName} onChange={(event) => onFieldChange("fullName", event.target.value)} />
-      {errors.fullName ? <p className="text-sm text-red-500">{errors.fullName}</p> : null}
-      <Input placeholder="Address line" value={form.line1} onChange={(event) => onFieldChange("line1", event.target.value)} />
-      {errors.line1 ? <p className="text-sm text-red-500">{errors.line1}</p> : null}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Input placeholder="Apartment / Shop / Floor (optional)" value={form.line2} onChange={(event) => onFieldChange("line2", event.target.value)} />
-        <Input placeholder="Landmark (optional)" value={form.landmark} onChange={(event) => onFieldChange("landmark", event.target.value)} />
+      <div>
+        <label htmlFor="checkout-full-name" className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate">
+          Full name
+        </label>
+        <Input
+          id="checkout-full-name"
+          name="fullName"
+          autoComplete="name"
+          placeholder="Full name"
+          value={form.fullName}
+          onChange={(event) => onFieldChange("fullName", event.target.value)}
+        />
+        {errors.fullName ? <p className="mt-2 text-sm text-red-500">{errors.fullName}</p> : null}
+      </div>
+      <div>
+        <label htmlFor="checkout-line1" className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate">
+          Address line 1
+        </label>
+        <Input
+          id="checkout-line1"
+          name="line1"
+          autoComplete="address-line1"
+          placeholder="House number, street, shop or office"
+          value={form.line1}
+          onChange={(event) => onFieldChange("line1", event.target.value)}
+        />
+        {errors.line1 ? <p className="mt-2 text-sm text-red-500">{errors.line1}</p> : null}
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <div>
-          <Input placeholder="City" value={form.city} onChange={(event) => onFieldChange("city", event.target.value)} />
+          <label htmlFor="checkout-line2" className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate">
+            Address line 2
+          </label>
+          <Input
+            id="checkout-line2"
+            name="line2"
+            autoComplete="address-line2"
+            placeholder="Apartment / Shop / Floor (optional)"
+            value={form.line2}
+            onChange={(event) => onFieldChange("line2", event.target.value)}
+          />
+        </div>
+        <div>
+          <label htmlFor="checkout-landmark" className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate">
+            Landmark
+          </label>
+          <Input
+            id="checkout-landmark"
+            name="landmark"
+            placeholder="Landmark (optional)"
+            value={form.landmark}
+            onChange={(event) => onFieldChange("landmark", event.target.value)}
+          />
+        </div>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <label htmlFor="checkout-city" className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate">
+            City
+          </label>
+          <Input
+            id="checkout-city"
+            name="city"
+            autoComplete="address-level2"
+            placeholder="City"
+            value={form.city}
+            onChange={(event) => onFieldChange("city", event.target.value)}
+          />
           {errors.city ? <p className="mt-2 text-sm text-red-500">{errors.city}</p> : null}
         </div>
         <div>
-          <Input placeholder="State" value={form.state} onChange={(event) => onFieldChange("state", event.target.value)} />
+          <label htmlFor="checkout-state" className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate">
+            State
+          </label>
+          <Input
+            id="checkout-state"
+            name="state"
+            autoComplete="address-level1"
+            placeholder="State"
+            value={form.state}
+            onChange={(event) => onFieldChange("state", event.target.value)}
+          />
           {errors.state ? <p className="mt-2 text-sm text-red-500">{errors.state}</p> : null}
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <div>
-          <Input placeholder="Pincode" value={form.postalCode} onChange={(event) => onFieldChange("postalCode", event.target.value)} />
+          <label htmlFor="checkout-postal-code" className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate">
+            Pincode
+          </label>
+          <Input
+            id="checkout-postal-code"
+            name="postalCode"
+            autoComplete="postal-code"
+            inputMode="numeric"
+            placeholder="Pincode"
+            value={form.postalCode}
+            onChange={(event) => onFieldChange("postalCode", event.target.value)}
+          />
           {errors.postalCode ? <p className="mt-2 text-sm text-red-500">{errors.postalCode}</p> : null}
         </div>
         <div>
-          <Input placeholder="Phone number" value={form.phone} onChange={(event) => onFieldChange("phone", event.target.value)} />
+          <label htmlFor="checkout-phone" className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate">
+            Phone number
+          </label>
+          <Input
+            id="checkout-phone"
+            name="phone"
+            autoComplete="tel"
+            inputMode="tel"
+            placeholder="Phone number"
+            value={form.phone}
+            onChange={(event) => onFieldChange("phone", event.target.value)}
+          />
           {errors.phone ? <p className="mt-2 text-sm text-red-500">{errors.phone}</p> : null}
         </div>
       </div>
-      <Input type="email" placeholder="Email" value={form.email} onChange={(event) => onFieldChange("email", event.target.value)} />
-      {errors.email ? <p className="text-sm text-red-500">{errors.email}</p> : null}
-      <Input placeholder="GST Number (optional)" value={form.gstNumber} onChange={(event) => onFieldChange("gstNumber", event.target.value)} />
+      <div>
+        <label htmlFor="checkout-email" className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate">
+          Email
+        </label>
+        <Input
+          id="checkout-email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={(event) => onFieldChange("email", event.target.value)}
+        />
+        {errors.email ? <p className="mt-2 text-sm text-red-500">{errors.email}</p> : null}
+      </div>
+      <div>
+        <label htmlFor="checkout-gst" className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate">
+          GST number
+        </label>
+        <Input
+          id="checkout-gst"
+          name="gstNumber"
+          placeholder="GST Number (optional)"
+          value={form.gstNumber}
+          onChange={(event) => onFieldChange("gstNumber", event.target.value)}
+        />
+      </div>
       <div className="rounded-[28px] bg-[#f5f8fb] p-4">
         <p className="text-sm font-semibold text-ink">Payment method</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -103,6 +216,9 @@ export function CheckoutForm({
         ) : (
           <p className="mt-3 text-sm text-slate">COD available for this order.</p>
         )}
+        <p className="mt-2 text-xs text-slate/70">
+          Razorpay is best when you want instant confirmation. COD is available only for supported pincodes and eligible order values.
+        </p>
       </div>
       <Button disabled={isSubmitting} className="w-full">
         {isSubmitting ? "Placing order..." : form.paymentMethod === "RAZORPAY" ? "Continue to Razorpay" : "Place order"}

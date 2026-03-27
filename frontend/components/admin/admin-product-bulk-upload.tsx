@@ -867,7 +867,7 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
           className="min-h-[260px] w-full rounded-[24px] border border-white/10 bg-black/20 px-4 py-4 font-mono text-xs leading-6 text-white placeholder:text-white/35"
           spellCheck={false}
           wrap="off"
-          placeholder="Paste CSV here or upload a file."
+          placeholder="Paste Google Sheets rows here or upload a CSV file."
         />
 
         <div className="rounded-[24px] border border-white/10 bg-black/10 p-4">
@@ -897,6 +897,7 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
             <li>`compatibleModels` should be pipe-separated names.</li>
             <li>`specifications` format: `key=value;key2=value2`.</li>
             <li>You can copy rows straight from Google Sheets and paste them here.</li>
+            <li>Tip: keep the first header row while copying, otherwise the pre-check will block import.</li>
             <li>`Update existing by SKU` is best for export, edit in sheet, and re-import workflow.</li>
             <li>For variant products, repeat the same base SKU on multiple rows and fill `variant*` columns.</li>
           </ul>
