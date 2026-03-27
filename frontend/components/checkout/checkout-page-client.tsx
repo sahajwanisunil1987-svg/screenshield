@@ -57,6 +57,7 @@ export function CheckoutPageClient() {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPaymentInProgress, setIsPaymentInProgress] = useState(false);
   const effectivePricingSettings = pricingSettings ?? defaultPricingSettings;
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount, effectivePricingSettings);
@@ -223,6 +224,13 @@ export function CheckoutPageClient() {
           currency: paymentOrder.data.currency,
           name: "PurjiX",
           description: `Payment for order ${response.data.orderNumber}`,
+          modal: {
+            ondismiss: () => {
+              setIsPaymentInProgress(false);
+              toast.info("Payment window closed. You can retry from My Orders any time.");
+              router.push("/my-orders");
+            }
+          },
           handler: async (paymentResponse: Record<string, string>) => {
             try {
               await api.post(
@@ -237,10 +245,13 @@ export function CheckoutPageClient() {
               );
               clear();
               clearCoupon();
+              setIsPaymentInProgress(false);
               toast.success("Payment verified. Order placed successfully.");
               router.push(`/order-success?orderNumber=${response.data.orderNumber}`);
             } catch (error) {
+              setIsPaymentInProgress(false);
               toast.error(getApiErrorMessage(error, "Payment verification failed"));
+              router.push("/my-orders");
             }
           },
           prefill: {
@@ -251,6 +262,13 @@ export function CheckoutPageClient() {
           theme: { color: "#0f766e" }
         });
 
+        razorpay.on("payment.failed", () => {
+          setIsPaymentInProgress(false);
+          toast.error("Payment failed. You can retry from My Orders.");
+          router.push("/my-orders");
+        });
+
+        setIsPaymentInProgress(true);
         razorpay.open();
         return;
       }
@@ -279,7 +297,7 @@ export function CheckoutPageClient() {
           <CheckoutForm
             form={form}
             errors={errors}
-            isSubmitting={isSubmitting}
+            isSubmitting={isSubmitting || isPaymentInProgress}
             codAvailable={codAvailable}
             codMaxOrderValue={Number(effectivePricingSettings.codMaxOrderValue ?? defaultPricingSettings.codMaxOrderValue)}
             onFieldChange={updateField}

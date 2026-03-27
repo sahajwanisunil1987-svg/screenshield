@@ -27,6 +27,7 @@ export default function MyOrdersPage() {
   const token = useAuthStore((state) => state.token);
   const [orders, setOrders] = useState<Order[]>([]);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [retryingOrderId, setRetryingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -87,6 +88,72 @@ export default function MyOrdersPage() {
       toast.success("Return request submitted");
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Unable to request return"));
+    }
+  };
+
+  const retryPayment = async (order: Order) => {
+    if (!token) return;
+    if (!window.Razorpay) {
+      toast.error("Razorpay SDK failed to load");
+      return;
+    }
+
+    setRetryingOrderId(order.id);
+
+    try {
+      const paymentOrder = await api.post(
+        "/payments/razorpay/create-order",
+        { orderId: order.id },
+        authHeaders(token)
+      );
+
+      const razorpay = new window.Razorpay({
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        order_id: paymentOrder.data.id,
+        amount: paymentOrder.data.amount,
+        currency: paymentOrder.data.currency,
+        name: "PurjiX",
+        description: `Payment for order ${order.orderNumber}`,
+        modal: {
+          ondismiss: () => {
+            setRetryingOrderId(null);
+            toast.info("Payment window closed. Order is still pending.");
+          }
+        },
+        handler: async (paymentResponse: Record<string, string>) => {
+          try {
+            await api.post(
+              "/payments/razorpay/verify",
+              {
+                orderId: order.id,
+                razorpayOrderId: paymentResponse.razorpay_order_id,
+                razorpayPaymentId: paymentResponse.razorpay_payment_id,
+                razorpaySignature: paymentResponse.razorpay_signature
+              },
+              authHeaders(token)
+            );
+
+            const refreshed = await api.get("/orders/my-orders", authHeaders(token));
+            setOrders(refreshed.data);
+            toast.success("Payment verified successfully");
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, "Payment verification failed"));
+          } finally {
+            setRetryingOrderId(null);
+          }
+        },
+        theme: { color: "#0f766e" }
+      });
+
+      razorpay.on("payment.failed", () => {
+        setRetryingOrderId(null);
+        toast.error("Payment failed. You can try again.");
+      });
+
+      razorpay.open();
+    } catch (error) {
+      setRetryingOrderId(null);
+      toast.error(getApiErrorMessage(error, "Unable to start Razorpay payment"));
     }
   };
 
@@ -152,6 +219,16 @@ export default function MyOrdersPage() {
                     {order.invoice?.invoiceNumber ? <span>Invoice: {order.invoice.invoiceNumber}</span> : null}
                   </div>
                   <div className="flex flex-wrap items-center gap-4">
+                    {(["PENDING", "FAILED"].includes(order.paymentStatus) && !["CANCELLED"].includes(order.status)) ? (
+                      <button
+                        type="button"
+                        onClick={() => retryPayment(order)}
+                        disabled={retryingOrderId === order.id}
+                        className="font-semibold text-accent underline decoration-accent/40 underline-offset-4 disabled:cursor-not-allowed disabled:text-slate"
+                      >
+                        {retryingOrderId === order.id ? "Opening Razorpay..." : "Pay now"}
+                      </button>
+                    ) : null}
                     {order.invoice?.invoiceNumber ? (
                       <button
                         type="button"

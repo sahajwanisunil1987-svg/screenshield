@@ -2,6 +2,7 @@ declare global {
   interface Window {
     Razorpay?: new (options: Record<string, unknown>) => {
       open: () => void;
+      on: (event: string, handler: (payload: Record<string, unknown>) => void) => void;
     };
   }
 }
