@@ -3,8 +3,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { HeroSearch } from "@/components/home/hero-search";
 import { PageShell } from "@/components/layout/page-shell";
+import { SponsorBanner } from "@/components/marketing/sponsor-banner";
 import { fetchApiOrFallback } from "@/lib/server-api";
 import { buildMetadata } from "@/lib/seo";
+import { getSponsorByPlacement } from "@/lib/sponsor-config";
 import { Brand, Category, MobileModel } from "@/types";
 
 export const revalidate = 300;
@@ -63,6 +65,7 @@ export default async function HomePage() {
     fetchApiOrFallback<Category[]>("/categories", []),
     fetchApiOrFallback<MobileModel[]>("/models", [])
   ]);
+  const homeSponsor = getSponsorByPlacement("home_primary");
 
   return (
     <PageShell>
@@ -82,6 +85,7 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      {homeSponsor ? <SponsorBanner sponsor={homeSponsor} /> : null}
       <section className="bg-page-wash">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-end justify-between gap-4">

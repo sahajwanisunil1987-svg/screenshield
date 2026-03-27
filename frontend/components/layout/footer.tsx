@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { FooterSponsorCard } from "@/components/marketing/sponsor-banner";
+import { getSponsorByPlacement } from "@/lib/sponsor-config";
 
 const shopLinks = [
   { href: "/brands", label: "Brands" },
@@ -46,6 +48,7 @@ const footerFallbackSettings: Required<FooterSettings> = {
 
 export function Footer() {
   const [settings, setSettings] = useState(footerFallbackSettings);
+  const footerSponsor = getSponsorByPlacement("footer_partner");
 
   useEffect(() => {
     let cancelled = false;
@@ -136,6 +139,12 @@ export function Footer() {
               </div>
             </div>
           </div>
+
+          {footerSponsor ? (
+            <div className="mt-4 border-t border-white/10 pt-4">
+              <FooterSponsorCard sponsor={footerSponsor} />
+            </div>
+          ) : null}
 
           <div className="mt-5 flex flex-col gap-2.5 border-t border-white/10 pt-4 text-sm text-white/50 sm:flex-row sm:items-center sm:justify-between">
             <p>© 2026 PurjiX. Mobile spare parts for repair shops and retail buyers.</p>
