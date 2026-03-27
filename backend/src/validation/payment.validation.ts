@@ -4,6 +4,10 @@ export const createRazorpayOrderSchema = z.object({
   orderId: z.string().min(1)
 });
 
+export const cancelRazorpayOrderSchema = z.object({
+  orderId: z.string().min(1)
+});
+
 export const verifyRazorpaySchema = z.object({
   orderId: z.string().min(1),
   razorpayOrderId: z.string().min(1),

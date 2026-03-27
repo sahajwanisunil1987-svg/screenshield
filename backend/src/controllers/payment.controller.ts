@@ -3,6 +3,7 @@ import { StatusCodes } from "http-status-codes";
 import { prisma } from "../lib/prisma.js";
 import { createNotification, sendOrderConfirmation, sendWhatsappNotification } from "../services/notification.service.js";
 import {
+  cancelAbandonedRazorpayOrder,
   createRazorpayOrder,
   handleRazorpayWebhook,
   verifyRazorpayPayment,
@@ -11,6 +12,10 @@ import {
 
 export const createOrder = async (req: Request, res: Response) => {
   res.status(StatusCodes.CREATED).json(await createRazorpayOrder(req.body.orderId));
+};
+
+export const cancelOrder = async (req: Request, res: Response) => {
+  res.json(await cancelAbandonedRazorpayOrder(req.body.orderId, req.user!.userId));
 };
 
 export const verify = async (req: Request, res: Response) => {

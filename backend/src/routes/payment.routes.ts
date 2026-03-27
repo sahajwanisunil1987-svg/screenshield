@@ -3,7 +3,7 @@ import * as paymentController from "../controllers/payment.controller.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { paymentRateLimiter } from "../middleware/rate-limit.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
-import { createRazorpayOrderSchema, verifyRazorpaySchema } from "../validation/payment.validation.js";
+import { cancelRazorpayOrderSchema, createRazorpayOrderSchema, verifyRazorpaySchema } from "../validation/payment.validation.js";
 
 const router = Router();
 
@@ -13,6 +13,13 @@ router.post(
   paymentRateLimiter,
   validate({ body: createRazorpayOrderSchema }),
   paymentController.createOrder
+);
+router.post(
+  "/payments/razorpay/cancel",
+  authenticate,
+  paymentRateLimiter,
+  validate({ body: cancelRazorpayOrderSchema }),
+  paymentController.cancelOrder
 );
 router.post(
   "/payments/razorpay/verify",

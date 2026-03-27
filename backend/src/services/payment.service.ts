@@ -177,6 +177,49 @@ export const createRazorpayOrder = async (orderId: string) => {
   return createdOrder;
 };
 
+export const cancelAbandonedRazorpayOrder = async (orderId: string, userId: string) => {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { payment: true }
+  });
+
+  if (!order || order.userId !== userId) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Order not found");
+  }
+
+  if (!order.payment) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Payment record not found for order");
+  }
+
+  if (order.payment.provider === "COD" || order.payment.status === PaymentStatus.COD) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "COD orders do not require Razorpay cancellation");
+  }
+
+  if (order.status === OrderStatus.CANCELLED) {
+    return { cancelled: true, alreadyCancelled: true, orderId: order.id };
+  }
+
+  if (order.paymentStatus === PaymentStatus.PAID || order.payment.status === PaymentStatus.PAID) {
+    return { cancelled: false, alreadyPaid: true, orderId: order.id };
+  }
+
+  await prisma.order.update({
+    where: { id: order.id },
+    data: {
+      status: OrderStatus.CANCELLED,
+      paymentStatus: PaymentStatus.FAILED,
+      cancelledAt: order.cancelledAt ?? new Date(),
+      payment: {
+        update: {
+          status: PaymentStatus.FAILED
+        }
+      }
+    }
+  });
+
+  return { cancelled: true, alreadyCancelled: false, orderId: order.id };
+};
+
 export const verifyRazorpayPayment = async (payload: {
   orderId: string;
   razorpayOrderId: string;

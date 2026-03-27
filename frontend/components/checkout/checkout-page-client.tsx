@@ -138,6 +138,16 @@ export function CheckoutPageClient() {
     }
   };
 
+  const cancelUnpaidOrder = async (orderId: string) => {
+    if (!token) return;
+
+    try {
+      await api.post("/payments/razorpay/cancel", { orderId }, authHeaders(token));
+    } catch {
+      // Ignore cancellation issues here and let support/admin review the order manually.
+    }
+  };
+
   const validate = () => {
     const nextErrors: FormErrors = {};
 
@@ -225,9 +235,10 @@ export function CheckoutPageClient() {
           name: "PurjiX",
           description: `Payment for order ${response.data.orderNumber}`,
           modal: {
-            ondismiss: () => {
+            ondismiss: async () => {
               setIsPaymentInProgress(false);
-              toast.info("Payment window closed. You can retry from My Orders any time.");
+              await cancelUnpaidOrder(response.data.id);
+              toast.info("Payment window closed. Your unpaid order has been cancelled.");
               router.push("/my-orders");
             }
           },
@@ -262,9 +273,10 @@ export function CheckoutPageClient() {
           theme: { color: "#0f766e" }
         });
 
-        razorpay.on("payment.failed", () => {
+        razorpay.on("payment.failed", async () => {
           setIsPaymentInProgress(false);
-          toast.error("Payment failed. You can retry from My Orders.");
+          await cancelUnpaidOrder(response.data.id);
+          toast.error("Payment failed. Your unpaid order has been cancelled.");
           router.push("/my-orders");
         });
 
