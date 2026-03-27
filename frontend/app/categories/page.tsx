@@ -8,9 +8,9 @@ import { Category } from "@/types";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Spare Part Categories",
+  title: "Mobile Spare Part Categories",
   description:
-    "Explore display, battery, charging port, camera, speaker, and other mobile spare part categories."
+    "Explore mobile spare part categories like display, battery, charging port, camera, speaker, and more on PurjiX."
 });
 
 export default async function CategoriesPage() {
