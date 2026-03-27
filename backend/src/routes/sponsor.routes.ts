@@ -2,12 +2,14 @@ import { Router } from "express";
 import * as sponsorController from "../controllers/sponsor.controller.js";
 import { authenticate, requireAdmin } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
-import { idParamSchema } from "../validation/common.js";
+import { idParamSchema, slugParamSchema } from "../validation/common.js";
 import { sponsorPlacementSchema, sponsorSchema } from "../validation/sponsor.validation.js";
 
 const router = Router();
 
 router.get("/sponsors/:placement", validate({ params: sponsorPlacementSchema }), sponsorController.getSponsorForPlacement);
+router.get("/sponsor-ads/by-slug/:slug", validate({ params: slugParamSchema }), sponsorController.getSponsorBySlug);
+router.post("/sponsor-ads/:slug/click", validate({ params: slugParamSchema }), sponsorController.trackSponsorClick);
 
 router.get("/admin/sponsor-ads", authenticate, requireAdmin, sponsorController.listSponsorAds);
 router.post("/admin/sponsor-ads", authenticate, requireAdmin, validate({ body: sponsorSchema }), sponsorController.createSponsorAd);

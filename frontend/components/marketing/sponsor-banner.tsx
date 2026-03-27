@@ -2,6 +2,9 @@ import Link from "next/link";
 import { ArrowUpRight, BadgeCheck } from "lucide-react";
 import { SponsorAd } from "@/types";
 
+const sponsorHref = (slug?: string, targetUrl?: string) =>
+  slug ? `/out/sponsor/${slug}` : targetUrl ?? "#";
+
 export function SponsorBanner({ sponsor }: { sponsor: SponsorAd }) {
   return (
     <section className="bg-page-wash">
@@ -19,7 +22,7 @@ export function SponsorBanner({ sponsor }: { sponsor: SponsorAd }) {
             <div className="flex shrink-0 flex-col items-start gap-3 lg:items-end">
               <p className="text-sm font-semibold text-cyan-100/90">{sponsor.name}</p>
               <Link
-                href={sponsor.targetUrl}
+                href={sponsorHref(sponsor.slug, sponsor.targetUrl)}
                 target="_blank"
                 rel="noreferrer sponsored"
                 className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:bg-cyan-50"
@@ -42,7 +45,7 @@ export function FooterSponsorCard({ sponsor }: { sponsor: SponsorAd }) {
       <p className="mt-2 text-base font-semibold text-white">{sponsor.name}</p>
       <p className="mt-2 text-sm leading-6 text-white/68">{sponsor.subtitle}</p>
       <Link
-        href={sponsor.targetUrl}
+        href={sponsorHref(sponsor.slug, sponsor.targetUrl)}
         target="_blank"
         rel="noreferrer sponsored"
         className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-cyan-100 transition hover:text-white"

@@ -24,3 +24,18 @@ export const deleteSponsorAd = async (req: Request, res: Response) => {
   await sponsorService.deleteSponsorAd(getSingleParam(req.params.id)!);
   res.status(StatusCodes.NO_CONTENT).send();
 };
+
+export const getSponsorBySlug = async (req: Request, res: Response) => {
+  const sponsor = await sponsorService.getSponsorBySlug(getSingleParam(req.params.slug)!);
+
+  if (!sponsor) {
+    return res.status(StatusCodes.NOT_FOUND).json({ message: "Sponsor not found" });
+  }
+
+  return res.json(sponsor);
+};
+
+export const trackSponsorClick = async (req: Request, res: Response) => {
+  const sponsor = await sponsorService.recordSponsorClick(getSingleParam(req.params.slug)!);
+  return res.json({ ok: true, targetUrl: sponsor.targetUrl });
+};

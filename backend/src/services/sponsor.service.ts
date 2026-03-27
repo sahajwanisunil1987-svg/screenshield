@@ -83,3 +83,18 @@ export const updateSponsorAd = async (id: string, input: SponsorInput) => {
 export const deleteSponsorAd = async (id: string) => {
   await prisma.sponsorAd.delete({ where: { id } });
 };
+
+export const getSponsorBySlug = async (slug: string) =>
+  prisma.sponsorAd.findUnique({
+    where: { slug }
+  });
+
+export const recordSponsorClick = async (slug: string) =>
+  prisma.sponsorAd.update({
+    where: { slug },
+    data: {
+      clickCount: {
+        increment: 1
+      }
+    }
+  });
