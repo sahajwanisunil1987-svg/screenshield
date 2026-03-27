@@ -6,14 +6,18 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { useCartStore } from "@/store/cart-store";
-import { Product } from "@/types";
+import { Product, ProductVariant } from "@/types";
 
 export function ProductMobileBar({
   product,
-  stock
+  stock,
+  price,
+  selectedVariant
 }: {
   product: Product;
   stock: number;
+  price?: number;
+  selectedVariant?: ProductVariant | null;
 }) {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
@@ -25,7 +29,7 @@ export function ProductMobileBar({
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-ink">{product.name}</p>
             <div className="mt-1 flex items-center gap-2 text-xs text-slate">
-              <span className="font-semibold text-ink">{formatCurrency(product.price)}</span>
+              <span className="font-semibold text-ink">{formatCurrency(price ?? product.price)}</span>
               <span className={stock > 0 ? "text-emerald-600" : "text-rose-500"}>
                 {stock > 0 ? "In stock" : "Out of stock"}
               </span>
@@ -36,7 +40,7 @@ export function ProductMobileBar({
               variant="secondary"
               className="h-11 gap-1.5 px-3.5 text-sm"
               onClick={() => {
-                addItem(product);
+                addItem(product, selectedVariant);
                 toast.success("Added to cart");
               }}
             >
@@ -46,7 +50,7 @@ export function ProductMobileBar({
             <Button
               className="h-11 gap-1.5 px-3.5 text-sm"
               onClick={() => {
-                addItem(product);
+                addItem(product, selectedVariant);
                 router.push("/checkout");
               }}
             >

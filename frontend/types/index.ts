@@ -23,6 +23,8 @@ export type Category = {
   slug: string;
   logoUrl?: string | null;
   description?: string | null;
+  usesVariants?: boolean;
+  variantLabel?: string | null;
   isActive?: boolean;
 };
 
@@ -31,6 +33,18 @@ export type ProductImage = {
   url: string;
   alt?: string | null;
   sortOrder?: number;
+};
+
+export type ProductVariant = {
+  id: string;
+  label: string;
+  sku: string;
+  price: number;
+  comparePrice?: number | null;
+  stock: number;
+  imageUrl?: string | null;
+  isDefault?: boolean;
+  isActive?: boolean;
 };
 
 export type Product = {
@@ -45,6 +59,7 @@ export type Product = {
   specifications: Record<string, string>;
   price: number;
   comparePrice?: number | null;
+  hasVariants?: boolean;
   warrantyMonths: number;
   stock: number;
   averageRating: number;
@@ -57,6 +72,7 @@ export type Product = {
   }>;
   category: Category;
   images: ProductImage[];
+  variants?: ProductVariant[];
   inventory?: {
     stock: number;
     lowStockLimit: number;
@@ -165,6 +181,7 @@ export type Order = {
     quantity: number;
     productName: string;
     productSku: string;
+    variantLabel?: string | null;
     totalPrice: number;
     product?: Product;
   }>;
@@ -200,6 +217,7 @@ export type UserOrderSummary = {
     quantity: number;
     productName: string;
     productSku: string;
+    variantLabel?: string | null;
     totalPrice: number;
   }>;
 };

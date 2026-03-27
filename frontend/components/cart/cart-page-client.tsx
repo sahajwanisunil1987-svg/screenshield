@@ -18,7 +18,7 @@ export function CartPageClient() {
   const [couponInput, setCouponInput] = useState(couponCode);
   const [isApplying, setIsApplying] = useState(false);
   const [pricingSettings, setPricingSettings] = useState<PricingSettings>(defaultPricingSettings);
-  const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount, pricingSettings);
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -77,16 +77,17 @@ export function CartPageClient() {
           ) : items.length ? (
             items.map((item) => (
               <CartLineItem
-                key={item.product.id}
+                key={`${item.product.id}:${item.variantId ?? "base"}`}
                 item={item}
-                onDecrease={() => updateQty(item.product.id, Math.max(item.quantity - 1, 1))}
+                onDecrease={() => updateQty(item.product.id, Math.max(item.quantity - 1, 1), item.variantId)}
                 onIncrease={() =>
                   updateQty(
                     item.product.id,
-                    Math.min(item.quantity + 1, item.product.inventory?.stock ?? item.product.stock)
+                    Math.min(item.quantity + 1, item.availableStock),
+                    item.variantId
                   )
                 }
-                onRemove={() => removeItem(item.product.id)}
+                onRemove={() => removeItem(item.product.id, item.variantId)}
               />
             ))
           ) : (

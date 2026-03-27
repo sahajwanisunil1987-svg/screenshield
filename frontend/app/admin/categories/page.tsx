@@ -14,7 +14,9 @@ export default function AdminCategoriesPage() {
           deleteBaseUrl="/admin/categories"
           fields={[
             { key: "name", placeholder: "Category name" },
-            { key: "description", placeholder: "Description" }
+            { key: "description", placeholder: "Description" },
+            { key: "usesVariants", placeholder: "This category uses variants", type: "checkbox" },
+            { key: "variantLabel", placeholder: "Variant label (e.g. Color)" }
           ]}
           subtitlePath="description"
         />

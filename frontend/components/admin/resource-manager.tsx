@@ -10,7 +10,7 @@ import { Input } from "../ui/input";
 type ResourceField = {
   key: string;
   placeholder: string;
-  type?: "text" | "select";
+  type?: "text" | "select" | "checkbox";
   options?: Array<{ label: string; value: string }>;
 };
 
@@ -35,8 +35,8 @@ type ResourceManagerProps = {
 };
 
 const createEmptyForm = (fields: ResourceField[]) =>
-  fields.reduce<Record<string, string>>((acc, field) => {
-    acc[field.key] = "";
+  fields.reduce<Record<string, string | boolean>>((acc, field) => {
+    acc[field.key] = field.type === "checkbox" ? false : "";
     return acc;
   }, {});
 
@@ -53,7 +53,7 @@ export function ResourceManager({
   const token = useAuthStore((state) => state.token);
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const [items, setItems] = useState<ResourceItem[]>([]);
-  const [form, setForm] = useState<Record<string, string>>(createEmptyForm(fields));
+  const [form, setForm] = useState<Record<string, string | boolean>>(createEmptyForm(fields));
   const [isActive, setIsActive] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -154,7 +154,7 @@ export function ResourceManager({
           field.type === "select" ? (
             <select
               key={field.key}
-              value={form[field.key] ?? ""}
+              value={String(form[field.key] ?? "")}
               onChange={(event) => setForm((state) => ({ ...state, [field.key]: event.target.value }))}
               className="rounded-2xl bg-white px-4 py-3 text-sm text-ink"
             >
@@ -165,11 +165,20 @@ export function ResourceManager({
                 </option>
               ))}
             </select>
+          ) : field.type === "checkbox" ? (
+            <label key={field.key} className="flex items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 text-sm text-white">
+              <input
+                type="checkbox"
+                checked={Boolean(form[field.key])}
+                onChange={(event) => setForm((state) => ({ ...state, [field.key]: event.target.checked }))}
+              />
+              {field.placeholder}
+            </label>
           ) : (
             <Input
               key={field.key}
               placeholder={field.placeholder}
-              value={form[field.key] ?? ""}
+              value={String(form[field.key] ?? "")}
               onChange={(event) => setForm((state) => ({ ...state, [field.key]: event.target.value }))}
             />
           )
@@ -225,8 +234,8 @@ export function ResourceManager({
                   <button
                     className="text-cyan-300"
                     onClick={() => {
-                      const nextForm = fields.reduce<Record<string, string>>((acc, field) => {
-                        acc[field.key] = String(item[field.key] ?? "");
+                      const nextForm = fields.reduce<Record<string, string | boolean>>((acc, field) => {
+                        acc[field.key] = field.type === "checkbox" ? Boolean(item[field.key]) : String(item[field.key] ?? "");
                         return acc;
                       }, {});
 

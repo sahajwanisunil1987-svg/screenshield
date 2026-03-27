@@ -98,6 +98,8 @@ model Category {
   name        String    @unique
   slug        String    @unique
   description String?
+  usesVariants Boolean  @default(false)
+  variantLabel String?
   isActive    Boolean   @default(true)
   products    Product[]
   createdAt   DateTime  @default(now())
@@ -116,6 +118,7 @@ model Product {
   shortDescription   String
   description        String
   specifications     Json
+  hasVariants        Boolean        @default(false)
   price              Decimal        @db.Decimal(10, 2)
   comparePrice       Decimal?       @db.Decimal(10, 2)
   warrantyMonths     Int            @default(6)
@@ -134,6 +137,7 @@ model Product {
   images             ProductImage[]
   reviews            Review[]
   inventory          Inventory?
+  variants           ProductVariant[]
   orderItems         OrderItem[]
   wishlistItems      WishlistItem[]
   compatibilityModels ProductCompatibility[]
@@ -144,6 +148,26 @@ model Product {
   @@unique([brandId, modelId, categoryId, name])
   @@index([brandId, modelId, categoryId, isFeatured, isActive])
   @@index([slug, sku])
+}
+
+model ProductVariant {
+  id           String   @id @default(cuid())
+  productId    String
+  label        String
+  sku          String   @unique
+  price        Decimal  @db.Decimal(10, 2)
+  comparePrice Decimal? @db.Decimal(10, 2)
+  stock        Int      @default(0)
+  imageUrl     String?
+  isDefault    Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems   OrderItem[]
+
+  @@unique([productId, label])
+  @@index([productId, isDefault, isActive])
 }
 
 model ProductCompatibility {
@@ -342,6 +366,8 @@ model OrderItem {
   id           String   @id @default(cuid())
   orderId      String
   productId    String
+  variantId    String?
+  variantLabel String?
   quantity     Int
   unitPrice    Decimal  @db.Decimal(10, 2)
   totalPrice   Decimal  @db.Decimal(10, 2)
@@ -349,6 +375,7 @@ model OrderItem {
   productSku   String
   order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product      Product  @relation(fields: [productId], references: [id])
+  variant      ProductVariant? @relation(fields: [variantId], references: [id])
 
   @@index([orderId, productId])
 }

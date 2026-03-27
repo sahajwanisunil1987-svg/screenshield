@@ -4,13 +4,19 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GitCompareArrows, Heart, ShoppingCart, Zap } from "lucide-react";
 import { toast } from "sonner";
-import { Product } from "@/types";
+import { Product, ProductVariant } from "@/types";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/store/cart-store";
 import { useCompareStore } from "@/store/compare-store";
 import { useWishlistStore } from "@/store/wishlist-store";
 
-export function ProductActions({ product }: { product: Product }) {
+export function ProductActions({
+  product,
+  selectedVariant
+}: {
+  product: Product;
+  selectedVariant?: ProductVariant | null;
+}) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
@@ -33,7 +39,7 @@ export function ProductActions({ product }: { product: Product }) {
         <Button
           className="justify-center gap-2 py-2.5"
           onClick={() => {
-            addItem(product);
+            addItem(product, selectedVariant);
             toast.success("Added to cart");
           }}
         >
@@ -44,7 +50,7 @@ export function ProductActions({ product }: { product: Product }) {
           variant="secondary"
           className="justify-center gap-2 py-2.5"
           onClick={() => {
-            addItem(product);
+            addItem(product, selectedVariant);
             router.push("/checkout");
           }}
         >

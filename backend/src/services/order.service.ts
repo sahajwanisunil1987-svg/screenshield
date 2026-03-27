@@ -119,7 +119,7 @@ const upsertDefaultAddress = async (client: OrderTx, userId: string, address: Re
 export const createOrder = async (
   userId: string,
   payload: {
-    items: { productId: string; quantity: number }[];
+    items: { productId: string; variantId?: string; quantity: number }[];
     address: Record<string, string | undefined>;
     couponCode?: string;
     paymentMethod: "RAZORPAY" | "COD";
@@ -140,7 +140,12 @@ export const createOrder = async (
     const productIds = payload.items.map((item) => item.productId);
     const products = await tx.product.findMany({
       where: { id: { in: productIds }, isActive: true },
-      include: { inventory: true }
+      include: {
+        inventory: true,
+        variants: {
+          where: { isActive: true }
+        }
+      }
     });
 
     if (products.length !== payload.items.length) {
@@ -154,22 +159,36 @@ export const createOrder = async (
         throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid product in cart");
       }
 
-      if ((product.inventory?.stock ?? product.stock) < item.quantity) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, `Insufficient stock for ${product.name}`);
+      const selectedVariant = item.variantId
+        ? product.variants.find((variant) => variant.id === item.variantId)
+        : null;
+
+      if (item.variantId && !selectedVariant) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, `Selected variant is unavailable for ${product.name}`);
       }
 
-      const unitPriceValue = Number(product.price);
+      const availableStock = selectedVariant ? selectedVariant.stock : (product.inventory?.stock ?? product.stock);
+      if (availableStock < item.quantity) {
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          `Insufficient stock for ${selectedVariant ? `${product.name} (${selectedVariant.label})` : product.name}`
+        );
+      }
+
+      const unitPriceValue = Number(selectedVariant?.price ?? product.price);
       const lineTotal = unitPriceValue * item.quantity;
       subtotal += lineTotal;
 
       return {
         productId: product.id,
+        variantId: selectedVariant?.id,
+        variantLabel: selectedVariant?.label ?? null,
         quantity: item.quantity,
         unitPriceValue,
         lineTotal,
         gstRate: Number(product.gstRate ?? 18),
         productName: product.name,
-        productSku: product.sku
+        productSku: selectedVariant?.sku ?? product.sku
       };
     });
 
@@ -190,6 +209,8 @@ export const createOrder = async (
 
       return {
         productId: item.productId,
+        variantId: item.variantId,
+        variantLabel: item.variantLabel,
         quantity: item.quantity,
         unitPrice: decimal(item.unitPriceValue),
         totalPrice: decimal(item.lineTotal),
@@ -214,36 +235,59 @@ export const createOrder = async (
 
     if (payload.paymentMethod === "COD") {
       for (const product of products) {
-        const qty = payload.items.find((item) => item.productId === product.id)?.quantity ?? 0;
-        if (!qty) continue;
+        const productItems = payload.items.filter((item) => item.productId === product.id);
+        if (!productItems.length) continue;
 
-        if (product.inventory) {
-          const inventoryUpdate = await tx.inventory.updateMany({
-            where: {
-              productId: product.id,
-              stock: { gte: qty }
-            },
-            data: {
-              stock: { decrement: qty }
+        for (const item of productItems) {
+          const qty = item.quantity;
+          const selectedVariant = item.variantId
+            ? product.variants.find((variant) => variant.id === item.variantId)
+            : null;
+
+          if (selectedVariant) {
+            const variantUpdate = await tx.productVariant.updateMany({
+              where: {
+                id: selectedVariant.id,
+                stock: { gte: qty }
+              },
+              data: {
+                stock: { decrement: qty }
+              }
+            });
+
+            if (variantUpdate.count === 0) {
+              throw new ApiError(StatusCodes.BAD_REQUEST, `Insufficient stock for ${product.name} (${selectedVariant.label})`);
             }
-          });
-
-          if (inventoryUpdate.count === 0) {
-            throw new ApiError(StatusCodes.BAD_REQUEST, `Insufficient stock for ${product.name}`);
           }
-        } else {
-          const productUpdate = await tx.product.updateMany({
-            where: {
-              id: product.id,
-              stock: { gte: qty }
-            },
-            data: {
-              stock: { decrement: qty }
-            }
-          });
 
-          if (productUpdate.count === 0) {
-            throw new ApiError(StatusCodes.BAD_REQUEST, `Insufficient stock for ${product.name}`);
+          if (product.inventory) {
+            const inventoryUpdate = await tx.inventory.updateMany({
+              where: {
+                productId: product.id,
+                stock: { gte: qty }
+              },
+              data: {
+                stock: { decrement: qty }
+              }
+            });
+
+            if (inventoryUpdate.count === 0) {
+              throw new ApiError(StatusCodes.BAD_REQUEST, `Insufficient stock for ${product.name}`);
+            }
+          } else {
+            const productUpdate = await tx.product.updateMany({
+              where: {
+                id: product.id,
+                stock: { gte: qty }
+              },
+              data: {
+                stock: { decrement: qty }
+              }
+            });
+
+            if (productUpdate.count === 0) {
+              throw new ApiError(StatusCodes.BAD_REQUEST, `Insufficient stock for ${product.name}`);
+            }
           }
         }
       }

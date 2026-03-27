@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
-import { Brand, Category, MobileModel, Product } from "@/types";
+import { Brand, Category, MobileModel, Product, ProductVariant } from "@/types";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 
@@ -35,6 +35,19 @@ type ProductFormValues = {
   specificationsText: string;
   isFeatured: boolean;
   isActive: boolean;
+  hasVariants: boolean;
+};
+
+type VariantFormValue = {
+  id?: string;
+  label: string;
+  sku: string;
+  price: string;
+  comparePrice: string;
+  stock: string;
+  imageUrl: string;
+  isDefault: boolean;
+  isActive: boolean;
 };
 
 type ProductFormErrors = Partial<Record<Exclude<keyof ProductFormValues, "compatibleModelIds" | "isFeatured" | "isActive">, string>>;
@@ -60,8 +73,32 @@ const DEFAULT_VALUES: ProductFormValues = {
   videoUrl: "",
   specificationsText: DEFAULT_SPECIFICATIONS,
   isFeatured: false,
-  isActive: true
+  isActive: true,
+  hasVariants: false
 };
+
+const createEmptyVariant = (): VariantFormValue => ({
+  label: "",
+  sku: "",
+  price: "",
+  comparePrice: "",
+  stock: "0",
+  imageUrl: "",
+  isDefault: false,
+  isActive: true
+});
+
+const mapVariantToForm = (variant: ProductVariant): VariantFormValue => ({
+  id: variant.id,
+  label: variant.label,
+  sku: variant.sku,
+  price: String(variant.price),
+  comparePrice: variant.comparePrice ? String(variant.comparePrice) : "",
+  stock: String(variant.stock),
+  imageUrl: variant.imageUrl ?? "",
+  isDefault: Boolean(variant.isDefault),
+  isActive: variant.isActive ?? true
+});
 
 export function ProductForm({ productId }: { productId?: string }) {
   const router = useRouter();
@@ -70,6 +107,7 @@ export function ProductForm({ productId }: { productId?: string }) {
   const [models, setModels] = useState<MobileModel[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<ProductFormValues>(DEFAULT_VALUES);
+  const [variants, setVariants] = useState<VariantFormValue[]>([]);
   const [errors, setErrors] = useState<ProductFormErrors>({});
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -86,6 +124,12 @@ export function ProductForm({ productId }: { productId?: string }) {
         .filter(Boolean),
     [form.imageUrls]
   );
+  const selectedCategory = useMemo(
+    () => categories.find((category) => category.id === form.categoryId) ?? null,
+    [categories, form.categoryId]
+  );
+  const categorySupportsVariants = Boolean(selectedCategory?.usesVariants);
+  const variantLabel = selectedCategory?.variantLabel?.trim() || "Variant";
 
   useEffect(() => {
     if (!token) {
@@ -142,8 +186,10 @@ export function ProductForm({ productId }: { productId?: string }) {
             .map(([key, value]) => `${key}: ${value}`)
             .join("\n"),
           isFeatured: Boolean(product.isFeatured),
-          isActive: Boolean(product.isActive)
+          isActive: Boolean(product.isActive),
+          hasVariants: Boolean(product.hasVariants)
         });
+        setVariants((product.variants ?? []).map(mapVariantToForm));
       })
       .catch((error) => {
         toast.error(getApiErrorMessage(error, "Unable to load product"));
@@ -173,6 +219,18 @@ export function ProductForm({ productId }: { productId?: string }) {
       compatibleModelIds: Array.from(new Set([...current.compatibleModelIds, current.modelId]))
     }));
   }, [form.compatibleModelIds, form.modelId]);
+
+  useEffect(() => {
+    if (!categorySupportsVariants && form.hasVariants) {
+      setForm((current) => ({ ...current, hasVariants: false }));
+    }
+  }, [categorySupportsVariants, form.hasVariants]);
+
+  useEffect(() => {
+    if (categorySupportsVariants && form.hasVariants && variants.length === 0) {
+      setVariants([createEmptyVariant()]);
+    }
+  }, [categorySupportsVariants, form.hasVariants, variants.length]);
 
   const updateField = <K extends keyof ProductFormValues>(key: K, value: ProductFormValues[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -207,6 +265,79 @@ export function ProductForm({ productId }: { productId?: string }) {
     if (form.imageUrls.trim().length < 5) nextErrors.imageUrls = "Add at least one image URL";
     if (form.videoUrl.trim() && !URL_REGEX.test(form.videoUrl.trim())) nextErrors.videoUrl = "Video URL must start with http:// or https://";
     if (form.specificationsText.trim().length < 3) nextErrors.specificationsText = "Add at least one specification";
+
+    if (categorySupportsVariants && form.hasVariants) {
+      if (!variants.length) {
+        toast.error(`Add at least one ${variantLabel.toLowerCase()} option`);
+        setErrors(nextErrors);
+        return false;
+      }
+
+      const seenLabels = new Set<string>();
+      const seenSkus = new Set<string>();
+      let hasDefault = false;
+
+      for (const variant of variants) {
+        const label = variant.label.trim();
+        const sku = variant.sku.trim();
+        const price = Number(variant.price);
+        const stock = Number(variant.stock);
+        const comparePrice = variant.comparePrice.trim() ? Number(variant.comparePrice) : undefined;
+
+        if (!label) {
+          toast.error(`${variantLabel} label is required for every variant`);
+          setErrors(nextErrors);
+          return false;
+        }
+
+        if (!sku) {
+          toast.error(`SKU is required for ${label}`);
+          setErrors(nextErrors);
+          return false;
+        }
+
+        if (!Number.isFinite(price) || price <= 0) {
+          toast.error(`Enter a valid price for ${label}`);
+          setErrors(nextErrors);
+          return false;
+        }
+
+        if (!Number.isFinite(stock) || stock < 0) {
+          toast.error(`Enter a valid stock value for ${label}`);
+          setErrors(nextErrors);
+          return false;
+        }
+
+        if (comparePrice !== undefined && (!Number.isFinite(comparePrice) || comparePrice <= 0)) {
+          toast.error(`Enter a valid compare price for ${label}`);
+          setErrors(nextErrors);
+          return false;
+        }
+
+        const normalizedLabel = label.toLowerCase();
+        const normalizedSku = sku.toLowerCase();
+        if (seenLabels.has(normalizedLabel)) {
+          toast.error(`${variantLabel} labels must be unique`);
+          setErrors(nextErrors);
+          return false;
+        }
+        if (seenSkus.has(normalizedSku)) {
+          toast.error("Variant SKUs must be unique");
+          setErrors(nextErrors);
+          return false;
+        }
+
+        seenLabels.add(normalizedLabel);
+        seenSkus.add(normalizedSku);
+        hasDefault ||= variant.isDefault;
+      }
+
+      if (!hasDefault) {
+        toast.error(`Select one default ${variantLabel.toLowerCase()} option`);
+        setErrors(nextErrors);
+        return false;
+      }
+    }
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -338,6 +469,20 @@ export function ProductForm({ productId }: { productId?: string }) {
         lowStockLimit: Number(form.lowStockLimit),
         warehouseCode: form.warehouseCode.trim() || undefined,
         videoUrl: form.videoUrl.trim() || undefined,
+        hasVariants: categorySupportsVariants ? form.hasVariants : false,
+        variants:
+          categorySupportsVariants && form.hasVariants
+            ? variants.map((variant) => ({
+                label: variant.label.trim(),
+                sku: variant.sku.trim(),
+                price: Number(variant.price),
+                comparePrice: variant.comparePrice.trim() ? Number(variant.comparePrice) : undefined,
+                stock: Number(variant.stock),
+                imageUrl: variant.imageUrl.trim() || undefined,
+                isDefault: variant.isDefault,
+                isActive: variant.isActive
+              }))
+            : [],
         isFeatured: form.isFeatured,
         isActive: form.isActive,
         images
@@ -431,6 +576,165 @@ export function ProductForm({ productId }: { productId?: string }) {
         </select>
         {errors.categoryId ? <p className="mt-2 text-sm text-rose-200">{errors.categoryId}</p> : null}
       </div>
+      {categorySupportsVariants ? (
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white md:col-span-2">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-semibold">{variantLabel} variants</p>
+              <p className="mt-1 text-xs text-white/60">
+                Use variants only when this spare part changes by {variantLabel.toLowerCase()}, finish, or sellable option.
+              </p>
+            </div>
+            <label className="flex items-center gap-3 rounded-full border border-white/10 px-4 py-2">
+              <input
+                type="checkbox"
+                checked={form.hasVariants}
+                onChange={(event) => updateField("hasVariants", event.target.checked)}
+              />
+              This product has variants
+            </label>
+          </div>
+          {form.hasVariants ? (
+            <div className="mt-4 space-y-4">
+              {variants.map((variant, index) => (
+                <div key={`${variant.id ?? "new"}-${index}`} className="rounded-2xl border border-white/10 bg-black/10 p-4">
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <Input
+                      placeholder={`${variantLabel} label`}
+                      value={variant.label}
+                      onChange={(event) =>
+                        setVariants((current) =>
+                          current.map((entry, entryIndex) =>
+                            entryIndex === index ? { ...entry, label: event.target.value } : entry
+                          )
+                        )
+                      }
+                    />
+                    <Input
+                      placeholder="Variant SKU"
+                      value={variant.sku}
+                      onChange={(event) =>
+                        setVariants((current) =>
+                          current.map((entry, entryIndex) =>
+                            entryIndex === index ? { ...entry, sku: event.target.value } : entry
+                          )
+                        )
+                      }
+                    />
+                    <Input
+                      placeholder="Variant price"
+                      type="number"
+                      value={variant.price}
+                      onChange={(event) =>
+                        setVariants((current) =>
+                          current.map((entry, entryIndex) =>
+                            entryIndex === index ? { ...entry, price: event.target.value } : entry
+                          )
+                        )
+                      }
+                    />
+                    <Input
+                      placeholder="Variant stock"
+                      type="number"
+                      value={variant.stock}
+                      onChange={(event) =>
+                        setVariants((current) =>
+                          current.map((entry, entryIndex) =>
+                            entryIndex === index ? { ...entry, stock: event.target.value } : entry
+                          )
+                        )
+                      }
+                    />
+                    <Input
+                      placeholder="Compare price"
+                      type="number"
+                      value={variant.comparePrice}
+                      onChange={(event) =>
+                        setVariants((current) =>
+                          current.map((entry, entryIndex) =>
+                            entryIndex === index ? { ...entry, comparePrice: event.target.value } : entry
+                          )
+                        )
+                      }
+                    />
+                    <Input
+                      placeholder="Variant image URL"
+                      value={variant.imageUrl}
+                      onChange={(event) =>
+                        setVariants((current) =>
+                          current.map((entry, entryIndex) =>
+                            entryIndex === index ? { ...entry, imageUrl: event.target.value } : entry
+                          )
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm">
+                    <div className="flex flex-wrap gap-3">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={variant.isDefault}
+                          onChange={() =>
+                            setVariants((current) =>
+                              current.map((entry, entryIndex) => ({
+                                ...entry,
+                                isDefault: entryIndex === index
+                              }))
+                            )
+                          }
+                        />
+                        Default option
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={variant.isActive}
+                          onChange={(event) =>
+                            setVariants((current) =>
+                              current.map((entry, entryIndex) =>
+                                entryIndex === index ? { ...entry, isActive: event.target.checked } : entry
+                              )
+                            )
+                          }
+                        />
+                        Active
+                      </label>
+                    </div>
+                    <button
+                      type="button"
+                      className="text-sm text-rose-300"
+                      onClick={() =>
+                        setVariants((current) => {
+                          const next = current.filter((_, entryIndex) => entryIndex !== index);
+                          if (next.length && !next.some((entry) => entry.isDefault)) {
+                            next[0] = { ...next[0], isDefault: true };
+                          }
+                          return next;
+                        })
+                      }
+                    >
+                      Remove variant
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() =>
+                  setVariants((current) => [
+                    ...current,
+                    { ...createEmptyVariant(), isDefault: current.length === 0 }
+                  ])
+                }
+              >
+                Add {variantLabel}
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white md:col-span-2">
         <p className="font-semibold text-white">Compatible models</p>
         <p className="mt-1 text-xs text-white/60">Choose every phone model this part supports. The primary model will be added automatically when you save.</p>

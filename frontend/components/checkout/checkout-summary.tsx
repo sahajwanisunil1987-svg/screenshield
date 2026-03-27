@@ -35,9 +35,12 @@ export function CheckoutSummary({
       </div>
       <div className="mt-6 space-y-4">
         {items.map((item) => (
-          <div key={item.product.id} className="flex items-center justify-between text-sm">
-            <span>{item.product.name} x {item.quantity}</span>
-            <span>{formatCurrency(item.product.price * item.quantity)}</span>
+          <div key={`${item.product.id}:${item.variantId ?? "base"}`} className="flex items-center justify-between text-sm">
+            <span>
+              {item.product.name}
+              {item.variantLabel ? ` (${item.variantLabel})` : ""} x {item.quantity}
+            </span>
+            <span>{formatCurrency(item.unitPrice * item.quantity)}</span>
           </div>
         ))}
       </div>

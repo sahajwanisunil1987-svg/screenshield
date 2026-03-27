@@ -109,6 +109,77 @@ export const getCategories = () =>
     orderBy: { name: "asc" }
   });
 
+type ProductVariantPayload = {
+  label: string;
+  sku: string;
+  price: number;
+  comparePrice?: number | null;
+  stock: number;
+  imageUrl?: string | null;
+  isDefault?: boolean;
+  isActive?: boolean;
+};
+
+type ProductDraftPayload = {
+  price: number;
+  comparePrice?: number | null;
+  stock: number;
+  hasVariants?: boolean;
+  variants?: ProductVariantPayload[];
+};
+
+const normalizeVariants = (variants: ProductVariantPayload[] = []) => {
+  if (!variants.length) {
+    return [];
+  }
+
+  const mapped = variants.map((variant, index) => ({
+    label: variant.label.trim(),
+    sku: variant.sku.trim(),
+    price: variant.price,
+    comparePrice: variant.comparePrice ?? null,
+    stock: variant.stock,
+    imageUrl: variant.imageUrl || null,
+    isDefault: Boolean(variant.isDefault),
+    isActive: variant.isActive ?? true,
+    index
+  }));
+
+  if (!mapped.some((variant) => variant.isDefault)) {
+    mapped[0]!.isDefault = true;
+  }
+
+  return mapped.map(({ index: _index, ...variant }, index) =>
+    index === mapped.findIndex((entry) => entry.isDefault)
+      ? { ...variant, isDefault: true }
+      : { ...variant, isDefault: false }
+  );
+};
+
+const deriveProductPricing = (payload: ProductDraftPayload) => {
+  if (!payload.hasVariants || !payload.variants?.length) {
+    return {
+      basePrice: payload.price,
+      baseComparePrice: payload.comparePrice ?? null,
+      totalStock: payload.stock
+    };
+  }
+
+  const normalizedVariants = normalizeVariants(payload.variants);
+  const defaultVariant = normalizedVariants.find((variant) => variant.isDefault) ?? normalizedVariants[0]!;
+
+  return {
+    basePrice: defaultVariant.price,
+    baseComparePrice: defaultVariant.comparePrice ?? null,
+    totalStock: normalizedVariants.reduce((sum, variant) => sum + variant.stock, 0)
+  };
+};
+
+const variantOrderBy: Prisma.ProductVariantOrderByWithRelationInput[] = [
+  { isDefault: "desc" },
+  { label: "asc" }
+];
+
 export const listProducts = async (query: {
   brand?: string;
   model?: string;
@@ -144,13 +215,16 @@ export const listProducts = async (query: {
     brand: true,
     model: true,
     category: true,
-    compatibilityModels: {
-      include: {
-        model: true
+      compatibilityModels: {
+        include: {
+          model: true
+        }
+      },
+      inventory: true,
+      variants: {
+        orderBy: variantOrderBy
       }
-    },
-    inventory: true
-  };
+    };
 
   const orderBy: Prisma.ProductOrderByWithRelationInput[] =
     sort === "price-low"
@@ -274,6 +348,9 @@ export const getProductBySlug = (slug: string) =>
         }
       },
       inventory: true,
+      variants: {
+        orderBy: variantOrderBy
+      },
       reviews: {
         where: {
           status: "APPROVED"
@@ -334,13 +411,16 @@ export const listAdminProducts = async (query: {
         brand: true,
         model: true,
         category: true,
-        compatibilityModels: {
-          include: {
-            model: true
-          }
-        },
-        inventory: true
+      compatibilityModels: {
+        include: {
+          model: true
+        }
       },
+      inventory: true,
+      variants: {
+        orderBy: variantOrderBy
+      }
+    },
       orderBy: [{ updatedAt: "desc" }],
       skip: (page - 1) * limit,
       take: limit
@@ -377,7 +457,10 @@ export const getAdminProductById = (id: string) =>
           }
         }
       },
-      inventory: true
+      inventory: true,
+      variants: {
+        orderBy: variantOrderBy
+      }
     }
   });
 
@@ -423,19 +506,21 @@ export const updateModel = (id: string, payload: { name: string; imageUrl?: stri
 
 export const deleteModel = (id: string) => prisma.mobileModel.delete({ where: { id } });
 
-export const createCategory = (payload: { name: string; description?: string; isActive: boolean }) =>
+export const createCategory = (payload: { name: string; description?: string; usesVariants?: boolean; variantLabel?: string; isActive: boolean }) =>
   prisma.category.create({
     data: {
       ...payload,
+      variantLabel: payload.variantLabel || null,
       slug: toSlug(payload.name)
     }
   });
 
-export const updateCategory = (id: string, payload: { name: string; description?: string; isActive: boolean }) =>
+export const updateCategory = (id: string, payload: { name: string; description?: string; usesVariants?: boolean; variantLabel?: string; isActive: boolean }) =>
   prisma.category.update({
     where: { id },
     data: {
       ...payload,
+      variantLabel: payload.variantLabel || null,
       slug: toSlug(payload.name)
     }
   });
@@ -450,6 +535,7 @@ export const createProduct = async (payload: {
   shortDescription: string;
   description: string;
   specifications: Record<string, string>;
+  hasVariants: boolean;
   price: number;
   comparePrice?: number | null;
   warrantyMonths: number;
@@ -463,10 +549,13 @@ export const createProduct = async (payload: {
   videoUrl?: string | null;
   isFeatured: boolean;
   isActive: boolean;
+  variants?: ProductVariantPayload[];
   images: { url: string; alt?: string }[];
 }) => {
-  const { compatibleModelIds = [], lowStockLimit, warehouseCode, stock, images, specifications, videoUrl, hsnCode, gstRate, ...productData } = payload;
+  const { compatibleModelIds = [], lowStockLimit, warehouseCode, stock, images, specifications, videoUrl, hsnCode, gstRate, variants = [], ...productData } = payload;
   const normalizedCompatibleModelIds = Array.from(new Set([payload.modelId, ...compatibleModelIds]));
+  const normalizedVariants = payload.hasVariants ? normalizeVariants(variants) : [];
+  const { basePrice, baseComparePrice, totalStock } = deriveProductPricing({ ...payload, variants: normalizedVariants });
 
   return prisma.product.create({
     data: {
@@ -475,6 +564,8 @@ export const createProduct = async (payload: {
       gstRate: decimal(gstRate),
       slug: toSlug(`${payload.name}-${payload.sku}`),
       specifications,
+      price: decimal(basePrice),
+      comparePrice: baseComparePrice ? decimal(baseComparePrice) : null,
       videoUrl: videoUrl || null,
       compatibilityModels: {
         create: normalizedCompatibleModelIds.map((modelId) => ({
@@ -487,9 +578,23 @@ export const createProduct = async (payload: {
           sortOrder: index
         }))
       },
+      variants: normalizedVariants.length
+        ? {
+            create: normalizedVariants.map((variant) => ({
+              label: variant.label,
+              sku: variant.sku,
+              price: decimal(variant.price),
+              comparePrice: variant.comparePrice ? decimal(variant.comparePrice) : null,
+              stock: variant.stock,
+              imageUrl: variant.imageUrl,
+              isDefault: variant.isDefault,
+              isActive: variant.isActive
+            }))
+          }
+        : undefined,
       inventory: {
         create: {
-          stock,
+          stock: normalizedVariants.length ? totalStock : stock,
           lowStockLimit: lowStockLimit ?? 5,
           warehouseCode
         }
@@ -498,6 +603,7 @@ export const createProduct = async (payload: {
     include: {
       images: true,
       inventory: true,
+      variants: true,
       compatibilityModels: {
         include: {
           model: true
@@ -510,9 +616,12 @@ export const createProduct = async (payload: {
 export const updateProduct = async (id: string, payload: Parameters<typeof createProduct>[0]) => {
   await prisma.productImage.deleteMany({ where: { productId: id } });
   await prisma.productCompatibility.deleteMany({ where: { productId: id } });
+  await prisma.productVariant.deleteMany({ where: { productId: id } });
 
-  const { compatibleModelIds = [], lowStockLimit, warehouseCode, stock, images, specifications, videoUrl, hsnCode, gstRate, ...productData } = payload;
+  const { compatibleModelIds = [], lowStockLimit, warehouseCode, stock, images, specifications, videoUrl, hsnCode, gstRate, variants = [], ...productData } = payload;
   const normalizedCompatibleModelIds = Array.from(new Set([payload.modelId, ...compatibleModelIds]));
+  const normalizedVariants = payload.hasVariants ? normalizeVariants(variants) : [];
+  const { basePrice, baseComparePrice, totalStock } = deriveProductPricing({ ...payload, variants: normalizedVariants });
 
   return prisma.product.update({
     where: { id },
@@ -522,6 +631,8 @@ export const updateProduct = async (id: string, payload: Parameters<typeof creat
       gstRate: decimal(gstRate),
       slug: toSlug(`${payload.name}-${payload.sku}`),
       specifications,
+      price: decimal(basePrice),
+      comparePrice: baseComparePrice ? decimal(baseComparePrice) : null,
       videoUrl: videoUrl || null,
       compatibilityModels: {
         create: normalizedCompatibleModelIds.map((modelId) => ({
@@ -534,15 +645,29 @@ export const updateProduct = async (id: string, payload: Parameters<typeof creat
           sortOrder: index
         }))
       },
+      variants: normalizedVariants.length
+        ? {
+            create: normalizedVariants.map((variant) => ({
+              label: variant.label,
+              sku: variant.sku,
+              price: decimal(variant.price),
+              comparePrice: variant.comparePrice ? decimal(variant.comparePrice) : null,
+              stock: variant.stock,
+              imageUrl: variant.imageUrl,
+              isDefault: variant.isDefault,
+              isActive: variant.isActive
+            }))
+          }
+        : undefined,
       inventory: {
         upsert: {
           update: {
-            stock,
+            stock: normalizedVariants.length ? totalStock : stock,
             lowStockLimit: lowStockLimit ?? 5,
             warehouseCode
           },
           create: {
-            stock,
+            stock: normalizedVariants.length ? totalStock : stock,
             lowStockLimit: lowStockLimit ?? 5,
             warehouseCode
           }
@@ -552,6 +677,7 @@ export const updateProduct = async (id: string, payload: Parameters<typeof creat
     include: {
       images: true,
       inventory: true,
+      variants: true,
       compatibilityModels: {
         include: {
           model: true

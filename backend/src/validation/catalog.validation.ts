@@ -18,6 +18,19 @@ export const categorySchema = z.object({
   name: z.string().min(2),
   description: z.string().optional(),
   logoUrl: z.string().url().optional().or(z.literal("")),
+  usesVariants: z.boolean().default(false),
+  variantLabel: z.string().max(40).optional().or(z.literal("")),
+  isActive: z.boolean().default(true)
+});
+
+const productVariantSchema = z.object({
+  label: z.string().min(1).max(40),
+  sku: z.string().min(3),
+  price: z.coerce.number().positive(),
+  comparePrice: z.coerce.number().positive().optional().nullable(),
+  stock: z.coerce.number().min(0).default(0),
+  imageUrl: z.string().url().optional().nullable(),
+  isDefault: z.boolean().default(false),
   isActive: z.boolean().default(true)
 });
 
@@ -29,6 +42,7 @@ export const productSchema = z.object({
   shortDescription: z.string().min(10),
   description: z.string().min(20),
   specifications: z.record(z.string(), z.string()),
+  hasVariants: z.boolean().default(false),
   price: z.coerce.number().positive(),
   comparePrice: z.coerce.number().positive().optional().nullable(),
   warrantyMonths: z.coerce.number().min(0).default(6),
@@ -42,7 +56,16 @@ export const productSchema = z.object({
   videoUrl: z.string().url().optional().nullable(),
   isFeatured: z.boolean().default(false),
   isActive: z.boolean().default(true),
+  variants: z.array(productVariantSchema).default([]).optional(),
   images: z.array(z.object({ url: z.string().url(), alt: z.string().optional() })).min(1).max(7)
+}).superRefine((value, ctx) => {
+  if (value.hasVariants && (!value.variants || value.variants.length === 0)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["variants"],
+      message: "Add at least one variant when variants are enabled"
+    });
+  }
 });
 
 export const productSearchSchema = z.object({

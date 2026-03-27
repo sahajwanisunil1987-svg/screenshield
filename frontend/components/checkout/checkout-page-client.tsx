@@ -57,7 +57,7 @@ export function CheckoutPageClient() {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount, pricingSettings);
   const blockedCodPincodes = useMemo(
     () =>
@@ -179,7 +179,11 @@ export function CheckoutPageClient() {
       const response = await api.post(
         "/orders/create",
         {
-          items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
+          items: items.map((item) => ({
+            productId: item.product.id,
+            variantId: item.variantId,
+            quantity: item.quantity
+          })),
           address: {
             fullName: form.fullName.trim(),
             line1: form.line1.trim(),

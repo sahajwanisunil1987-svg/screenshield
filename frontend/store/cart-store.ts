@@ -2,10 +2,17 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Product } from "@/types";
+import { Product, ProductVariant } from "@/types";
 
 export type CartItem = {
   product: Product;
+  variantId?: string;
+  variantLabel?: string | null;
+  variantSku?: string;
+  imageUrl?: string | null;
+  unitPrice: number;
+  comparePrice?: number | null;
+  availableStock: number;
   quantity: number;
 };
 
@@ -14,14 +21,16 @@ type CartStore = {
   couponCode: string;
   couponDiscount: number;
   hasHydrated: boolean;
-  addItem: (product: Product) => void;
-  updateQty: (productId: string, quantity: number) => void;
-  removeItem: (productId: string) => void;
+  addItem: (product: Product, variant?: ProductVariant | null) => void;
+  updateQty: (productId: string, quantity: number, variantId?: string) => void;
+  removeItem: (productId: string, variantId?: string) => void;
   applyCoupon: (payload: { code: string; discount: number }) => void;
   clearCoupon: () => void;
   clear: () => void;
   setHydrated: (value: boolean) => void;
 };
+
+const getCartKey = (productId: string, variantId?: string) => `${productId}:${variantId ?? "base"}`;
 
 export const useCartStore = create<CartStore>()(
   persist(
@@ -30,30 +39,49 @@ export const useCartStore = create<CartStore>()(
       couponCode: "",
       couponDiscount: 0,
       hasHydrated: false,
-      addItem: (product) =>
+      addItem: (product, variant) =>
         set((state) => {
-          const existing = state.items.find((item) => item.product.id === product.id);
+          const key = getCartKey(product.id, variant?.id);
+          const existing = state.items.find((item) => getCartKey(item.product.id, item.variantId) === key);
+          const availableStock = variant?.stock ?? product.inventory?.stock ?? product.stock;
           if (existing) {
             return {
               items: state.items.map((item) =>
-                item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+                getCartKey(item.product.id, item.variantId) === key
+                  ? { ...item, quantity: Math.min(item.quantity + 1, availableStock), availableStock }
+                  : item
               )
             };
           }
 
           return {
-            items: [...state.items, { product, quantity: 1 }]
+            items: [
+              ...state.items,
+              {
+                product,
+                variantId: variant?.id,
+                variantLabel: variant?.label,
+                variantSku: variant?.sku ?? product.sku,
+                imageUrl: variant?.imageUrl ?? product.images[0]?.url ?? null,
+                unitPrice: variant?.price ?? product.price,
+                comparePrice: variant?.comparePrice ?? product.comparePrice ?? null,
+                availableStock,
+                quantity: 1
+              }
+            ]
           };
         }),
-      updateQty: (productId, quantity) =>
+      updateQty: (productId, quantity, variantId) =>
         set((state) => ({
           items: state.items.map((item) =>
-            item.product.id === productId ? { ...item, quantity: Math.max(quantity, 1) } : item
+            getCartKey(item.product.id, item.variantId) === getCartKey(productId, variantId)
+              ? { ...item, quantity: Math.max(Math.min(quantity, item.availableStock), 1) }
+              : item
           )
         })),
-      removeItem: (productId) =>
+      removeItem: (productId, variantId) =>
         set((state) => ({
-          items: state.items.filter((item) => item.product.id !== productId)
+          items: state.items.filter((item) => getCartKey(item.product.id, item.variantId) !== getCartKey(productId, variantId))
         })),
       applyCoupon: ({ code, discount }) => set({ couponCode: code, couponDiscount: discount }),
       clearCoupon: () => set({ couponCode: "", couponDiscount: 0 }),
