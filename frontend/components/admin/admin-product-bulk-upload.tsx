@@ -725,9 +725,10 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "purjix-product-bulk-template.csv";
+    anchor.download = "purjix-google-sheets-template.csv";
     anchor.click();
     URL.revokeObjectURL(url);
+    toast.success("Google Sheets template downloaded.");
   };
 
   const handleExportExistingProducts = async () => {
@@ -743,10 +744,10 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = "purjix-products-export.csv";
+      anchor.download = "purjix-products-sheet-ready.csv";
       anchor.click();
       URL.revokeObjectURL(url);
-      toast.success("Product export downloaded.");
+      toast.success("Sheet-ready product export downloaded.");
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Unable to export products"));
     } finally {
@@ -831,10 +832,10 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
             <option value="UPSERT_BY_SKU">Update existing by SKU</option>
           </select>
           <Button type="button" variant="ghost" onClick={handleTemplateDownload}>
-            Download template
+            Download Google Sheets template
           </Button>
           <Button type="button" variant="ghost" onClick={handleExportExistingProducts} disabled={exporting}>
-            {exporting ? "Exporting..." : "Export existing"}
+            {exporting ? "Exporting..." : "Export current products"}
           </Button>
           <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleFileUpload} />
           <Button type="button" variant="ghost" onClick={() => fileInputRef.current?.click()}>
@@ -857,6 +858,10 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
 
         <div className="rounded-[24px] border border-white/10 bg-black/10 p-4">
           <p className="text-sm font-semibold text-white">Import safety</p>
+          <div className="mt-3 rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-3 py-3 text-sm text-cyan-50">
+            Best admin flow: download the Google Sheets template for new products, or export current products to a
+            sheet-ready CSV when you want to update prices, stock, descriptions, or variant rows in bulk.
+          </div>
           <div className="mt-3 grid grid-cols-3 gap-3">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
               <p className="text-[11px] uppercase tracking-[0.16em] text-white/45">Rows</p>
