@@ -1,8 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { SearchSuggestion } from "@/types";
 
 const SearchAutocomplete = dynamic(
@@ -33,17 +33,20 @@ export function NavbarSearch({
   onSubmitted
 }: NavbarSearchProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
-  const [searchUiReady, setSearchUiReady] = useState(false);
 
-  const enableSearchUi = () => setSearchUiReady(true);
-
-  const onSearch = () => {
-    if (!searchUiReady) {
-      enableSearchUi();
+  useEffect(() => {
+    if (pathname === "/products") {
+      setSearch(searchParams.get("search") ?? "");
       return;
     }
 
+    setSearch("");
+  }, [pathname, searchParams]);
+
+  const onSearch = () => {
     const params = new URLSearchParams();
     if (search.trim()) {
       params.set("search", search.trim());
@@ -54,52 +57,25 @@ export function NavbarSearch({
   };
 
   return (
-    <div className={wrapperClassName} role="search" onPointerEnter={enableSearchUi} onFocusCapture={enableSearchUi}>
+    <div className={wrapperClassName} role="search">
       <div className="min-w-0 flex-1">
-        {searchUiReady ? (
-          <SearchAutocomplete
-            name="site-search"
-            value={search}
-            onChange={setSearch}
-            onSubmit={() => onSearch()}
-            onSuggestionSelect={(suggestion: SearchSuggestion) => {
-              router.push(`/products/${suggestion.slug}`);
-              onSubmitted?.();
-            }}
-            placeholder={placeholder}
-            inputClassName={inputClassName}
-            dropdownClassName={dropdownClassName}
-          />
-        ) : (
-          <SearchAutocompleteFallback placeholder={placeholder} onActivate={enableSearchUi} />
-        )}
+        <SearchAutocomplete
+          name="site-search"
+          value={search}
+          onChange={setSearch}
+          onSubmit={() => onSearch()}
+          onSuggestionSelect={(suggestion: SearchSuggestion) => {
+            router.push(`/products/${suggestion.slug}`);
+            onSubmitted?.();
+          }}
+          placeholder={placeholder}
+          inputClassName={inputClassName}
+          dropdownClassName={dropdownClassName}
+        />
       </div>
       <button type="button" onClick={onSearch} className={buttonClassName}>
         {buttonLabel}
       </button>
     </div>
   );
-}
-
-function SearchAutocompleteFallback({
-  placeholder,
-  onActivate
-}: {
-  placeholder: string;
-  onActivate: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onActivate}
-      className="flex h-[50px] w-full items-center overflow-hidden rounded-2xl border border-white/10 bg-white/5 px-4 text-left text-sm text-white/55 transition hover:border-white/20 hover:bg-white/10"
-    >
-      <SearchSuggestionIcon />
-      <span className="ml-3 block truncate whitespace-nowrap">{placeholder}</span>
-    </button>
-  );
-}
-
-function SearchSuggestionIcon() {
-  return <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]"><circle cx="11" cy="11" r="6" /><path d="m20 20-3.5-3.5" /></svg>;
 }

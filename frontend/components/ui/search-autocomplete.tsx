@@ -1,7 +1,7 @@
 "use client";
 
-import { KeyboardEvent, useEffect, useId, useRef, useState } from "react";
-import { Clock3, Search, TrendingUp } from "lucide-react";
+import { KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Clock3, Search, TrendingUp, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { SearchSuggestion } from "@/types";
@@ -47,6 +47,7 @@ export function SearchAutocomplete({
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [activeIndex, setActiveIndex] = useState(-1);
 
   useEffect(() => {
     try {
@@ -96,6 +97,7 @@ export function SearchAutocomplete({
     if (query.length < 2) {
       setSuggestions([]);
       setLoading(false);
+      setActiveIndex(-1);
       return;
     }
 
@@ -113,9 +115,11 @@ export function SearchAutocomplete({
         .then((response) => {
           setSuggestions(response.data);
           setOpen(true);
+          setActiveIndex(response.data.length ? 0 : -1);
         })
         .catch(() => {
           setSuggestions([]);
+          setActiveIndex(-1);
         })
         .finally(() => {
           setLoading(false);
@@ -136,12 +140,49 @@ export function SearchAutocomplete({
     setOpen(false);
   };
 
-  const quickSuggestions = value.trim()
-    ? []
-    : [...recentSearches.map((entry) => ({ kind: "recent" as const, label: entry })), ...TRENDING_SEARCHES.map((entry) => ({
-        kind: "trending" as const,
-        label: entry
-      }))].filter((entry, index, collection) => collection.findIndex((item) => item.label === entry.label) === index);
+  const quickSuggestions = useMemo(
+    () =>
+      value.trim()
+        ? []
+        : [
+            ...recentSearches.map((entry) => ({ kind: "recent" as const, label: entry })),
+            ...TRENDING_SEARCHES.map((entry) => ({
+              kind: "trending" as const,
+              label: entry
+            }))
+          ].filter((entry, index, collection) => collection.findIndex((item) => item.label === entry.label) === index),
+    [recentSearches, value]
+  );
+
+  const suggestionActions = useMemo(
+    () =>
+      suggestions.map((suggestion) => ({
+        key: suggestion.id,
+        run: () => {
+          onChange(suggestion.searchTerm);
+          saveRecentSearch(suggestion.searchTerm);
+          onSuggestionSelect?.(suggestion);
+          setOpen(false);
+        }
+      })),
+    [onChange, onSuggestionSelect, suggestions]
+  );
+
+  const quickActions = useMemo(
+    () =>
+      quickSuggestions.map((entry) => ({
+        key: `${entry.kind}-${entry.label}`,
+        run: () => {
+          onChange(entry.label);
+          saveRecentSearch(entry.label);
+          onSubmit(entry.label);
+          setOpen(false);
+        }
+      })),
+    [onChange, onSubmit, quickSuggestions]
+  );
+
+  const actions = value.trim() ? suggestionActions : quickActions;
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -158,25 +199,70 @@ export function SearchAutocomplete({
           aria-label={label ?? placeholder}
           value={value}
           onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+            if (event.key === "ArrowDown") {
+              event.preventDefault();
+              if (!actions.length) return;
+              setOpen(true);
+              setActiveIndex((current) => (current + 1 >= actions.length ? 0 : current + 1));
+              return;
+            }
+
+            if (event.key === "ArrowUp") {
+              event.preventDefault();
+              if (!actions.length) return;
+              setOpen(true);
+              setActiveIndex((current) => (current <= 0 ? actions.length - 1 : current - 1));
+              return;
+            }
+
+            if (event.key === "Escape") {
+              setOpen(false);
+              setActiveIndex(-1);
+              return;
+            }
+
             if (event.key === "Enter") {
               event.preventDefault();
+              if (open && activeIndex >= 0 && actions[activeIndex]) {
+                actions[activeIndex].run();
+                return;
+              }
               submit();
             }
           }}
-          onFocus={() => setOpen(Boolean(suggestions.length || quickSuggestions.length))}
+          onFocus={() => {
+            setOpen(Boolean(suggestions.length || quickSuggestions.length));
+            setActiveIndex(value.trim() ? (suggestions.length ? 0 : -1) : quickSuggestions.length ? 0 : -1);
+          }}
           onChange={(event) => {
             onChange(event.target.value);
             if (!event.target.value.trim()) {
               setSuggestions([]);
               setOpen(true);
+              setActiveIndex(quickSuggestions.length ? 0 : -1);
             }
           }}
           placeholder={placeholder}
           className={cn(
-            "w-full rounded-2xl border border-slate-200 bg-white px-11 py-3 text-sm text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/10",
+            "w-full rounded-2xl border border-slate-200 bg-white px-11 py-3 pr-11 text-sm text-ink outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/10",
             inputClassName
           )}
         />
+        {value ? (
+          <button
+            type="button"
+            onClick={() => {
+              onChange("");
+              setSuggestions([]);
+              setOpen(true);
+              setActiveIndex(quickSuggestions.length ? 0 : -1);
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate transition hover:bg-slate-100 hover:text-ink"
+            aria-label="Clear search"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        ) : null}
       </div>
       {open ? (
         <div className={cn("absolute z-30 mt-2 w-full rounded-2xl border border-slate-200 bg-white p-2 shadow-card", dropdownClassName)}>
@@ -195,7 +281,10 @@ export function SearchAutocomplete({
                         onSubmit(entry);
                         setOpen(false);
                       }}
-                      className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-accentSoft"
+                      className={cn(
+                        "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-accentSoft",
+                        activeIndex === quickActions.findIndex((item) => item.key === `recent-${entry}`) && "bg-accentSoft"
+                      )}
                     >
                       <Clock3 className="h-4 w-4 text-slate" />
                       <span className="text-sm font-medium text-ink">{entry}</span>
@@ -214,7 +303,10 @@ export function SearchAutocomplete({
                     onSubmit(entry);
                     setOpen(false);
                   }}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-accentSoft"
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-accentSoft",
+                    activeIndex === quickActions.findIndex((item) => item.key === `trending-${entry}`) && "bg-accentSoft"
+                  )}
                 >
                   <TrendingUp className="h-4 w-4 text-accent" />
                   <span className="text-sm font-medium text-ink">{entry}</span>
@@ -234,7 +326,10 @@ export function SearchAutocomplete({
                     onSuggestionSelect?.(suggestion);
                     setOpen(false);
                   }}
-                  className="block w-full rounded-xl px-3 py-3 text-left transition hover:bg-accentSoft"
+                  className={cn(
+                    "block w-full rounded-xl px-3 py-3 text-left transition hover:bg-accentSoft",
+                    activeIndex === suggestionActions.findIndex((item) => item.key === suggestion.id) && "bg-accentSoft"
+                  )}
                 >
                   <p className="text-sm font-semibold text-ink">{suggestion.label}</p>
                   <p className="mt-1 text-xs text-slate">{suggestion.hint}</p>
