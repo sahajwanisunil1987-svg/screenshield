@@ -14,8 +14,20 @@ const normalizeRelativeUrl = (value?: string) => {
   return value.replace(/^\/+/, "");
 };
 
+const getDefaultBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    return "http://localhost:4000/api";
+  }
+
+  return undefined;
+};
+
 export const api = axios.create({
-  baseURL: normalizeBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL),
+  baseURL: normalizeBaseUrl(getDefaultBaseUrl()),
   withCredentials: true,
   headers: {
     "Content-Type": "application/json"

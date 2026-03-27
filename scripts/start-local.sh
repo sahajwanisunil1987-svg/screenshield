@@ -35,11 +35,17 @@ fi
 
 cd "$ROOT_DIR"
 
-nohup npm run dev:backend >"$BACKEND_LOG" 2>&1 &
+nohup env \
+  NEXT_PUBLIC_API_BASE_URL="http://localhost:4000/api" \
+  NEXT_PUBLIC_SITE_URL="http://localhost:3000" \
+  npm run dev:backend >"$BACKEND_LOG" 2>&1 &
 BACKEND_PID=$!
 echo "$BACKEND_PID" > "$BACKEND_PID_FILE"
 
-nohup npm run dev:frontend >"$FRONTEND_LOG" 2>&1 &
+nohup env \
+  NEXT_PUBLIC_API_BASE_URL="http://localhost:4000/api" \
+  NEXT_PUBLIC_SITE_URL="http://localhost:3000" \
+  npm run dev:frontend >"$FRONTEND_LOG" 2>&1 &
 FRONTEND_PID=$!
 echo "$FRONTEND_PID" > "$FRONTEND_PID_FILE"
 
