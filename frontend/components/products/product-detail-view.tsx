@@ -60,6 +60,9 @@ export function ProductDetailView({ payload }: { payload: ProductPayload }) {
         <div className="grid gap-4 sm:gap-6 xl:grid-cols-[minmax(0,0.96fr)_380px]">
           <div className="space-y-5 sm:space-y-6 xl:max-w-[760px]">
             <ProductGallery images={product.images} productName={product.name} videoUrl={product.videoUrl} />
+            <div className="xl:hidden">
+              <ProductPurchasePanel product={product} />
+            </div>
             <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
               {quickFacts.map((fact) => (
                 <div key={fact.label} className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-card sm:rounded-[20px]">
@@ -118,7 +121,9 @@ export function ProductDetailView({ payload }: { payload: ProductPayload }) {
               </div>
             </section>
           </div>
-          <ProductPurchasePanel product={product} />
+          <div className="hidden xl:block">
+            <ProductPurchasePanel product={product} />
+          </div>
         </div>
         <ProductDetailTabs
           productId={product.id}

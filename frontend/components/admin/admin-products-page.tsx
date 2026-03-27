@@ -223,9 +223,10 @@ export function AdminProductsPageClient() {
                     <span>Stock {product.inventory?.stock ?? product.stock}</span>
                     <span>{product.images?.length ?? 0} image(s)</span>
                     <span>{product.videoUrl ? "Video added" : "No video"}</span>
+                    {product.hasVariants ? <span>{product.variants?.length ?? 0} variant(s)</span> : null}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center xl:justify-end xl:self-start">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center xl:justify-end xl:self-start">
                   <Link href={`/products/${product.slug}`} className="rounded-full border border-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white/80 transition hover:bg-white/10">
                     Open live
                   </Link>
@@ -236,7 +237,7 @@ export function AdminProductsPageClient() {
                     Edit
                   </Link>
                   <button
-                    className="rounded-full border border-rose-400/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-rose-200 transition hover:bg-rose-500/10"
+                    className="col-span-2 rounded-full border border-rose-400/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-rose-200 transition hover:bg-rose-500/10 sm:col-auto"
                     onClick={async () => {
                       const confirmed = window.confirm(
                         product.hasVariants
