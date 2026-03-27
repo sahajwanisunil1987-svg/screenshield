@@ -17,6 +17,12 @@ type CsvImportRow = {
   data: ParsedCsvRow;
 };
 
+type CsvValidationIssue = {
+  rowNumber: number;
+  sku: string;
+  message: string;
+};
+
 const templateHeaders = [
   "name",
   "sku",
@@ -110,6 +116,8 @@ const parseSpecifications = (value?: string) => {
   return specs;
 };
 
+const requiredColumns = ["name", "sku", "brand", "model", "category", "price", "stock", "shortDescription", "description", "imageUrls"];
+
 const splitCsvLine = (line: string) => {
   const values: string[] = [];
   let current = "";
@@ -164,6 +172,107 @@ const parseCsv = (csvText: string): CsvImportRow[] => {
   });
 };
 
+const analyzeCsv = (csvText: string) => {
+  const lines = csvText
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length < 2) {
+    return {
+      rows: [] as CsvImportRow[],
+      validRows: [] as CsvImportRow[],
+      invalidRows: [] as CsvImportRow[],
+      issues: [{ rowNumber: 1, sku: "-", message: "Add a header row and at least one product row." }],
+      missingColumns: [] as string[],
+      totalRows: 0
+    };
+  }
+
+  const headers = splitCsvLine(lines[0]!).map((header) => header.trim());
+  const missingColumns = requiredColumns.filter((column) => !headers.includes(column));
+  const rows = parseCsv(csvText);
+  const issues: CsvValidationIssue[] = [];
+  const seenSkus = new Map<string, number>();
+
+  for (const row of rows) {
+    const sku = row.data.sku?.trim() || "-";
+    const imageUrls = parsePipeList(row.data.imageUrls);
+
+    if (!row.data.name?.trim()) {
+      issues.push({ rowNumber: row.rowNumber, sku, message: "Missing product name." });
+    }
+
+    if (!row.data.sku?.trim()) {
+      issues.push({ rowNumber: row.rowNumber, sku, message: "Missing SKU." });
+    }
+
+    if (!row.data.brand?.trim()) {
+      issues.push({ rowNumber: row.rowNumber, sku, message: "Missing brand." });
+    }
+
+    if (!row.data.model?.trim()) {
+      issues.push({ rowNumber: row.rowNumber, sku, message: "Missing model." });
+    }
+
+    if (!row.data.category?.trim()) {
+      issues.push({ rowNumber: row.rowNumber, sku, message: "Missing category." });
+    }
+
+    if (!Number.isFinite(Number(row.data.price)) || Number(row.data.price) <= 0) {
+      issues.push({ rowNumber: row.rowNumber, sku, message: "Price must be greater than 0." });
+    }
+
+    if (!Number.isFinite(Number(row.data.stock)) || Number(row.data.stock) < 0) {
+      issues.push({ rowNumber: row.rowNumber, sku, message: "Stock must be 0 or higher." });
+    }
+
+    if ((row.data.shortDescription ?? "").trim().length < 10) {
+      issues.push({ rowNumber: row.rowNumber, sku, message: "Short description is too short." });
+    }
+
+    if ((row.data.description ?? "").trim().length < 20) {
+      issues.push({ rowNumber: row.rowNumber, sku, message: "Description is too short." });
+    }
+
+    if (!imageUrls.length) {
+      issues.push({ rowNumber: row.rowNumber, sku, message: "Add at least one image URL." });
+    }
+
+    const normalizedSku = sku.toLowerCase();
+    if (sku !== "-" && seenSkus.has(normalizedSku)) {
+      issues.push({
+        rowNumber: row.rowNumber,
+        sku,
+        message: `Duplicate SKU in file. Also seen on row ${seenSkus.get(normalizedSku)}.`
+      });
+    } else if (sku !== "-") {
+      seenSkus.set(normalizedSku, row.rowNumber);
+    }
+  }
+
+  if (missingColumns.length) {
+    issues.unshift({
+      rowNumber: 1,
+      sku: "-",
+      message: `Missing required columns: ${missingColumns.join(", ")}`
+    });
+  }
+
+  const invalidRowNumbers = new Set(issues.map((issue) => issue.rowNumber).filter((rowNumber) => rowNumber > 1));
+  const invalidRows = rows.filter((row) => invalidRowNumbers.has(row.rowNumber));
+  const validRows = rows.filter((row) => !invalidRowNumbers.has(row.rowNumber));
+
+  return {
+    rows,
+    validRows,
+    invalidRows,
+    issues,
+    missingColumns,
+    totalRows: rows.length
+  };
+};
+
 const buildBulkPayload = (rows: CsvImportRow[]) => ({
   items: rows.map((row) => {
     const imageUrls = parsePipeList(row.data.imageUrls);
@@ -207,6 +316,7 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
   const [uploading, setUploading] = useState(false);
   const [lastResult, setLastResult] = useState<BulkProductImportResponse | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const csvAnalysis = useMemo(() => analyzeCsv(csvText), [csvText]);
 
   const resultSummary = useMemo(() => {
     if (!lastResult) {
@@ -248,14 +358,30 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
 
     try {
       setUploading(true);
-      const parsedRows = parseCsv(csvText);
-      const payload = buildBulkPayload(parsedRows);
+      if (!csvAnalysis.validRows.length) {
+        throw new Error("No valid rows found. Fix the highlighted CSV issues first.");
+      }
+
+      if (csvAnalysis.invalidRows.length) {
+        const confirmed = window.confirm(
+          `Import ${csvAnalysis.validRows.length} valid rows and skip ${csvAnalysis.invalidRows.length} invalid rows?`
+        );
+
+        if (!confirmed) {
+          setUploading(false);
+          return;
+        }
+      }
+
+      const payload = buildBulkPayload(csvAnalysis.validRows);
       const response = await api.post<BulkProductImportResponse>("/admin/products/bulk", payload, authHeaders(token));
       setLastResult(response.data);
       onImported();
 
-      if (response.data.failedCount > 0) {
-        toast.warning(`Imported ${response.data.createdCount} products. ${response.data.failedCount} rows need attention.`);
+      if (response.data.failedCount > 0 || csvAnalysis.invalidRows.length > 0) {
+        toast.warning(
+          `Imported ${response.data.createdCount} products. ${response.data.failedCount + csvAnalysis.invalidRows.length} rows need attention.`
+        );
       } else {
         toast.success(`${response.data.createdCount} products imported successfully.`);
       }
@@ -303,7 +429,22 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
         />
 
         <div className="rounded-[24px] border border-white/10 bg-black/10 p-4">
-          <p className="text-sm font-semibold text-white">Import tips</p>
+          <p className="text-sm font-semibold text-white">Import safety</p>
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-white/45">Rows</p>
+              <p className="mt-2 font-display text-2xl text-white">{csvAnalysis.totalRows}</p>
+            </div>
+            <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-3">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-white/45">Valid</p>
+              <p className="mt-2 font-display text-2xl text-emerald-100">{csvAnalysis.validRows.length}</p>
+            </div>
+            <div className="rounded-2xl border border-rose-400/20 bg-rose-500/10 p-3">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-white/45">Invalid</p>
+              <p className="mt-2 font-display text-2xl text-rose-100">{csvAnalysis.invalidRows.length}</p>
+            </div>
+          </div>
+
           <ul className="mt-3 space-y-2 text-sm text-white/60">
             <li>Use exact brand, model, and category names from admin.</li>
             <li>`imageUrls` should be pipe-separated links.</li>
@@ -311,6 +452,26 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
             <li>`specifications` format: `key=value;key2=value2`.</li>
             <li>Keep this importer for standard products. Variants can be added later from edit screens.</li>
           </ul>
+
+          {csvAnalysis.issues.length ? (
+            <div className="mt-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-white/45">Pre-check issues</p>
+              <div className="mt-2 space-y-2 text-sm text-white/70">
+                {csvAnalysis.issues.slice(0, 6).map((issue) => (
+                  <div key={`${issue.rowNumber}-${issue.sku}-${issue.message}`} className="rounded-2xl border border-rose-400/20 bg-rose-500/10 px-3 py-2">
+                    Row {issue.rowNumber} · {issue.sku} · {issue.message}
+                  </div>
+                ))}
+                {csvAnalysis.issues.length > 6 ? (
+                  <div className="text-xs text-white/45">+{csvAnalysis.issues.length - 6} more issue(s) hidden</div>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
+              CSV pre-check passed. All rows are ready for import.
+            </div>
+          )}
 
           {lastResult ? (
             <div className="mt-5 space-y-4">
