@@ -132,6 +132,7 @@ const bulkProductRowSchema = z.object({
 });
 
 export const productBulkSchema = z.object({
+  mode: z.enum(["CREATE_ONLY", "UPSERT_BY_SKU"]).default("CREATE_ONLY"),
   items: z.array(bulkProductRowSchema).min(1).max(100)
 });
 

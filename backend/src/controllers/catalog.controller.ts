@@ -71,6 +71,10 @@ export const getAdminProductById = async (req: Request, res: Response) => {
   res.json(await catalogService.getAdminProductById(getSingleParam(req.params.id)!));
 };
 
+export const exportProductsForBulkEditing = async (_req: Request, res: Response) => {
+  res.json(await catalogService.exportProductsForBulkEditing());
+};
+
 export const searchProducts = async (req: Request, res: Response) => {
   res.json(await catalogService.listProducts(req.query));
 };

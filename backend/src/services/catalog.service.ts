@@ -783,7 +783,10 @@ export const createProduct = async (payload: {
   });
 };
 
-export const createProductsBulk = async (payload: { items: BulkProductImportPayload[] }) => {
+export const createProductsBulk = async (payload: {
+  mode?: "CREATE_ONLY" | "UPSERT_BY_SKU";
+  items: BulkProductImportPayload[];
+}) => {
   const results: Array<{
     rowNumber: number;
     status: "CREATED" | "FAILED";
@@ -792,6 +795,7 @@ export const createProductsBulk = async (payload: { items: BulkProductImportPayl
     productId?: string;
     message?: string;
   }> = [];
+  const mode = payload.mode ?? "CREATE_ONLY";
 
   for (const [index, item] of payload.items.entries()) {
     const rowNumber = item.rowNumber ?? index + 2;
@@ -815,7 +819,7 @@ export const createProductsBulk = async (payload: { items: BulkProductImportPayl
         )
       ).filter((value): value is string => Boolean(value));
 
-      const createdProduct = await createProduct({
+      const productPayload = {
         name: item.name,
         sku: item.sku,
         hsnCode: item.hsnCode ?? null,
@@ -838,14 +842,27 @@ export const createProductsBulk = async (payload: { items: BulkProductImportPayl
         isFeatured: item.isFeatured,
         isActive: item.isActive,
         images: item.images
-      });
+      };
+
+      const existingProduct =
+        mode === "UPSERT_BY_SKU"
+          ? await prisma.product.findFirst({
+              where: { sku: item.sku },
+              select: { id: true }
+            })
+          : null;
+
+      const savedProduct = existingProduct
+        ? await updateProduct(existingProduct.id, productPayload)
+        : await createProduct(productPayload);
 
       results.push({
         rowNumber,
         status: "CREATED",
-        name: createdProduct.name,
-        sku: createdProduct.sku,
-        productId: createdProduct.id
+        name: savedProduct.name,
+        sku: savedProduct.sku,
+        productId: savedProduct.id,
+        message: existingProduct ? "Updated existing product by SKU." : undefined
       });
     } catch (error) {
       results.push({
@@ -863,6 +880,48 @@ export const createProductsBulk = async (payload: { items: BulkProductImportPayl
     failedCount: results.filter((result) => result.status === "FAILED").length,
     results
   };
+};
+
+export const exportProductsForBulkEditing = async () => {
+  const products = await prisma.product.findMany({
+    include: {
+      brand: true,
+      model: true,
+      category: true,
+      images: { orderBy: { sortOrder: "asc" } },
+      compatibilityModels: {
+        include: { model: true },
+        orderBy: { model: { name: "asc" } }
+      },
+      inventory: true
+    },
+    orderBy: [{ updatedAt: "desc" }]
+  });
+
+  return products.map((product) => ({
+    name: product.name,
+    sku: product.sku,
+    brand: product.brand.name,
+    model: product.model.name,
+    category: product.category.name,
+    price: Number(product.price),
+    stock: product.inventory?.stock ?? product.stock,
+    shortDescription: product.shortDescription,
+    description: product.description,
+    imageUrls: product.images.map((image) => image.url).join("|"),
+    comparePrice: product.comparePrice ? Number(product.comparePrice) : "",
+    warrantyMonths: product.warrantyMonths,
+    gstRate: product.gstRate ? Number(product.gstRate) : 18,
+    hsnCode: product.hsnCode ?? "",
+    warehouseCode: product.inventory?.warehouseCode ?? "",
+    videoUrl: product.videoUrl ?? "",
+    isFeatured: product.isFeatured ? "true" : "false",
+    isActive: product.isActive ? "true" : "false",
+    compatibleModels: product.compatibilityModels.map((entry) => entry.model.name).join("|"),
+    specifications: Object.entries(product.specifications ?? {})
+      .map(([key, value]) => `${key}=${value}`)
+      .join(";")
+  }));
 };
 
 export const checkExistingProductSkus = async (payload: { skus: string[] }) => {

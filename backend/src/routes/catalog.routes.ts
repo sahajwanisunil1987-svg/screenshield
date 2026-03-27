@@ -46,6 +46,12 @@ router.get(
   validate({ params: idParamSchema }),
   catalogController.getAdminProductById
 );
+router.get(
+  "/admin/products/bulk/export",
+  authenticate,
+  requireAdmin,
+  catalogController.exportProductsForBulkEditing
+);
 
 router.post("/admin/brands", authenticate, requireAdmin, validate({ body: brandSchema }), catalogController.createBrand);
 router.put(

@@ -24,6 +24,8 @@ type CsvValidationIssue = {
   message: string;
 };
 
+type ImportMode = "CREATE_ONLY" | "UPSERT_BY_SKU";
+
 const templateHeaders = [
   "name",
   "sku",
@@ -326,11 +328,31 @@ const buildBulkPayload = (rows: CsvImportRow[]) => ({
   })
 });
 
+const toCsvCell = (value: string | number) => {
+  const stringValue = String(value ?? "");
+  if (/[",\n]/.test(stringValue)) {
+    return `"${stringValue.replace(/"/g, "\"\"")}"`;
+  }
+
+  return stringValue;
+};
+
+const rowsToCsv = (rows: Array<Record<string, string | number>>) => {
+  if (!rows.length) {
+    return templateRows;
+  }
+
+  const headers = Object.keys(rows[0]!);
+  return [headers.join(","), ...rows.map((row) => headers.map((header) => toCsvCell(row[header] ?? "")).join(","))].join("\n");
+};
+
 export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUploadProps) {
   const [csvText, setCsvText] = useState(templateRows);
+  const [importMode, setImportMode] = useState<ImportMode>("CREATE_ONLY");
   const [uploading, setUploading] = useState(false);
   const [checkingSkus, setCheckingSkus] = useState(false);
   const [checkingReferences, setCheckingReferences] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [lastResult, setLastResult] = useState<BulkProductImportResponse | null>(null);
   const [existingSkuMap, setExistingSkuMap] = useState<Record<string, { id: string; name: string; slug: string }>>({});
   const [referenceIssues, setReferenceIssues] = useState<CsvValidationIssue[]>([]);
@@ -491,13 +513,14 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
   const blockedReferenceRowCount = referenceIssueRows.size;
 
   const safeValidRows = useMemo(() => {
-    const blockedSkus = new Set(existingSkuRows.map((entry) => entry.sku.toLowerCase()));
+    const blockedSkus =
+      importMode === "UPSERT_BY_SKU" ? new Set<string>() : new Set(existingSkuRows.map((entry) => entry.sku.toLowerCase()));
     const blockedReferenceRows = new Set(referenceIssues.map((issue) => issue.rowNumber));
 
     return csvAnalysis.validRows.filter(
       (row) => !blockedSkus.has(row.data.sku.trim().toLowerCase()) && !blockedReferenceRows.has(row.rowNumber)
     );
-  }, [csvAnalysis.validRows, existingSkuRows, referenceIssues]);
+  }, [csvAnalysis.validRows, existingSkuRows, importMode, referenceIssues]);
 
   const handleTemplateDownload = () => {
     const blob = new Blob([templateRows], { type: "text/csv;charset=utf-8;" });
@@ -507,6 +530,30 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
     anchor.download = "purjix-product-bulk-template.csv";
     anchor.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleExportExistingProducts = async () => {
+    if (!token) {
+      toast.error("Admin session missing. Please log in again.");
+      return;
+    }
+
+    try {
+      setExporting(true);
+      const response = await api.get<Array<Record<string, string | number>>>("/admin/products/bulk/export", authHeaders(token));
+      const blob = new Blob([rowsToCsv(response.data)], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "purjix-products-export.csv";
+      anchor.click();
+      URL.revokeObjectURL(url);
+      toast.success("Product export downloaded.");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Unable to export products"));
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -543,7 +590,7 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
         }
       }
 
-      const payload = buildBulkPayload(safeValidRows);
+      const payload = { mode: importMode, ...buildBulkPayload(safeValidRows) };
       const response = await api.post<BulkProductImportResponse>("/admin/products/bulk", payload, authHeaders(token));
       setLastResult(response.data);
       onImported();
@@ -576,8 +623,19 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
+          <select
+            value={importMode}
+            onChange={(event) => setImportMode(event.target.value as ImportMode)}
+            className="rounded-full border border-white/10 bg-white px-4 py-3 text-sm font-semibold text-ink"
+          >
+            <option value="CREATE_ONLY">Create new only</option>
+            <option value="UPSERT_BY_SKU">Update existing by SKU</option>
+          </select>
           <Button type="button" variant="ghost" onClick={handleTemplateDownload}>
             Download template
+          </Button>
+          <Button type="button" variant="ghost" onClick={handleExportExistingProducts} disabled={exporting}>
+            {exporting ? "Exporting..." : "Export existing"}
           </Button>
           <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleFileUpload} />
           <Button type="button" variant="ghost" onClick={() => fileInputRef.current?.click()}>
@@ -621,6 +679,7 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
             <li>`compatibleModels` should be pipe-separated names.</li>
             <li>`specifications` format: `key=value;key2=value2`.</li>
             <li>You can copy rows straight from Google Sheets and paste them here.</li>
+            <li>`Update existing by SKU` is best for export, edit in sheet, and re-import workflow.</li>
             <li>Keep this importer for standard products. Variants can be added later from edit screens.</li>
           </ul>
 
@@ -645,17 +704,26 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
           )}
 
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/65">
-            {checkingSkus ? "Checking existing SKUs in catalog..." : `${existingSkuRows.length} row(s) match existing catalog SKUs and will be skipped.`}
+            {checkingSkus
+              ? "Checking existing SKUs in catalog..."
+              : importMode === "UPSERT_BY_SKU"
+                ? `${existingSkuRows.length} row(s) match existing catalog SKUs and will be updated.`
+                : `${existingSkuRows.length} row(s) match existing catalog SKUs and will be skipped.`}
           </div>
 
           {existingSkuRows.length ? (
             <div className="mt-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-white/45">Existing SKU conflicts</p>
+              <p className="text-xs uppercase tracking-[0.16em] text-white/45">
+                {importMode === "UPSERT_BY_SKU" ? "Existing SKU updates" : "Existing SKU conflicts"}
+              </p>
               <div className="mt-2 space-y-2 text-sm text-white/70">
                 {existingSkuRows.slice(0, 5).map((entry) => (
-                  <div key={`${entry.rowNumber}-${entry.sku}`} className="rounded-2xl border border-amber-400/20 bg-amber-500/10 px-3 py-2">
-                    Row {entry.rowNumber} · {entry.sku} already exists as{" "}
-                    <Link href={`/admin/products/edit/${entry.product.id}`} className="font-semibold text-amber-100 underline">
+                  <div
+                    key={`${entry.rowNumber}-${entry.sku}`}
+                    className={`rounded-2xl px-3 py-2 ${importMode === "UPSERT_BY_SKU" ? "border border-cyan-400/20 bg-cyan-500/10" : "border border-amber-400/20 bg-amber-500/10"}`}
+                  >
+                    Row {entry.rowNumber} · {entry.sku} {importMode === "UPSERT_BY_SKU" ? "will update" : "already exists as"}{" "}
+                    <Link href={`/admin/products/edit/${entry.product.id}`} className="font-semibold text-cyan-100 underline">
                       {entry.product.name}
                     </Link>
                   </div>
