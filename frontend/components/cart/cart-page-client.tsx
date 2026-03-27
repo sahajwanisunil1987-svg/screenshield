@@ -18,8 +18,9 @@ export function CartPageClient() {
   const [couponInput, setCouponInput] = useState(couponCode);
   const [isApplying, setIsApplying] = useState(false);
   const [pricingSettings, setPricingSettings] = useState<PricingSettings>(defaultPricingSettings);
+  const effectivePricingSettings = pricingSettings ?? defaultPricingSettings;
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount, pricingSettings);
+  const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount, effectivePricingSettings);
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {
@@ -109,7 +110,7 @@ export function CartPageClient() {
           hasItems={items.length > 0}
           subtotal={subtotal}
           shipping={shipping}
-          freeShippingThreshold={pricingSettings.freeShippingThreshold ?? defaultPricingSettings.freeShippingThreshold}
+          freeShippingThreshold={effectivePricingSettings.freeShippingThreshold ?? defaultPricingSettings.freeShippingThreshold}
           tax={tax}
           total={total}
           couponCode={couponCode}

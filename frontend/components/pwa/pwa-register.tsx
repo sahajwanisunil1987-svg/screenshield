@@ -23,12 +23,11 @@ export function PwaRegister() {
 
     const run = async () => {
       try {
+        await clearServiceWorkers();
+
         if (process.env.NODE_ENV !== "production" || isLocalhost(window.location.hostname)) {
-          await clearServiceWorkers();
           return;
         }
-
-        await navigator.serviceWorker.register("/sw.js", { scope: "/" });
       } catch (error) {
         console.error("PWA service worker registration failed", error);
       }

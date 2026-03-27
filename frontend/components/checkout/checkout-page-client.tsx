@@ -57,21 +57,22 @@ export function CheckoutPageClient() {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const effectivePricingSettings = pricingSettings ?? defaultPricingSettings;
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount, pricingSettings);
+  const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount, effectivePricingSettings);
   const blockedCodPincodes = useMemo(
     () =>
-      String(pricingSettings.codDisabledPincodes ?? "")
+      String(effectivePricingSettings.codDisabledPincodes ?? "")
         .split(",")
         .map((entry) => entry.trim())
         .filter(Boolean),
-    [pricingSettings.codDisabledPincodes]
+    [effectivePricingSettings.codDisabledPincodes]
   );
   const codAvailable = useMemo(
     () =>
-      total <= Number(pricingSettings.codMaxOrderValue ?? defaultPricingSettings.codMaxOrderValue) &&
+      total <= Number(effectivePricingSettings.codMaxOrderValue ?? defaultPricingSettings.codMaxOrderValue) &&
       !blockedCodPincodes.includes(form.postalCode.trim()),
-    [blockedCodPincodes, form.postalCode, pricingSettings.codMaxOrderValue, total]
+    [blockedCodPincodes, effectivePricingSettings.codMaxOrderValue, form.postalCode, total]
   );
 
   useEffect(() => {
@@ -280,7 +281,7 @@ export function CheckoutPageClient() {
             errors={errors}
             isSubmitting={isSubmitting}
             codAvailable={codAvailable}
-            codMaxOrderValue={Number(pricingSettings.codMaxOrderValue ?? defaultPricingSettings.codMaxOrderValue)}
+            codMaxOrderValue={Number(effectivePricingSettings.codMaxOrderValue ?? defaultPricingSettings.codMaxOrderValue)}
             onFieldChange={updateField}
             onSubmit={onSubmit}
           />
@@ -290,7 +291,7 @@ export function CheckoutPageClient() {
             couponCode={couponCode}
             couponDiscount={couponDiscount}
             shipping={shipping}
-            freeShippingThreshold={Number(pricingSettings.freeShippingThreshold ?? defaultPricingSettings.freeShippingThreshold)}
+            freeShippingThreshold={Number(effectivePricingSettings.freeShippingThreshold ?? defaultPricingSettings.freeShippingThreshold)}
             tax={tax}
             total={total}
           />
