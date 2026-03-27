@@ -7,6 +7,8 @@ import { createInvoiceNumber, createOrderNumber } from "../utils/helpers.js";
 import { ensureAppSettings } from "./app-settings.service.js";
 
 const decimal = (value: number) => new Prisma.Decimal(value.toFixed(2));
+const PAYMENT_RETRY_LIMIT = 3;
+const PAYMENT_WINDOW_MINUTES = 15;
 
 
 const parseDisabledCodPincodes = (value: string | undefined) =>
@@ -321,6 +323,11 @@ export const createOrder = async (
         notes: payload.notes,
         gstNumber: payload.address.gstNumber,
         paymentStatus: payload.paymentMethod === "COD" ? PaymentStatus.COD : PaymentStatus.PENDING,
+        paymentRetryCount: payload.paymentMethod === "COD" ? 0 : 0,
+        paymentExpiresAt:
+          payload.paymentMethod === "COD"
+            ? null
+            : new Date(Date.now() + PAYMENT_WINDOW_MINUTES * 60 * 1000),
         items: {
           create: orderItems.map(({ lineTax: _lineTax, ...item }) => item)
         },

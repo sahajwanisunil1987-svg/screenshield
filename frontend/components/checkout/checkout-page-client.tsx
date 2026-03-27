@@ -142,7 +142,19 @@ export function CheckoutPageClient() {
     if (!token) return;
 
     try {
-      await api.post("/payments/razorpay/cancel", { orderId }, authHeaders(token));
+      const response = await api.post("/payments/razorpay/cancel", { orderId }, authHeaders(token));
+      const retriesRemaining = Number(response.data?.retriesRemaining ?? 0);
+
+      if (response.data?.cancelled) {
+        toast.info("Payment window closed. Your unpaid order has been cancelled.");
+        return;
+      }
+
+      toast.info(
+        retriesRemaining > 0
+          ? `Payment not completed. You can retry ${retriesRemaining} more time${retriesRemaining > 1 ? "s" : ""} from My Orders.`
+          : "Payment not completed."
+      );
     } catch {
       // Ignore cancellation issues here and let support/admin review the order manually.
     }
@@ -238,7 +250,6 @@ export function CheckoutPageClient() {
             ondismiss: async () => {
               setIsPaymentInProgress(false);
               await cancelUnpaidOrder(response.data.id);
-              toast.info("Payment window closed. Your unpaid order has been cancelled.");
               router.push("/my-orders");
             }
           },
@@ -276,7 +287,6 @@ export function CheckoutPageClient() {
         razorpay.on("payment.failed", async () => {
           setIsPaymentInProgress(false);
           await cancelUnpaidOrder(response.data.id);
-          toast.error("Payment failed. Your unpaid order has been cancelled.");
           router.push("/my-orders");
         });
 

@@ -6,6 +6,8 @@ import { prisma } from "../lib/prisma.js";
 import { razorpay } from "../lib/razorpay.js";
 import { ApiError } from "../utils/api-error.js";
 
+const PAYMENT_RETRY_LIMIT = 3;
+
 type OrderWithPayment = Order & {
   payment: Payment;
 };
@@ -157,6 +159,42 @@ export const createRazorpayOrder = async (orderId: string) => {
     throw new ApiError(StatusCodes.CONFLICT, "Cancelled orders cannot create a Razorpay payment intent");
   }
 
+  if (order.paymentExpiresAt && order.paymentExpiresAt < new Date()) {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        status: OrderStatus.CANCELLED,
+        paymentStatus: PaymentStatus.FAILED,
+        cancelledAt: order.cancelledAt ?? new Date(),
+        payment: {
+          update: {
+            status: PaymentStatus.FAILED
+          }
+        }
+      }
+    });
+
+    throw new ApiError(StatusCodes.CONFLICT, "Payment window expired. Please place the order again.");
+  }
+
+  if (order.paymentRetryCount >= PAYMENT_RETRY_LIMIT) {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        status: OrderStatus.CANCELLED,
+        paymentStatus: PaymentStatus.FAILED,
+        cancelledAt: order.cancelledAt ?? new Date(),
+        payment: {
+          update: {
+            status: PaymentStatus.FAILED
+          }
+        }
+      }
+    });
+
+    throw new ApiError(StatusCodes.CONFLICT, "Payment retry limit reached. Please place the order again.");
+  }
+
   if (order.paymentStatus === PaymentStatus.PAID || order.payment.status === PaymentStatus.PAID) {
     throw new ApiError(StatusCodes.CONFLICT, "Order is already marked as paid");
   }
@@ -171,6 +209,14 @@ export const createRazorpayOrder = async (orderId: string) => {
     where: { orderId: order.id },
     data: {
       providerOrderId: createdOrder.id
+    }
+  });
+
+  await prisma.order.update({
+    where: { id: order.id },
+    data: {
+      paymentRetryCount: { increment: 1 },
+      paymentStatus: PaymentStatus.PENDING
     }
   });
 
@@ -203,6 +249,32 @@ export const cancelAbandonedRazorpayOrder = async (orderId: string, userId: stri
     return { cancelled: false, alreadyPaid: true, orderId: order.id };
   }
 
+  const nextRetryCount = order.paymentRetryCount;
+  const paymentExpired = Boolean(order.paymentExpiresAt && order.paymentExpiresAt < new Date());
+  const shouldCancel = paymentExpired || nextRetryCount >= PAYMENT_RETRY_LIMIT;
+
+  if (!shouldCancel) {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        paymentStatus: PaymentStatus.FAILED,
+        payment: {
+          update: {
+            status: PaymentStatus.FAILED
+          }
+        }
+      }
+    });
+
+    return {
+      cancelled: false,
+      alreadyCancelled: false,
+      alreadyPaid: false,
+      orderId: order.id,
+      retriesRemaining: PAYMENT_RETRY_LIMIT - nextRetryCount
+    };
+  }
+
   await prisma.order.update({
     where: { id: order.id },
     data: {
@@ -217,7 +289,7 @@ export const cancelAbandonedRazorpayOrder = async (orderId: string, userId: stri
     }
   });
 
-  return { cancelled: true, alreadyCancelled: false, orderId: order.id };
+  return { cancelled: true, alreadyCancelled: false, orderId: order.id, retriesRemaining: 0 };
 };
 
 export const verifyRazorpayPayment = async (payload: {

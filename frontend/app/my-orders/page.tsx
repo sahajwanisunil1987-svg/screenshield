@@ -95,9 +95,21 @@ export default function MyOrdersPage() {
     if (!token) return;
 
     try {
-      await api.post("/payments/razorpay/cancel", { orderId }, authHeaders(token));
+      const response = await api.post("/payments/razorpay/cancel", { orderId }, authHeaders(token));
       const refreshed = await api.get("/orders/my-orders", authHeaders(token));
       setOrders(refreshed.data);
+
+      const retriesRemaining = Number(response.data?.retriesRemaining ?? 0);
+      if (response.data?.cancelled) {
+        toast.info("Payment not completed. This order has been cancelled.");
+        return;
+      }
+
+      toast.info(
+        retriesRemaining > 0
+          ? `Payment not completed. You can retry ${retriesRemaining} more time${retriesRemaining > 1 ? "s" : ""}.`
+          : "Payment not completed."
+      );
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Unable to cancel unpaid order"));
     }
@@ -130,7 +142,6 @@ export default function MyOrdersPage() {
           ondismiss: async () => {
             await cancelUnpaidOrder(order.id);
             setRetryingOrderId(null);
-            toast.info("Payment window closed. Your unpaid order has been cancelled.");
           }
         },
         handler: async (paymentResponse: Record<string, string>) => {
@@ -161,7 +172,6 @@ export default function MyOrdersPage() {
       razorpay.on("payment.failed", async () => {
         await cancelUnpaidOrder(order.id);
         setRetryingOrderId(null);
-        toast.error("Payment failed. Your unpaid order has been cancelled.");
       });
 
       razorpay.open();

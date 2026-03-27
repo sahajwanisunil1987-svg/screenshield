@@ -327,6 +327,8 @@ model Order {
   gstNumber           String?
   status              OrderStatus    @default(PENDING)
   paymentStatus       PaymentStatus  @default(PENDING)
+  paymentRetryCount   Int            @default(0)
+  paymentExpiresAt    DateTime?
   shippingCourier     String?
   shippingAwb         String?
   estimatedDeliveryAt DateTime?
