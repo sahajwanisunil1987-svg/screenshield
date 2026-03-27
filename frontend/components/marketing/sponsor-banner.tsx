@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { ArrowUpRight, BadgeCheck } from "lucide-react";
-import { SponsorEntry } from "@/lib/sponsor-config";
+import { SponsorAd } from "@/types";
 
-export function SponsorBanner({ sponsor }: { sponsor: SponsorEntry }) {
+export function SponsorBanner({ sponsor }: { sponsor: SponsorAd }) {
   return (
     <section className="bg-page-wash">
       <div className="mx-auto max-w-7xl px-4 pb-2 sm:px-6 lg:px-8">
@@ -35,7 +35,7 @@ export function SponsorBanner({ sponsor }: { sponsor: SponsorEntry }) {
   );
 }
 
-export function FooterSponsorCard({ sponsor }: { sponsor: SponsorEntry }) {
+export function FooterSponsorCard({ sponsor }: { sponsor: SponsorAd }) {
   return (
     <div className="rounded-[22px] border border-white/10 bg-white/5 px-4 py-4">
       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-200/80">{sponsor.badge ?? "Partner"}</p>

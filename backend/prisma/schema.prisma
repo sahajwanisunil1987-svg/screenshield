@@ -244,6 +244,30 @@ model AppSetting {
   updatedAt          DateTime @updatedAt
 }
 
+model SponsorAd {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  title           String
+  subtitle        String
+  ctaLabel        String
+  targetUrl       String
+  desktopImageUrl String?
+  mobileImageUrl  String?
+  placement       String
+  badge           String?
+  priority        Int      @default(0)
+  startAt         DateTime?
+  endAt           DateTime?
+  isActive        Boolean  @default(true)
+  clickCount      Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([placement, isActive, priority])
+  @@index([startAt, endAt])
+}
+
 model Address {
   id          String   @id @default(cuid())
   userId      String

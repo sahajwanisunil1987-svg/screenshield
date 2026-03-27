@@ -7,7 +7,7 @@ import { SponsorBanner } from "@/components/marketing/sponsor-banner";
 import { fetchApiOrFallback } from "@/lib/server-api";
 import { buildMetadata } from "@/lib/seo";
 import { getSponsorByPlacement } from "@/lib/sponsor-config";
-import { Brand, Category, MobileModel } from "@/types";
+import { Brand, Category, MobileModel, SponsorAd } from "@/types";
 
 export const revalidate = 300;
 
@@ -60,12 +60,13 @@ export const metadata: Metadata = buildMetadata({
 
 
 export default async function HomePage() {
-  const [brands, categories, models] = await Promise.all([
+  const [brands, categories, models, remoteSponsor] = await Promise.all([
     fetchApiOrFallback<Brand[]>("/brands", []),
     fetchApiOrFallback<Category[]>("/categories", []),
-    fetchApiOrFallback<MobileModel[]>("/models", [])
+    fetchApiOrFallback<MobileModel[]>("/models", []),
+    fetchApiOrFallback<SponsorAd | null>("/sponsors/home_primary", null)
   ]);
-  const homeSponsor = getSponsorByPlacement("home_primary");
+  const homeSponsor = remoteSponsor ?? getSponsorByPlacement("home_primary");
 
   return (
     <PageShell>

@@ -20,6 +20,7 @@ const links = [
   { href: "/admin/brands", label: "Brands" },
   { href: "/admin/models", label: "Models" },
   { href: "/admin/categories", label: "Categories" },
+  { href: "/admin/sponsors", label: "Sponsors" },
   { href: "/admin/coupons", label: "Coupons" },
   { href: "/admin/reviews", label: "Reviews" },
   { href: "/admin/users", label: "Users" },

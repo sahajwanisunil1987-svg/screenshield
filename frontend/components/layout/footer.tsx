@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { FooterSponsorCard } from "@/components/marketing/sponsor-banner";
 import { getSponsorByPlacement } from "@/lib/sponsor-config";
+import { SponsorAd } from "@/types";
 
 const shopLinks = [
   { href: "/brands", label: "Brands" },
@@ -48,20 +49,25 @@ const footerFallbackSettings: Required<FooterSettings> = {
 
 export function Footer() {
   const [settings, setSettings] = useState(footerFallbackSettings);
-  const footerSponsor = getSponsorByPlacement("footer_partner");
+  const [footerSponsor, setFooterSponsor] = useState<SponsorAd | null>(getSponsorByPlacement("footer_partner"));
 
   useEffect(() => {
     let cancelled = false;
 
     const load = async () => {
       try {
-        const response = await api.get("/settings/app");
+        const [settingsResponse, sponsorResponse] = await Promise.all([
+          api.get("/settings/app"),
+          api.get("/sponsors/footer_partner").catch(() => ({ data: null }))
+        ]);
         if (!cancelled) {
-          setSettings({ ...footerFallbackSettings, ...response.data });
+          setSettings({ ...footerFallbackSettings, ...settingsResponse.data });
+          setFooterSponsor(sponsorResponse.data ?? getSponsorByPlacement("footer_partner"));
         }
       } catch {
         if (!cancelled) {
           setSettings(footerFallbackSettings);
+          setFooterSponsor(getSponsorByPlacement("footer_partner"));
         }
       }
     };

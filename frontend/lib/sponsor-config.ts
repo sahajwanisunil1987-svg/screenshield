@@ -1,20 +1,7 @@
-export type SponsorPlacement = "home_primary" | "footer_partner";
+import { SponsorAd, SponsorPlacement } from "@/types";
 
-export type SponsorEntry = {
-  slug: string;
-  name: string;
-  title: string;
-  subtitle: string;
-  targetUrl: string;
-  ctaLabel: string;
-  placement: SponsorPlacement;
-  badge?: string;
-  isActive: boolean;
-};
-
-const sponsorEntries: SponsorEntry[] = [
+const sponsorEntries: SponsorAd[] = [
   {
-    slug: "toolkit-pro",
     name: "Toolkit Pro Supplies",
     title: "Need repair tools, tapes, and bench essentials too?",
     subtitle:
@@ -23,10 +10,10 @@ const sponsorEntries: SponsorEntry[] = [
     ctaLabel: "Ask on WhatsApp",
     placement: "home_primary",
     badge: "Sponsored",
-    isActive: true
+    isActive: true,
+    priority: 10
   },
   {
-    slug: "repair-academy",
     name: "Repair Academy Partner",
     title: "Training, tools, and verified repair support",
     subtitle: "A trusted ecosystem partner for technicians and workshop owners who want faster turnaround.",
@@ -34,10 +21,11 @@ const sponsorEntries: SponsorEntry[] = [
     ctaLabel: "Learn more",
     placement: "footer_partner",
     badge: "Partner",
-    isActive: true
+    isActive: true,
+    priority: 10
   }
 ];
 
 export function getSponsorByPlacement(placement: SponsorPlacement) {
-  return sponsorEntries.find((entry) => entry.placement === placement && entry.isActive);
+  return sponsorEntries.find((entry) => entry.placement === placement && entry.isActive) ?? null;
 }

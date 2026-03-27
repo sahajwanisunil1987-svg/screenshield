@@ -47,6 +47,27 @@ export type ProductVariant = {
   isActive?: boolean;
 };
 
+export type SponsorPlacement = "home_primary" | "footer_partner" | "category_top";
+
+export type SponsorAd = {
+  id?: string;
+  name: string;
+  slug?: string;
+  title: string;
+  subtitle: string;
+  ctaLabel: string;
+  targetUrl: string;
+  desktopImageUrl?: string | null;
+  mobileImageUrl?: string | null;
+  placement: SponsorPlacement;
+  badge?: string | null;
+  priority?: number;
+  startAt?: string | null;
+  endAt?: string | null;
+  isActive?: boolean;
+  clickCount?: number;
+};
+
 export type Product = {
   id: string;
   name: string;
