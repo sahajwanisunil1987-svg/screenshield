@@ -119,7 +119,19 @@ const parseSpecifications = (value?: string) => {
 
 const requiredColumns = ["name", "sku", "brand", "model", "category", "price", "stock", "shortDescription", "description", "imageUrls"];
 
-const splitCsvLine = (line: string) => {
+const detectDelimiter = (headerLine: string) => {
+  if (headerLine.includes("\t")) {
+    return "\t";
+  }
+
+  return ",";
+};
+
+const splitDelimitedLine = (line: string, delimiter: string) => {
+  if (delimiter === "\t") {
+    return line.split("\t").map((value) => value.trim());
+  }
+
   const values: string[] = [];
   let current = "";
   let inQuotes = false;
@@ -137,7 +149,7 @@ const splitCsvLine = (line: string) => {
       continue;
     }
 
-    if (character === "," && !inQuotes) {
+    if (character === delimiter && !inQuotes) {
       values.push(current);
       current = "";
       continue;
@@ -160,10 +172,11 @@ const parseCsv = (csvText: string): CsvImportRow[] => {
     throw new Error("Add a header row and at least one product row.");
   }
 
-  const headers = splitCsvLine(lines[0]!).map((header) => header.trim());
+  const delimiter = detectDelimiter(lines[0]!);
+  const headers = splitDelimitedLine(lines[0]!, delimiter).map((header) => header.trim());
 
   return lines.slice(1).map((line, index) => {
-    const values = splitCsvLine(line);
+    const values = splitDelimitedLine(line, delimiter);
     const row = headers.reduce<ParsedCsvRow>((accumulator, header, headerIndex) => {
       accumulator[header] = values[headerIndex] ?? "";
       return accumulator;
@@ -190,7 +203,8 @@ const analyzeCsv = (csvText: string) => {
     };
   }
 
-  const headers = splitCsvLine(lines[0]!).map((header) => header.trim());
+  const delimiter = detectDelimiter(lines[0]!);
+  const headers = splitDelimitedLine(lines[0]!, delimiter).map((header) => header.trim());
   const missingColumns = requiredColumns.filter((column) => !headers.includes(column));
   const rows = parseCsv(csvText);
   const issues: CsvValidationIssue[] = [];
@@ -554,8 +568,8 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
         <div className="max-w-3xl">
           <p className="text-sm font-semibold text-white">Bulk product upload</p>
           <p className="mt-2 text-sm text-white/60">
-            Upload many standard products at once with CSV. Use brand, model, and category names as they already
-            exist in admin. Variants are not included in this first version.
+            Upload many standard products at once with CSV, or paste rows directly from Google Sheets. Use brand,
+            model, and category names as they already exist in admin. Variants are not included in this first version.
           </p>
           <p className="mt-3 text-xs text-white/45">
             Template columns: {templateHeaders.join(", ")}
@@ -606,6 +620,7 @@ export function AdminProductBulkUpload({ token, onImported }: AdminProductBulkUp
             <li>`imageUrls` should be pipe-separated links.</li>
             <li>`compatibleModels` should be pipe-separated names.</li>
             <li>`specifications` format: `key=value;key2=value2`.</li>
+            <li>You can copy rows straight from Google Sheets and paste them here.</li>
             <li>Keep this importer for standard products. Variants can be added later from edit screens.</li>
           </ul>
 
