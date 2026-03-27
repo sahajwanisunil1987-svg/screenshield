@@ -37,7 +37,7 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
 
   return (
     <>
-      <div className="theme-surface space-y-3 rounded-[24px] p-4 shadow-card sm:rounded-[30px] sm:p-5 xl:sticky xl:top-20 xl:self-start">
+      <div className="theme-surface space-y-3 rounded-[24px] p-4 shadow-card sm:rounded-[30px] sm:p-5 xl:sticky xl:top-28 xl:self-start">
         <div>
           <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-accent sm:text-xs">
             <span>{product.brand.name}</span>
