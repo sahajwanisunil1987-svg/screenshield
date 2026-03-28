@@ -83,6 +83,56 @@ const defaultSettings = {
 
 type SettingsState = typeof defaultSettings;
 
+const toSafeString = (value: unknown, fallback: string) => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length ? trimmed : fallback;
+  }
+
+  return fallback;
+};
+
+const toSafeNumber = (value: unknown, fallback: number) => {
+  const nextValue =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && value.trim().length
+        ? Number(value)
+        : Number.NaN;
+
+  return Number.isFinite(nextValue) ? nextValue : fallback;
+};
+
+const toSafeBoolean = (value: unknown, fallback: boolean) => (typeof value === "boolean" ? value : fallback);
+
+const normalizeSettings = (value: Partial<Record<keyof SettingsState, unknown>> | undefined | null): SettingsState => ({
+  siteName: toSafeString(value?.siteName, defaultSettings.siteName),
+  legalName: toSafeString(value?.legalName, defaultSettings.legalName),
+  supportEmail: toSafeString(value?.supportEmail, defaultSettings.supportEmail),
+  supportPhone: toSafeString(value?.supportPhone, defaultSettings.supportPhone),
+  supportWhatsapp: toSafeString(value?.supportWhatsapp, defaultSettings.supportWhatsapp),
+  supportHours: toSafeString(value?.supportHours, defaultSettings.supportHours),
+  addressLine1: toSafeString(value?.addressLine1, defaultSettings.addressLine1),
+  addressLine2: toSafeString(value?.addressLine2, defaultSettings.addressLine2),
+  heroHeading: toSafeString(value?.heroHeading, defaultSettings.heroHeading),
+  heroSubheading: toSafeString(value?.heroSubheading, defaultSettings.heroSubheading),
+  announcementText: toSafeString(value?.announcementText, defaultSettings.announcementText),
+  supportBannerText: toSafeString(value?.supportBannerText, defaultSettings.supportBannerText),
+  maintenanceMessage: toSafeString(value?.maintenanceMessage, defaultSettings.maintenanceMessage),
+  orderPrefix: toSafeString(value?.orderPrefix, defaultSettings.orderPrefix).toUpperCase().replace(/\s+/g, ""),
+  invoicePrefix: toSafeString(value?.invoicePrefix, defaultSettings.invoicePrefix).toUpperCase().replace(/\s+/g, ""),
+  invoiceFooterNote: toSafeString(value?.invoiceFooterNote, defaultSettings.invoiceFooterNote),
+  invoiceDeclaration: toSafeString(value?.invoiceDeclaration, defaultSettings.invoiceDeclaration),
+  shippingFee: toSafeNumber(value?.shippingFee, defaultSettings.shippingFee),
+  freeShippingThreshold: toSafeNumber(value?.freeShippingThreshold, defaultSettings.freeShippingThreshold),
+  codMaxOrderValue: toSafeNumber(value?.codMaxOrderValue, defaultSettings.codMaxOrderValue),
+  codDisabledPincodes: typeof value?.codDisabledPincodes === "string" ? value.codDisabledPincodes : defaultSettings.codDisabledPincodes,
+  returnWindowDays: Math.max(0, Math.min(30, Math.round(toSafeNumber(value?.returnWindowDays, defaultSettings.returnWindowDays)))),
+  maintenanceMode: toSafeBoolean(value?.maintenanceMode, defaultSettings.maintenanceMode),
+  allowGuestCheckout: toSafeBoolean(value?.allowGuestCheckout, defaultSettings.allowGuestCheckout),
+  showSupportBanner: toSafeBoolean(value?.showSupportBanner, defaultSettings.showSupportBanner)
+});
+
 const environmentRows = (settings: SettingsState) => [
   { label: "Brand", value: settings.siteName || "PurjiX" },
   { label: "Order prefix", value: settings.orderPrefix || "PJX" },
@@ -111,7 +161,7 @@ export function AdminSettingsPage() {
       try {
         const response = await api.get("/admin/settings", authHeaders(token));
         if (!cancelled) {
-          const nextSettings = { ...defaultSettings, ...response.data };
+          const nextSettings = normalizeSettings(response.data);
           setSettings(nextSettings);
           setSavedSettings(nextSettings);
         }
@@ -185,8 +235,9 @@ export function AdminSettingsPage() {
 
     setIsSaving(true);
     try {
-      const response = await api.put("/admin/settings", settings, authHeaders(token));
-      const nextSettings = { ...defaultSettings, ...response.data };
+      const payload = normalizeSettings(settings);
+      const response = await api.put("/admin/settings", payload, authHeaders(token));
+      const nextSettings = normalizeSettings(response.data);
       setSettings(nextSettings);
       setSavedSettings(nextSettings);
       toast.success("Settings saved");
