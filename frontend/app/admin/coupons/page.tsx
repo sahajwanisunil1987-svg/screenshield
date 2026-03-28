@@ -178,7 +178,10 @@ export default function AdminCouponsPage() {
                     checked={form.isActive}
                     onChange={(event) => setForm((state) => ({ ...state, isActive: event.target.checked }))}
                   />
-                  Active coupon
+                  <span>
+                    <span className="block font-medium">Active coupon</span>
+                    <span className="block text-xs text-white/55">Inactive coupons stay in admin, but customers cannot apply them at checkout.</span>
+                  </span>
                 </label>
               </div>
               <div className="flex flex-wrap items-center gap-3">
