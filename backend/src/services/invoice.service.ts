@@ -5,8 +5,8 @@ import { ensureAppSettings } from "./app-settings.service.js";
 
 const formatCurrency = (value: number) => `INR ${value.toFixed(2)}`;
 const formatDate = (value: Date | string) => new Date(value).toLocaleDateString("en-IN", { dateStyle: "medium" });
-const PAGE_BOTTOM = 700;
-const FOOTER_Y = 760;
+const PAGE_BOTTOM = 730;
+const FOOTER_Y = 780;
 const INVOICE_IMAGE_SIZE = 28;
 
 const drawLabelValue = (doc: PDFKit.PDFDocument, label: string, value: string, x: number, y: number, width = 220) => {
@@ -174,7 +174,7 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
     doc.text("Amount", columns.amount, y - 3);
   };
 
-  doc.roundedRect(40, 34, 515, 86, 18).fill("#08111f");
+  doc.roundedRect(40, 34, 515, 82, 18).fill("#08111f");
   if (companyLogoBuffer) {
     try {
       doc.roundedRect(58, 52, 42, 42, 12).fill("#ffffff");
@@ -202,7 +202,7 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
     "Payment",
     order.paymentStatus,
     420,
-    132,
+    124,
     order.paymentStatus === "PAID" ? "#0f766e" : order.paymentStatus === "COD" ? "#92400e" : "#334155"
   );
   drawStatusBadge(
@@ -210,28 +210,28 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
     "Order",
     order.status,
     290,
-    132,
+    124,
     order.status === "DELIVERED" ? "#166534" : order.status === "CANCELLED" ? "#991b1b" : "#1d4ed8"
   );
 
-  drawSectionCard(doc, 40, 180, 165, 118, "Invoice Summary");
-  drawSectionCard(doc, 215, 180, 165, 118, "Billing Contact");
-  drawSectionCard(doc, 390, 180, 165, 118, "Order Address");
+  drawSectionCard(doc, 40, 168, 165, 108, "Invoice Summary");
+  drawSectionCard(doc, 215, 168, 165, 108, "Billing Contact");
+  drawSectionCard(doc, 390, 168, 165, 108, "Order Address");
 
-  drawLabelValue(doc, "Invoice No", order.invoice.invoiceNumber, 54, 208, 135);
-  drawLabelValue(doc, "Order No", order.orderNumber, 54, 246, 135);
-  drawLabelValue(doc, "Invoice Date", formatDate(order.invoice.createdAt), 54, 270, 135);
-  drawAddressLines(doc, billingContactLines, 229, 208, 137);
-  drawAddressLines(doc, orderAddressLines, 404, 208, 137);
-  drawLabelValue(doc, "Supply Type", "Domestic taxable supply", 229, 270, 137);
-  drawLabelValue(doc, "Currency", "INR", 404, 270, 137);
+  drawLabelValue(doc, "Invoice No", order.invoice.invoiceNumber, 54, 194, 135);
+  drawLabelValue(doc, "Order No", order.orderNumber, 54, 228, 135);
+  drawLabelValue(doc, "Invoice Date", formatDate(order.invoice.createdAt), 54, 252, 135);
+  drawAddressLines(doc, billingContactLines, 229, 194, 137);
+  drawAddressLines(doc, orderAddressLines, 404, 194, 137);
+  drawLabelValue(doc, "Supply Type", "Domestic taxable supply", 229, 246, 137);
+  drawLabelValue(doc, "Currency", "INR", 404, 246, 137);
 
-  const tableTop = 318;
+  const tableTop = 294;
   drawTableHeader(tableTop);
 
   let y = tableTop + 24;
   order.items.forEach((item, index) => {
-    const rowHeight = item.variantLabel ? 42 : 36;
+    const rowHeight = item.variantLabel ? 38 : 32;
     if (y + rowHeight > PAGE_BOTTOM) {
       doc.addPage();
       drawTableHeader(60);
@@ -264,7 +264,7 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
     }
     doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(10).text(item.productName, textX, y, { width: 142 });
     if (item.variantLabel) {
-      doc.font("Helvetica").fontSize(8).fillColor("#5b6474").text(`Variant: ${item.variantLabel}`, textX, y + 14, { width: 142 });
+      doc.font("Helvetica").fontSize(8).fillColor("#5b6474").text(`Variant: ${item.variantLabel}`, textX, y + 12, { width: 142 });
     }
     doc.font("Helvetica").fontSize(9).fillColor("#5b6474").text(itemHsnCode, columns.hsn, y + 1, { width: 48 });
     doc.text(item.productSku, columns.sku, y + 1, { width: 64 });
@@ -272,32 +272,32 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
     doc.text(`${itemGstRate.toFixed(0)}%`, columns.gst, y + 1, { width: 36 });
     doc.text(formatCurrency(lineTaxableValue), columns.taxable, y + 1, { width: 68 });
     doc.text(formatCurrency(grossValue), columns.amount, y + 1, { width: 60 });
-    y += rowHeight + 4;
+    y += rowHeight + 3;
   });
 
-  let summaryTop = y + 10;
-  const hsnBlockHeight = Math.max(56, hsnSummary.length * 18 + 34);
-  const summaryCardHeight = Math.max(150, hsnBlockHeight + 176);
-  if (summaryTop + summaryCardHeight + 84 > PAGE_BOTTOM) {
+  let summaryTop = y + 8;
+  const hsnBlockHeight = Math.max(52, hsnSummary.length * 16 + 30);
+  const summaryCardHeight = Math.max(138, hsnBlockHeight + 156);
+  if (summaryTop + summaryCardHeight + 68 > PAGE_BOTTOM) {
     doc.addPage();
     summaryTop = 60;
   }
 
-  drawSectionCard(doc, 305, summaryTop, 250, 150, "Tax Summary");
-  drawLabelValue(doc, "Taxable Value", formatCurrency(taxableValue), 319, summaryTop + 24, 200);
-  drawLabelValue(doc, "Shipping", formatCurrency(shipping), 319, summaryTop + 50, 200);
-  drawLabelValue(doc, cgstLabel, formatCurrency(cgst), 319, summaryTop + 76, 200);
-  drawLabelValue(doc, sgstLabel, formatCurrency(sgst), 319, summaryTop + 102, 200);
-  drawLabelValue(doc, "Amount Payable", formatCurrency(total), 319, summaryTop + 128, 200);
+  drawSectionCard(doc, 305, summaryTop, 250, 138, "Tax Summary");
+  drawLabelValue(doc, "Taxable Value", formatCurrency(taxableValue), 319, summaryTop + 22, 200);
+  drawLabelValue(doc, "Shipping", formatCurrency(shipping), 319, summaryTop + 46, 200);
+  drawLabelValue(doc, cgstLabel, formatCurrency(cgst), 319, summaryTop + 70, 200);
+  drawLabelValue(doc, sgstLabel, formatCurrency(sgst), 319, summaryTop + 94, 200);
+  drawLabelValue(doc, "Amount Payable", formatCurrency(total), 319, summaryTop + 118, 200);
 
-  doc.roundedRect(305, summaryTop + 162, 250, hsnBlockHeight, 12).fillAndStroke("#ffffff", "#d6dee8");
-  doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(10).text("HSN Tax Breakdown", 319, summaryTop + 174);
+  doc.roundedRect(305, summaryTop + 148, 250, hsnBlockHeight, 12).fillAndStroke("#ffffff", "#d6dee8");
+  doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(10).text("HSN Tax Breakdown", 319, summaryTop + 160);
   doc.font("Helvetica-Bold").fontSize(8).fillColor("#5b6474");
-  doc.text("HSN", 319, summaryTop + 192, { width: 44 });
-  doc.text("GST", 372, summaryTop + 192, { width: 28 });
-  doc.text("Taxable", 410, summaryTop + 192, { width: 52 });
-  doc.text("Tax", 490, summaryTop + 192, { width: 40 });
-  let hsnY = summaryTop + 208;
+  doc.text("HSN", 319, summaryTop + 178, { width: 44 });
+  doc.text("GST", 372, summaryTop + 178, { width: 28 });
+  doc.text("Taxable", 410, summaryTop + 178, { width: 52 });
+  doc.text("Tax", 490, summaryTop + 178, { width: 40 });
+  let hsnY = summaryTop + 194;
   doc.font("Helvetica").fontSize(8).fillColor("#08111f");
   hsnSummary.forEach((entry, index) => {
     if (index > 0) {
@@ -307,56 +307,56 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
     doc.text(`${entry.gstRate.toFixed(0)}%`, 372, hsnY, { width: 28 });
     doc.text(formatCurrency(entry.taxable), 410, hsnY, { width: 64 });
     doc.text(formatCurrency(entry.tax), 490, hsnY, { width: 45 });
-    hsnY += 18;
+    hsnY += 16;
   });
 
-  doc.roundedRect(40, summaryTop, 250, 150, 12).fillAndStroke("#f5f8fb", "#d6dee8");
+  doc.roundedRect(40, summaryTop, 250, 138, 12).fillAndStroke("#f5f8fb", "#d6dee8");
   doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(11).text("Invoice Notes", 54, summaryTop + 14);
   doc.font("Helvetica").fontSize(9).fillColor("#5b6474");
-  doc.text("Supply type: Domestic taxable supply", 54, summaryTop + 36);
-  doc.text("Currency: INR", 54, summaryTop + 52);
-  doc.text(`Payment mode: ${order.payment?.provider ?? order.paymentStatus}`, 54, summaryTop + 68);
-  doc.text(`Payment status: ${order.paymentStatus}`, 54, summaryTop + 84);
-  doc.text(`Order placed on: ${formatDate(order.createdAt)}`, 54, summaryTop + 100);
-  doc.text(`GST charged on order: blended effective ${gstRate.toFixed(1)}%`, 54, summaryTop + 116, { width: 210 });
+  doc.text("Supply type: Domestic taxable supply", 54, summaryTop + 34);
+  doc.text("Currency: INR", 54, summaryTop + 50);
+  doc.text(`Payment mode: ${order.payment?.provider ?? order.paymentStatus}`, 54, summaryTop + 66);
+  doc.text(`Payment status: ${order.paymentStatus}`, 54, summaryTop + 82);
+  doc.text(`Order placed on: ${formatDate(order.createdAt)}`, 54, summaryTop + 98);
+  doc.text(`GST charged on order: blended effective ${gstRate.toFixed(1)}%`, 54, summaryTop + 114, { width: 210 });
   if (order.notes) {
-    doc.text(`Notes: ${order.notes}`, 54, summaryTop + 132, { width: 210, lineGap: 1 });
+    doc.text(`Notes: ${order.notes}`, 54, summaryTop + 128, { width: 210, lineGap: 1 });
   }
 
-  const declarationTop = summaryTop + summaryCardHeight + 12;
-  if (declarationTop + 64 > PAGE_BOTTOM) {
+  const declarationTop = summaryTop + summaryCardHeight + 10;
+  if (declarationTop + 56 > PAGE_BOTTOM) {
     doc.addPage();
     const newDeclarationTop = 60;
-    doc.roundedRect(40, newDeclarationTop, 515, 64, 12).fillAndStroke("#ffffff", "#d6dee8");
+    doc.roundedRect(40, newDeclarationTop, 515, 56, 12).fillAndStroke("#ffffff", "#d6dee8");
     doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(11).text("Declaration", 54, newDeclarationTop + 12);
     doc.font("Helvetica").fontSize(8).fillColor("#5b6474").text(
       `${appSettings.invoiceDeclaration} This invoice is generated by ${env.COMPANY_LEGAL_NAME}.`,
       54,
-      newDeclarationTop + 28,
+      newDeclarationTop + 26,
       { width: 340, lineGap: 1 }
     );
     doc.font("Helvetica-Bold").fontSize(9).fillColor("#08111f").text(`For ${env.COMPANY_LEGAL_NAME}`, 412, newDeclarationTop + 16, {
       width: 120,
       align: "right"
     });
-    doc.font("Helvetica").fontSize(8).fillColor("#5b6474").text("Authorised Signatory", 412, newDeclarationTop + 42, {
+    doc.font("Helvetica").fontSize(8).fillColor("#5b6474").text("Authorised Signatory", 412, newDeclarationTop + 36, {
       width: 120,
       align: "right"
     });
   } else {
-    doc.roundedRect(40, declarationTop, 515, 64, 12).fillAndStroke("#ffffff", "#d6dee8");
+    doc.roundedRect(40, declarationTop, 515, 56, 12).fillAndStroke("#ffffff", "#d6dee8");
     doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(11).text("Declaration", 54, declarationTop + 12);
     doc.font("Helvetica").fontSize(8).fillColor("#5b6474").text(
       `${appSettings.invoiceDeclaration} This invoice is generated by ${env.COMPANY_LEGAL_NAME}.`,
       54,
-      declarationTop + 28,
+      declarationTop + 26,
       { width: 340, lineGap: 1 }
     );
     doc.font("Helvetica-Bold").fontSize(9).fillColor("#08111f").text(`For ${env.COMPANY_LEGAL_NAME}`, 412, declarationTop + 16, {
       width: 120,
       align: "right"
     });
-    doc.font("Helvetica").fontSize(8).fillColor("#5b6474").text("Authorised Signatory", 412, declarationTop + 42, {
+    doc.font("Helvetica").fontSize(8).fillColor("#5b6474").text("Authorised Signatory", 412, declarationTop + 36, {
       width: 120,
       align: "right"
     });

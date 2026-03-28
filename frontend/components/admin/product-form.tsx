@@ -807,7 +807,7 @@ export function ProductForm({ productId }: { productId?: string }) {
               {imagePreviewUrls.map((url, index) => (
                 <div key={`${url}-${index}`} className="overflow-hidden rounded-2xl border border-white/10 bg-black/20">
                   <div className="relative aspect-square">
-                    <Image src={url} alt={`Uploaded preview ${index + 1}`} fill className="object-cover" />
+                    <Image src={url} alt={`Uploaded preview ${index + 1}`} fill sizes="(max-width: 639px) 50vw, (max-width: 1279px) 33vw, 240px" className="object-cover" />
                     {index === 0 ? (
                       <span className="absolute left-2 top-2 rounded-full bg-accent px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white">Primary</span>
                     ) : null}

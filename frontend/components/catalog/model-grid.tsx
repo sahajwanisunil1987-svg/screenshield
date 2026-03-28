@@ -14,7 +14,7 @@ export function ModelGrid({ models }: { models: MobileModel[] }) {
           <div className="flex items-center gap-4">
             <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-slate-100">
               {model.imageUrl ? (
-                <Image src={model.imageUrl} alt={model.name} fill className="object-cover" />
+                <Image src={model.imageUrl} alt={model.name} fill sizes="64px" className="object-cover" />
               ) : (
                 <span className="text-lg font-semibold text-ink">{model.name.slice(0, 1)}</span>
               )}

@@ -10,7 +10,14 @@ export function BrandGrid({ brands }: { brands: Brand[] }) {
           <div className="flex items-center gap-4">
             <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-slate-100">
               {brand.logoUrl ? (
-                <Image src={brand.logoUrl} alt={`${brand.name} logo`} fill className="object-contain p-2" />
+                <Image
+                  src={brand.logoUrl}
+                  alt={`${brand.name} logo`}
+                  fill
+                  sizes="56px"
+                  unoptimized
+                  className="object-contain p-2"
+                />
               ) : (
                 <span className="text-lg font-semibold text-ink">{brand.name.slice(0, 1)}</span>
               )}

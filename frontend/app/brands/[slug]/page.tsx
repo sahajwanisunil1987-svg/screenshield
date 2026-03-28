@@ -63,7 +63,14 @@ export default async function BrandPage({ params }: BrandPageProps) {
           <div className="mt-6 grid gap-6 lg:grid-cols-[112px_minmax(0,1fr)] lg:items-center">
             <div className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50">
               {brand.logoUrl ? (
-                <Image src={brand.logoUrl} alt={`${brand.name} logo`} fill className="object-contain p-4" />
+                <Image
+                  src={brand.logoUrl}
+                  alt={`${brand.name} logo`}
+                  fill
+                  sizes="112px"
+                  unoptimized
+                  className="object-contain p-4"
+                />
               ) : (
                 <span className="text-4xl font-semibold text-ink">{brand.name.slice(0, 1)}</span>
               )}
@@ -108,7 +115,7 @@ export default async function BrandPage({ params }: BrandPageProps) {
                   <div className="flex items-center gap-4">
                     <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-slate-100">
                       {model.imageUrl ? (
-                        <Image src={model.imageUrl} alt={model.name} fill className="object-cover" />
+                        <Image src={model.imageUrl} alt={model.name} fill sizes="64px" className="object-cover" />
                       ) : (
                         <span className="text-lg font-semibold text-ink">{model.name.slice(0, 1)}</span>
                       )}

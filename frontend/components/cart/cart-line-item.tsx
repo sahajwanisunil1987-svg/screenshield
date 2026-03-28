@@ -16,7 +16,13 @@ export function CartLineItem({ item, onDecrease, onIncrease, onRemove }: CartLin
   return (
     <div className="theme-surface grid gap-4 rounded-[28px] p-5 sm:grid-cols-[110px_1fr] xl:grid-cols-[110px_1fr_auto]">
       <div className="relative h-28 overflow-hidden rounded-2xl bg-slate-100">
-        <Image src={item.imageUrl ?? item.product.images[0]?.url ?? "https://placehold.co/300x300"} alt={item.product.name} fill className="object-cover" />
+        <Image
+          src={item.imageUrl ?? item.product.images[0]?.url ?? "https://placehold.co/300x300"}
+          alt={item.product.name}
+          fill
+          sizes="110px"
+          className="object-cover"
+        />
       </div>
       <div>
         <h2 className="text-lg font-semibold text-ink">{item.product.name}</h2>

@@ -63,6 +63,7 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
                   src={activeItem.url}
                   alt={activeItem.alt ?? productName}
                   fill
+                  sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 640px"
                   className="object-contain p-4 transition duration-300 ease-out sm:p-5"
                   style={{
                     transform: isZoomed ? "scale(1.75)" : "scale(1)",
@@ -82,6 +83,7 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
                   src={activeItem.url}
                   alt={activeItem.alt ?? productName}
                   fill
+                  sizes="100vw"
                   className="object-contain p-3 transition duration-500 group-hover:scale-[1.04]"
                 />
               </button>
@@ -122,7 +124,7 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
                 {item.type === "video" ? (
                   <div className="relative z-[1] flex h-full w-full items-center justify-center bg-black text-[10px] font-semibold uppercase tracking-[0.18em] text-white">Video</div>
                 ) : (
-                  <Image src={item.url} alt={item.alt ?? productName} fill className="object-contain p-1.5" />
+                  <Image src={item.url} alt={item.alt ?? productName} fill sizes="80px" className="object-contain p-1.5" />
                 )}
               </button>
             );

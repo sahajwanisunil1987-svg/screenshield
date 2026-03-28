@@ -272,29 +272,37 @@ export function TrackOrderPageClient() {
                     <span className="rounded-full bg-sky-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-sky-300">Returned</span>
                   ) : null}
                 </div>
-                <div className="mt-5 grid gap-3 lg:grid-cols-5">
+                <div className="mt-5 flex gap-3 overflow-x-auto pb-2">
                   {shipmentTimeline.map((step, index) => (
                     <div
                       key={step.key}
-                      className={`relative min-w-0 rounded-[24px] border p-4 ${
+                      className={`relative min-w-[220px] flex-1 rounded-[24px] border p-4 ${
                         step.current
-                          ? "border-accent/30 bg-accentSoft"
+                          ? "border-accent bg-accent text-white shadow-card"
                           : step.reached
                             ? "border-emerald-400/20 bg-emerald-500/12"
                             : "border-slate-200 bg-panel"
                       }`}
                     >
                       {index < shipmentTimeline.length - 1 ? (
-                        <div className="absolute -right-2 top-8 hidden h-px w-4 bg-slate-300 lg:block" />
+                        <div className={`absolute -right-2 top-8 h-px w-4 ${step.current ? "bg-accent/60" : "bg-slate-300"}`} />
                       ) : null}
                       <div className="flex items-start gap-3">
-                        <div className={`mt-0.5 rounded-full p-2 ${step.current ? "bg-accent text-white" : step.reached ? "bg-emerald-500 text-white" : "bg-white/90 text-slate-400"}`}>
+                        <div
+                          className={`mt-0.5 rounded-full p-2 ${
+                            step.current
+                              ? "bg-white/15 text-white ring-1 ring-white/20"
+                              : step.reached
+                                ? "bg-emerald-500 text-white"
+                                : "bg-white/90 text-slate-400"
+                          }`}
+                        >
                           {step.reached ? <CheckCircle2 className="h-4 w-4" /> : <CircleDotDashed className="h-4 w-4" />}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate">{step.label}</p>
-                          <p className="mt-2 text-sm font-medium text-ink">{step.description}</p>
-                          <p className="mt-3 text-xs text-slate">
+                          <p className={`text-xs font-semibold uppercase tracking-[0.16em] ${step.current ? "text-white/80" : "text-slate"}`}>{step.label}</p>
+                          <p className={`mt-2 text-sm font-medium leading-7 ${step.current ? "text-white" : "text-ink"}`}>{step.description}</p>
+                          <p className={`mt-3 text-xs ${step.current ? "text-white/75" : "text-slate"}`}>
                             {step.timestamp ? formatDateTime(step.timestamp) : step.reached ? "Updated" : "Pending"}
                           </p>
                         </div>
