@@ -4,7 +4,7 @@ import Link from "next/link";
 import { HeroSearch } from "@/components/home/hero-search";
 import { PageShell } from "@/components/layout/page-shell";
 import { SponsorBanner } from "@/components/marketing/sponsor-banner";
-import { fetchApiOrFallback } from "@/lib/server-api";
+import { fetchApi, fetchApiOrFallback } from "@/lib/server-api";
 import { buildMetadata } from "@/lib/seo";
 import { getSponsorByPlacement } from "@/lib/sponsor-config";
 import { Brand, Category, MobileModel, SponsorAd } from "@/types";
@@ -60,13 +60,18 @@ export const metadata: Metadata = buildMetadata({
 
 
 export default async function HomePage() {
-  const [brands, categories, models, remoteSponsor] = await Promise.all([
+  const [brands, categories, models] = await Promise.all([
     fetchApiOrFallback<Brand[]>("/brands", []),
     fetchApiOrFallback<Category[]>("/categories", []),
-    fetchApiOrFallback<MobileModel[]>("/models", []),
-    fetchApiOrFallback<SponsorAd | null>("/sponsors/home_primary", null)
+    fetchApiOrFallback<MobileModel[]>("/models", [])
   ]);
-  const homeSponsor = remoteSponsor ?? getSponsorByPlacement("home_primary");
+  let homeSponsor: SponsorAd | null = null;
+
+  try {
+    homeSponsor = await fetchApi<SponsorAd | null>("/sponsors/home_primary");
+  } catch {
+    homeSponsor = getSponsorByPlacement("home_primary");
+  }
 
   return (
     <PageShell>

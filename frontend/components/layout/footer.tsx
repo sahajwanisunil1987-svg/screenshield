@@ -49,7 +49,7 @@ const footerFallbackSettings: Required<FooterSettings> = {
 
 export function Footer() {
   const [settings, setSettings] = useState(footerFallbackSettings);
-  const [footerSponsor, setFooterSponsor] = useState<SponsorAd | null>(getSponsorByPlacement("footer_partner"));
+  const [footerSponsor, setFooterSponsor] = useState<SponsorAd | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,11 +58,11 @@ export function Footer() {
       try {
         const [settingsResponse, sponsorResponse] = await Promise.all([
           api.get("/settings/app"),
-          api.get("/sponsors/footer_partner").catch(() => ({ data: null }))
+          api.get("/sponsors/footer_partner")
         ]);
         if (!cancelled) {
           setSettings({ ...footerFallbackSettings, ...settingsResponse.data });
-          setFooterSponsor(sponsorResponse.data ?? getSponsorByPlacement("footer_partner"));
+          setFooterSponsor(sponsorResponse.data ?? null);
         }
       } catch {
         if (!cancelled) {

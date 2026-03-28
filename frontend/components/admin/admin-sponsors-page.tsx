@@ -203,7 +203,10 @@ export function AdminSponsorsPage() {
             checked={Boolean(form.isActive)}
             onChange={(event) => setForm((state) => ({ ...state, isActive: event.target.checked }))}
           />
-          Active
+          <span>
+            <span className="block font-medium">Active</span>
+            <span className="block text-xs text-white/55">Turns the sponsor on or off. Start/end dates can still keep it hidden.</span>
+          </span>
         </label>
       </div>
 
