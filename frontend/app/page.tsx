@@ -84,28 +84,30 @@ export default async function HomePage() {
   return (
     <PageShell>
       <section className="bg-hero-grid text-white">
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-          <div className="max-w-3xl">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-teal-200 sm:text-sm">Mobile spare parts made easy</p>
-            <h1 className="mt-3 font-display text-[2.35rem] leading-[1.02] sm:mt-4 sm:text-4xl">
-              {appSettings.heroHeading || "Find the right spare part in three quick steps."}
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/72 sm:mt-4 sm:text-base">
-              {appSettings.heroSubheading || "Choose the brand, pick the model, then open batteries, displays, charging parts, cameras, and more."}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80 sm:mt-5 sm:text-xs">
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Brand to model flow</span>
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Repair-shop friendly</span>
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Fast part discovery</span>
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-14">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="max-w-3xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-teal-200 sm:text-sm">Mobile spare parts made easy</p>
+              <h1 className="mt-3 font-display text-[2.35rem] leading-[1.02] sm:mt-4 sm:text-4xl lg:max-w-2xl">
+                {appSettings.heroHeading || "Find the right spare part in three quick steps."}
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/72 sm:mt-4 sm:text-base">
+                {appSettings.heroSubheading || "Choose the brand, pick the model, then open batteries, displays, charging parts, cameras, and more."}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80 sm:mt-5 sm:text-xs">
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Brand to model flow</span>
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Repair-shop friendly</span>
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Fast part discovery</span>
+              </div>
             </div>
             {appSettings.showSupportBanner ? (
-              <div className="mt-4 max-w-2xl rounded-2xl border border-teal-300/15 bg-teal-400/10 px-4 py-3 text-sm text-teal-50/90 sm:mt-5">
+              <div className="rounded-[24px] border border-teal-300/15 bg-teal-400/10 px-5 py-4 text-sm text-teal-50/90 shadow-[0_18px_40px_rgba(8,17,31,0.18)]">
                 <p className="font-semibold uppercase tracking-[0.18em] text-teal-100/75">{appSettings.siteName || "PurjiX"} support</p>
-                <p className="mt-1.5 leading-6">{appSettings.supportBannerText || appSettings.announcementText || "WhatsApp support available for urgent part checks and bulk buying."}</p>
+                <p className="mt-2 leading-6">{appSettings.supportBannerText || appSettings.announcementText || "WhatsApp support available for urgent part checks and bulk buying."}</p>
               </div>
             ) : null}
           </div>
-          <div className="mt-6 max-w-5xl sm:mt-8">
+          <div className="mt-6 max-w-5xl sm:mt-7">
             <HeroSearch brands={brands} models={models} categories={categories} />
           </div>
         </div>

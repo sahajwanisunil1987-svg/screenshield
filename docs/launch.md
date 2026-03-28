@@ -1,5 +1,19 @@
 # PurjiX Go-Live Checklist
 
+## Smoke Testing Policy
+
+- Live environment: read-only smoke only
+  - Observe and verify only
+  - No destructive actions
+  - No bulk edits
+  - No test cleanups directly on production data unless explicitly required
+- Localhost environment: real smoke
+  - Login, cart, checkout, payment, bulk upload, admin actions, and bug reproduction should be tested locally first
+  - Reproduce and fix issues locally before touching live
+- Working rule
+  - Live = observe
+  - Localhost = experiment
+
 ## Critical
 
 - Confirm auth refresh works on Render
@@ -30,7 +44,7 @@
 - Set strong secrets on Render
   - `JWT_SECRET`
   - `JWT_REFRESH_SECRET`
-- Confirm backend `FRONTEND_URL` matches the exact Vercel frontend URL
+- Confirm backend `FRONTEND_URL` matches the exact production frontend URL
 - Confirm `SITE_URL` and `NEXT_PUBLIC_SITE_URL` are correct
 - Confirm rate limiting is active on auth, search, order, payment, and upload endpoints
 - Confirm abuse protection thresholds suit real traffic
@@ -60,7 +74,7 @@
 - Confirm `/api/health` is returning DB-up status in production
 - Add a database backup and recovery plan
 - Add a deployment rollback plan
-- Document Render and Vercel environment variables and deployment steps
+- Document Render environment variables and deployment steps
   - See [operations.md](/home/mistermobiletriveni/screen/screenshield/docs/operations.md)
 
 ## Data
@@ -175,7 +189,7 @@ Mark each item `PASS` or `FAIL` during final release validation.
 - [ ] No network errors in browser console
 - [ ] No production-breaking console errors
 - [ ] Render production schema is in sync
-- [ ] Vercel frontend is on latest deploy
+- [ ] Render frontend is on latest deploy
 - [ ] Render backend is on latest deploy
 
 ### Payments
