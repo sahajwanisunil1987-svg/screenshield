@@ -12,6 +12,7 @@ type MaintenanceSettings = {
   supportWhatsapp: string;
   supportHours: string;
   announcementText: string;
+  maintenanceMessage: string;
   maintenanceMode: boolean;
 };
 
@@ -22,6 +23,7 @@ const fallbackSettings: MaintenanceSettings = {
   supportWhatsapp: "+91 99999 99999",
   supportHours: "Mon-Sat, 10 AM to 7 PM",
   announcementText: "We are improving the storefront experience.",
+  maintenanceMessage: "We are updating the storefront and will be back shortly.",
   maintenanceMode: false
 };
 
@@ -123,7 +125,7 @@ export function MaintenanceGate({ children }: { children: ReactNode }) {
 
           <p className="mt-6 text-sm font-semibold uppercase tracking-[0.28em] text-teal-200/80">{settings.siteName}</p>
           <h1 className="mt-4 max-w-3xl font-display text-4xl leading-tight sm:text-5xl">
-            We are updating the storefront and will be back shortly.
+            {settings.maintenanceMessage || "We are updating the storefront and will be back shortly."}
           </h1>
           <p className="mt-5 max-w-3xl text-base leading-7 text-white/72 sm:text-lg">
             {settings.announcementText || "We are improving the storefront experience."} You can still reach the team for urgent help while storefront browsing is temporarily paused.

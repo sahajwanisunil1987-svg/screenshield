@@ -1,8 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { Globe, Layers3, LifeBuoy, RotateCcw, Save, ShieldCheck, ShoppingBag, Sparkles } from "lucide-react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
+import {
+  Globe,
+  Layers3,
+  LifeBuoy,
+  MessageSquare,
+  RotateCcw,
+  Save,
+  ShieldCheck,
+  ShoppingBag,
+  Sparkles,
+  Store,
+  Truck
+} from "lucide-react";
 import { toast } from "sonner";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { Button } from "@/components/ui/button";
@@ -13,28 +25,28 @@ import { useAuthStore } from "@/store/auth-store";
 const appCards = [
   {
     title: "Storefront",
-    description: "Review customer-facing routes and check branding, navigation, and product discovery flows.",
+    description: "Check live branding, homepage messaging, search, and customer-facing flows.",
     href: "/",
     action: "Open storefront",
     icon: Globe
   },
   {
     title: "Catalog setup",
-    description: "Manage brands, models, and categories from the existing admin tools.",
+    description: "Manage brands, models, and categories when settings need catalog support.",
     href: "/admin/brands",
     action: "Manage catalog",
     icon: Layers3
   },
   {
     title: "Operations",
-    description: "Handle orders, inventory, and purchase workflows from the core admin modules.",
+    description: "Go straight into orders, inventory, and purchase workflows from here.",
     href: "/admin/orders",
     action: "Open operations",
     icon: ShoppingBag
   },
   {
     title: "Support",
-    description: "Track support inbox activity and help customers from the admin panel.",
+    description: "Handle support tickets and keep buyer communication aligned with storefront settings.",
     href: "/admin/support",
     action: "Open support",
     icon: LifeBuoy
@@ -53,11 +65,14 @@ const defaultSettings = {
   heroHeading: "Mobile spare parts, faster sourcing, cleaner checkout.",
   heroSubheading: "Use admin settings to keep storefront branding and support details consistent.",
   announcementText: "Free shipping above Rs. 999",
+  supportBannerText: "WhatsApp support available for urgent part checks and bulk buying.",
+  maintenanceMessage: "We are updating the storefront and will be back shortly.",
   orderPrefix: "PJX",
   shippingFee: 79,
   freeShippingThreshold: 999,
   codMaxOrderValue: 5000,
   codDisabledPincodes: "",
+  returnWindowDays: 7,
   maintenanceMode: false,
   allowGuestCheckout: true,
   showSupportBanner: true
@@ -181,32 +196,20 @@ export function AdminSettingsPage() {
 
   return (
     <AdminShell title="Settings">
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+      <div className="grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
         <section className="space-y-6">
           <div className="rounded-[28px] border border-white/10 bg-white/5 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.16)] backdrop-blur">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-start gap-4">
                 <div className="rounded-2xl bg-white/10 p-3 text-teal-100">
                   <ShieldCheck className="h-6 w-6" />
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/80">Admin settings</p>
-                  <h3 className="mt-2 font-display text-3xl text-white">Store configuration</h3>
+                  <h3 className="mt-2 font-display text-3xl text-white">Store control room</h3>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70">
-                    Update core PurjiX branding, support details, and homepage messaging from one place. Changes now
-                    persist through the admin API.
+                    Keep branding, storefront copy, support info, shipping rules, and maintenance messaging aligned from one page.
                   </p>
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${isDirty ? "bg-amber-500/15 text-amber-100" : "bg-emerald-500/15 text-emerald-100"}`}>
-                      {isDirty ? "Unsaved changes" : "All changes saved"}
-                    </span>
-                    <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/75">
-                      Order prefix: {settings.orderPrefix}
-                    </span>
-                    <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/75">
-                      Free shipping above Rs. {settings.freeShippingThreshold}
-                    </span>
-                  </div>
                 </div>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -215,211 +218,209 @@ export function AdminSettingsPage() {
                   variant="ghost"
                   onClick={resetToSaved}
                   disabled={isLoading || isSaving || !isDirty}
-                  className="gap-2 self-start whitespace-nowrap"
+                  className="gap-2 whitespace-nowrap"
                 >
                   <RotateCcw className="h-4 w-4" />
                   Undo changes
                 </Button>
-                <Button
-                  type="button"
-                  onClick={() => void saveSettings()}
-                  disabled={isLoading || isSaving}
-                  className="gap-2 self-start whitespace-nowrap"
-                >
+                <Button type="button" onClick={() => void saveSettings()} disabled={isLoading || isSaving} className="gap-2 whitespace-nowrap">
                   <Save className="h-4 w-4" />
                   {isSaving ? "Saving..." : "Save settings"}
                 </Button>
               </div>
             </div>
 
-            <div className="mt-8 grid gap-6 lg:grid-cols-2">
-              <div className="space-y-4 rounded-[24px] border border-white/10 bg-white/5 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-200/80">Branding</p>
-                <Input
-                  value={settings.siteName}
-                  onChange={(event) => updateField("siteName", event.target.value)}
-                  placeholder="Site name"
-                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
-                  disabled={isLoading}
-                />
-                <Input
-                  value={settings.legalName}
-                  onChange={(event) => updateField("legalName", event.target.value)}
-                  placeholder="Legal name"
-                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
-                  disabled={isLoading}
-                />
-                <Input
-                  value={settings.announcementText}
-                  onChange={(event) => updateField("announcementText", event.target.value)}
-                  placeholder="Announcement banner text"
-                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
-                  disabled={isLoading}
-                />
-                <Input
-                  value={settings.orderPrefix}
-                  onChange={(event) => updateField("orderPrefix", event.target.value.toUpperCase().replace(/\s+/g, ""))}
-                  placeholder="Order prefix"
-                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
-                  disabled={isLoading}
-                />
-                <Input
-                  type="number"
-                  value={String(settings.freeShippingThreshold)}
-                  onChange={(event) => updateField("freeShippingThreshold", Number(event.target.value || 0))}
-                  placeholder="Free shipping threshold"
-                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div className="space-y-4 rounded-[24px] border border-white/10 bg-white/5 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-200/80">Support</p>
-                <Input
-                  value={settings.supportEmail}
-                  onChange={(event) => updateField("supportEmail", event.target.value)}
-                  placeholder="Support email"
-                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
-                  disabled={isLoading}
-                />
-                <Input
-                  value={settings.supportPhone}
-                  onChange={(event) => updateField("supportPhone", event.target.value)}
-                  placeholder="Support phone"
-                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
-                  disabled={isLoading}
-                />
-                <Input
-                  value={settings.supportWhatsapp}
-                  onChange={(event) => updateField("supportWhatsapp", event.target.value)}
-                  placeholder="WhatsApp number"
-                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
-                  disabled={isLoading}
-                />
-                <Input
-                  value={settings.supportHours}
-                  onChange={(event) => updateField("supportHours", event.target.value)}
-                  placeholder="Support hours"
-                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
-                  disabled={isLoading}
-                />
-                <Input
-                  type="number"
-                  value={String(settings.shippingFee)}
-                  onChange={(event) => updateField("shippingFee", Number(event.target.value || 0))}
-                  placeholder="Shipping fee"
-                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-6 lg:grid-cols-2">
-              <div className="space-y-4 rounded-[24px] border border-white/10 bg-white/5 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-200/80">Address</p>
-                <Input
-                  value={settings.addressLine1}
-                  onChange={(event) => updateField("addressLine1", event.target.value)}
-                  placeholder="Address line 1"
-                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
-                  disabled={isLoading}
-                />
-                <Input
-                  value={settings.addressLine2}
-                  onChange={(event) => updateField("addressLine2", event.target.value)}
-                  placeholder="Address line 2"
-                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
-                  disabled={isLoading}
-                />
-                <Input
-                  type="number"
-                  value={String(settings.codMaxOrderValue)}
-                  onChange={(event) => updateField("codMaxOrderValue", Number(event.target.value || 0))}
-                  placeholder="COD max order value"
-                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div className="space-y-4 rounded-[24px] border border-white/10 bg-white/5 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-200/80">Homepage copy</p>
-                <textarea
-                  value={settings.heroHeading}
-                  onChange={(event) => updateField("heroHeading", event.target.value)}
-                  placeholder="Hero heading"
-                  rows={3}
-                  disabled={isLoading}
-                  className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-teal-300 disabled:opacity-70"
-                />
-                <textarea
-                  value={settings.heroSubheading}
-                  onChange={(event) => updateField("heroSubheading", event.target.value)}
-                  placeholder="Hero subheading"
-                  rows={4}
-                  disabled={isLoading}
-                  className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-teal-300 disabled:opacity-70"
-                />
-                <Input
-                  value={settings.codDisabledPincodes}
-                  onChange={(event) => updateField("codDisabledPincodes", event.target.value)}
-                  placeholder="Blocked COD pincodes (comma separated)"
-                  className="border-white/10 bg-white/10 text-white placeholder:text-white/35"
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            <div className="mt-6 rounded-[24px] border border-white/10 bg-white/5 p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-200/80">Feature toggles</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                {[
-                  {
-                    key: "maintenanceMode" as const,
-                    label: "Maintenance mode",
-                    description: "Use when you want to pause storefront updates."
-                  },
-                  {
-                    key: "allowGuestCheckout" as const,
-                    label: "Guest checkout",
-                    description: "Keep checkout open without forced login."
-                  },
-                  {
-                    key: "showSupportBanner" as const,
-                    label: "Support banner",
-                    description: "Keep quick support visibility on the storefront."
-                  }
-                ].map((toggle) => (
-                  <button
-                    key={toggle.key}
-                    type="button"
-                    onClick={() => updateField(toggle.key, !settings[toggle.key])}
-                    disabled={isLoading}
-                    className={`rounded-[22px] border px-4 py-4 text-left transition disabled:cursor-not-allowed disabled:opacity-70 ${
-                      settings[toggle.key]
-                        ? "border-teal-300/50 bg-teal-500/15 text-white"
-                        : "border-white/10 bg-white/5 text-white/75 hover:bg-white/10"
-                    }`}
-                  >
-                    <p className="text-sm font-semibold">{toggle.label}</p>
-                    <p className="mt-2 text-xs leading-5 text-white/60">{toggle.description}</p>
-                  </button>
-                ))}
-              </div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <SummaryCard label="State" value={isDirty ? "Unsaved changes" : "All changes saved"} tone={isDirty ? "amber" : "emerald"} />
+              <SummaryCard label="Shipping" value={`Rs. ${settings.shippingFee}`} hint={`Free above Rs. ${settings.freeShippingThreshold}`} tone="cyan" />
+              <SummaryCard label="COD" value={`Rs. ${settings.codMaxOrderValue}`} hint={`${settings.returnWindowDays} day return window`} tone="white" />
+              <SummaryCard label="Mode" value={settings.maintenanceMode ? "Maintenance ON" : "Store live"} hint={`Prefix ${settings.orderPrefix}`} tone={settings.maintenanceMode ? "amber" : "white"} />
             </div>
           </div>
 
-          <section className="rounded-[28px] border border-white/10 bg-white/5 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.16)] backdrop-blur">
-            <div className="flex items-start gap-4">
-              <div className="rounded-2xl bg-white/10 p-3 text-teal-100">
-                <Globe className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/80">Quick links</p>
-                <h3 className="mt-2 font-display text-2xl text-white">Operational shortcuts</h3>
-              </div>
+          <SectionCard
+            eyebrow="Store identity"
+            title="Branding and storefront copy"
+            description="These fields power the homepage message, trust strips, maintenance screen, and support surfaces."
+            icon={Store}
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <LabeledInput
+                label="Site name"
+                hint="Short customer-facing brand name."
+                value={settings.siteName}
+                onChange={(value) => updateField("siteName", value)}
+                disabled={isLoading}
+              />
+              <LabeledInput
+                label="Legal name"
+                hint="Long-form business/legal label."
+                value={settings.legalName}
+                onChange={(value) => updateField("legalName", value)}
+                disabled={isLoading}
+              />
+              <LabeledInput
+                label="Announcement text"
+                hint="Used for quick promo or dispatch update messaging."
+                value={settings.announcementText}
+                onChange={(value) => updateField("announcementText", value)}
+                disabled={isLoading}
+              />
+              <LabeledInput
+                label="Order prefix"
+                hint="Used in generated order numbers."
+                value={settings.orderPrefix}
+                onChange={(value) => updateField("orderPrefix", value.toUpperCase().replace(/\s+/g, ""))}
+                disabled={isLoading}
+              />
             </div>
+            <div className="mt-4 grid gap-4">
+              <LabeledTextarea
+                label="Hero heading"
+                hint="Main homepage headline."
+                value={settings.heroHeading}
+                onChange={(value) => updateField("heroHeading", value)}
+                rows={3}
+                disabled={isLoading}
+              />
+              <LabeledTextarea
+                label="Hero subheading"
+                hint="Short supporting copy below the main headline."
+                value={settings.heroSubheading}
+                onChange={(value) => updateField("heroSubheading", value)}
+                rows={4}
+                disabled={isLoading}
+              />
+              <LabeledTextarea
+                label="Support banner text"
+                hint="Shows on homepage when support banner is enabled."
+                value={settings.supportBannerText}
+                onChange={(value) => updateField("supportBannerText", value)}
+                rows={3}
+                disabled={isLoading}
+              />
+              <LabeledTextarea
+                label="Maintenance message"
+                hint="Main headline shown on the maintenance screen."
+                value={settings.maintenanceMessage}
+                onChange={(value) => updateField("maintenanceMessage", value)}
+                rows={3}
+                disabled={isLoading}
+              />
+            </div>
+          </SectionCard>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <SectionCard
+            eyebrow="Support desk"
+            title="Support and contact details"
+            description="Keep footer, maintenance mode, and support-facing touchpoints consistent."
+            icon={MessageSquare}
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <LabeledInput label="Support email" value={settings.supportEmail} onChange={(value) => updateField("supportEmail", value)} disabled={isLoading} />
+              <LabeledInput label="Support phone" value={settings.supportPhone} onChange={(value) => updateField("supportPhone", value)} disabled={isLoading} />
+              <LabeledInput label="WhatsApp number" value={settings.supportWhatsapp} onChange={(value) => updateField("supportWhatsapp", value)} disabled={isLoading} />
+              <LabeledInput label="Support hours" value={settings.supportHours} onChange={(value) => updateField("supportHours", value)} disabled={isLoading} />
+              <LabeledInput
+                label="Address line 1"
+                value={settings.addressLine1}
+                onChange={(value) => updateField("addressLine1", value)}
+                disabled={isLoading}
+              />
+              <LabeledInput
+                label="Address line 2"
+                value={settings.addressLine2}
+                onChange={(value) => updateField("addressLine2", value)}
+                disabled={isLoading}
+              />
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            eyebrow="Fulfilment"
+            title="Shipping, COD, and returns"
+            description="Set the commercial rules buyers see at cart, checkout, and order handling."
+            icon={Truck}
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <LabeledNumberInput
+                label="Shipping fee"
+                hint="Standard shipping charge below free-shipping threshold."
+                value={settings.shippingFee}
+                onChange={(value) => updateField("shippingFee", value)}
+                disabled={isLoading}
+              />
+              <LabeledNumberInput
+                label="Free shipping threshold"
+                hint="Orders above this amount get free shipping."
+                value={settings.freeShippingThreshold}
+                onChange={(value) => updateField("freeShippingThreshold", value)}
+                disabled={isLoading}
+              />
+              <LabeledNumberInput
+                label="COD max order value"
+                hint="Above this amount, COD should stay unavailable."
+                value={settings.codMaxOrderValue}
+                onChange={(value) => updateField("codMaxOrderValue", value)}
+                disabled={isLoading}
+              />
+              <LabeledNumberInput
+                label="Return window (days)"
+                hint="Use in policy copy and support decisions."
+                value={settings.returnWindowDays}
+                onChange={(value) => updateField("returnWindowDays", value)}
+                disabled={isLoading}
+              />
+            </div>
+            <div className="mt-4">
+              <LabeledInput
+                label="Blocked COD pincodes"
+                hint="Comma-separated pincode list where COD should stay disabled."
+                value={settings.codDisabledPincodes}
+                onChange={(value) => updateField("codDisabledPincodes", value)}
+                disabled={isLoading}
+              />
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            eyebrow="Visibility"
+            title="Feature toggles"
+            description="These switches control what buyers can see and do across the storefront."
+            icon={Sparkles}
+          >
+            <div className="grid gap-3 sm:grid-cols-3">
+              <ToggleCard
+                label="Maintenance mode"
+                description="Pause public storefront browsing and show the maintenance screen."
+                enabled={settings.maintenanceMode}
+                onToggle={() => updateField("maintenanceMode", !settings.maintenanceMode)}
+                disabled={isLoading}
+              />
+              <ToggleCard
+                label="Guest checkout"
+                description="Allow buyers to complete checkout without logging in first."
+                enabled={settings.allowGuestCheckout}
+                onToggle={() => updateField("allowGuestCheckout", !settings.allowGuestCheckout)}
+                disabled={isLoading}
+              />
+              <ToggleCard
+                label="Support banner"
+                description="Show the homepage support strip with WhatsApp and bulk-buyer messaging."
+                enabled={settings.showSupportBanner}
+                onToggle={() => updateField("showSupportBanner", !settings.showSupportBanner)}
+                disabled={isLoading}
+              />
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            eyebrow="Shortcuts"
+            title="Operational links"
+            description="Jump straight into adjacent admin areas while updating configuration."
+            icon={Layers3}
+          >
+            <div className="grid gap-4 md:grid-cols-2">
               {appCards.map((card) => {
                 const Icon = card.icon;
                 return (
@@ -441,14 +442,36 @@ export function AdminSettingsPage() {
                 );
               })}
             </div>
-          </section>
+          </SectionCard>
         </section>
 
         <section className="space-y-6">
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.16)] backdrop-blur">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/80">Environment</p>
-            <h3 className="mt-2 font-display text-2xl text-white">Current setup</h3>
-            <div className="mt-6 space-y-4">
+          <SectionCard eyebrow="Preview" title="Live storefront snapshot" description="Quick read of what buyers will see after saving." icon={Globe}>
+            <div className="rounded-[24px] border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-200/80">{settings.siteName}</p>
+              <h4 className="mt-3 text-2xl font-semibold text-white">{settings.heroHeading}</h4>
+              <p className="mt-3 text-sm leading-6 text-white/70">{settings.heroSubheading}</p>
+              <div className="mt-5 inline-flex rounded-full bg-teal-500/15 px-4 py-2 text-sm font-semibold text-teal-100">
+                {settings.announcementText}
+              </div>
+              {settings.showSupportBanner ? (
+                <div className="mt-4 rounded-2xl border border-teal-300/15 bg-teal-500/10 px-4 py-3 text-sm text-teal-50/90">
+                  {settings.supportBannerText}
+                </div>
+              ) : null}
+              <div className="mt-6 space-y-2 text-sm text-white/70">
+                <p>{settings.supportEmail}</p>
+                <p>{settings.supportPhone}</p>
+                <p>{settings.supportWhatsapp}</p>
+                <p>{settings.supportHours}</p>
+                <p>{settings.addressLine1}</p>
+                <p>{settings.addressLine2}</p>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard eyebrow="Environment" title="Current setup" description="Useful when checking if local, staging, or production config is aligned." icon={ShoppingBag}>
+            <div className="space-y-4">
               {environmentRows(settings).map((row) => (
                 <div key={row.label} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">{row.label}</p>
@@ -456,39 +479,10 @@ export function AdminSettingsPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </SectionCard>
 
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.16)] backdrop-blur">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/80">Settings snapshot</p>
-            <h3 className="mt-2 font-display text-2xl text-white">Live preview</h3>
-            <div className="mt-6 rounded-[24px] border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-200/80">{settings.siteName}</p>
-              <h4 className="mt-3 text-2xl font-semibold text-white">{settings.heroHeading}</h4>
-              <p className="mt-3 text-sm leading-6 text-white/70">{settings.heroSubheading}</p>
-              <div className="mt-5 inline-flex rounded-full bg-teal-500/15 px-4 py-2 text-sm font-semibold text-teal-100">
-                {settings.announcementText}
-              </div>
-              <div className="mt-6 space-y-2 text-sm text-white/70">
-                <p>{settings.supportEmail}</p>
-                <p>{settings.supportPhone}</p>
-                <p>{settings.supportHours}</p>
-                <p>{settings.addressLine1}</p>
-                <p>{settings.addressLine2}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.16)] backdrop-blur">
-            <div className="flex items-start gap-4">
-              <div className="rounded-2xl bg-white/10 p-3 text-teal-100">
-                <Sparkles className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/80">Quick actions</p>
-                <h3 className="mt-2 font-display text-2xl text-white">Admin productivity</h3>
-              </div>
-            </div>
-            <div className="mt-6 space-y-3">
+          <SectionCard eyebrow="Quick actions" title="Helpful admin tools" description="Use these when you want a safe baseline or a quick rules snapshot." icon={Sparkles}>
+            <div className="space-y-3">
               <button
                 type="button"
                 onClick={resetToDefaults}
@@ -499,15 +493,195 @@ export function AdminSettingsPage() {
                 <p className="mt-1 text-white/60">Useful when you want a clean baseline before saving new settings.</p>
               </button>
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
-                <p className="font-semibold text-white">Current shipping summary</p>
+                <p className="font-semibold text-white">Current rules snapshot</p>
                 <p className="mt-2">Shipping fee: Rs. {settings.shippingFee}</p>
                 <p>Free shipping threshold: Rs. {settings.freeShippingThreshold}</p>
                 <p>COD limit: Rs. {settings.codMaxOrderValue}</p>
+                <p>Return window: {settings.returnWindowDays} day(s)</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
+                <p className="font-semibold text-white">Maintenance preview</p>
+                <p className="mt-2">{settings.maintenanceMessage}</p>
               </div>
             </div>
-          </div>
+          </SectionCard>
         </section>
       </div>
     </AdminShell>
+  );
+}
+
+function SectionCard({
+  eyebrow,
+  title,
+  description,
+  icon: Icon,
+  children
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  icon: typeof ShieldCheck;
+  children: ReactNode;
+}) {
+  return (
+    <div className="rounded-[28px] border border-white/10 bg-white/5 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.16)] backdrop-blur">
+      <div className="flex items-start gap-4">
+        <div className="rounded-2xl bg-white/10 p-3 text-teal-100">
+          <Icon className="h-6 w-6" />
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/80">{eyebrow}</p>
+          <h3 className="mt-2 font-display text-2xl text-white">{title}</h3>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-white/65">{description}</p>
+        </div>
+      </div>
+      <div className="mt-6">{children}</div>
+    </div>
+  );
+}
+
+function LabeledInput({
+  label,
+  hint,
+  value,
+  onChange,
+  disabled
+}: {
+  label: string;
+  hint?: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label className="block">
+      <span className="text-sm font-semibold text-white">{label}</span>
+      {hint ? <span className="mt-1 block text-xs text-white/55">{hint}</span> : null}
+      <Input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-2 border-white/10 bg-white/10 text-white placeholder:text-white/35"
+        disabled={disabled}
+      />
+    </label>
+  );
+}
+
+function LabeledNumberInput({
+  label,
+  hint,
+  value,
+  onChange,
+  disabled
+}: {
+  label: string;
+  hint?: string;
+  value: number;
+  onChange: (value: number) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label className="block">
+      <span className="text-sm font-semibold text-white">{label}</span>
+      {hint ? <span className="mt-1 block text-xs text-white/55">{hint}</span> : null}
+      <Input
+        type="number"
+        value={String(value)}
+        onChange={(event) => onChange(Number(event.target.value || 0))}
+        className="mt-2 border-white/10 bg-white/10 text-white placeholder:text-white/35"
+        disabled={disabled}
+      />
+    </label>
+  );
+}
+
+function LabeledTextarea({
+  label,
+  hint,
+  value,
+  onChange,
+  rows,
+  disabled
+}: {
+  label: string;
+  hint?: string;
+  value: string;
+  onChange: (value: string) => void;
+  rows?: number;
+  disabled?: boolean;
+}) {
+  return (
+    <label className="block">
+      <span className="text-sm font-semibold text-white">{label}</span>
+      {hint ? <span className="mt-1 block text-xs text-white/55">{hint}</span> : null}
+      <textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        rows={rows ?? 3}
+        disabled={disabled}
+        className="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-teal-300 disabled:opacity-70"
+      />
+    </label>
+  );
+}
+
+function ToggleCard({
+  label,
+  description,
+  enabled,
+  onToggle,
+  disabled
+}: {
+  label: string;
+  description: string;
+  enabled: boolean;
+  onToggle: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      disabled={disabled}
+      className={`rounded-[22px] border px-4 py-4 text-left transition disabled:cursor-not-allowed disabled:opacity-70 ${
+        enabled ? "border-teal-300/50 bg-teal-500/15 text-white" : "border-white/10 bg-white/5 text-white/75 hover:bg-white/10"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-semibold">{label}</p>
+        <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${enabled ? "bg-white/15 text-white" : "bg-black/20 text-white/65"}`}>
+          {enabled ? "On" : "Off"}
+        </span>
+      </div>
+      <p className="mt-2 text-xs leading-5 text-white/60">{description}</p>
+    </button>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  hint,
+  tone
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  tone: "emerald" | "amber" | "cyan" | "white";
+}) {
+  const toneClasses = {
+    emerald: "border-emerald-400/25 bg-emerald-500/10",
+    amber: "border-amber-400/25 bg-amber-500/10",
+    cyan: "border-cyan-400/25 bg-cyan-500/10",
+    white: "border-white/10 bg-white/5"
+  };
+
+  return (
+    <div className={`rounded-[24px] border p-4 ${toneClasses[tone]}`}>
+      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">{label}</p>
+      <p className="mt-3 text-lg font-semibold text-white">{value}</p>
+      {hint ? <p className="mt-1 text-sm text-white/60">{hint}</p> : null}
+    </div>
   );
 }

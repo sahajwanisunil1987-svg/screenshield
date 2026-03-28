@@ -60,10 +60,18 @@ export const metadata: Metadata = buildMetadata({
 
 
 export default async function HomePage() {
-  const [brands, categories, models] = await Promise.all([
+  const [brands, categories, models, appSettings] = await Promise.all([
     fetchApiOrFallback<Brand[]>("/brands", []),
     fetchApiOrFallback<Category[]>("/categories", []),
-    fetchApiOrFallback<MobileModel[]>("/models", [])
+    fetchApiOrFallback<MobileModel[]>("/models", []),
+    fetchApiOrFallback<{
+      siteName?: string;
+      heroHeading?: string;
+      heroSubheading?: string;
+      announcementText?: string;
+      supportBannerText?: string;
+      showSupportBanner?: boolean;
+    }>("/settings/app", {})
   ]);
   let homeSponsor: SponsorAd | null = null;
 
@@ -80,16 +88,22 @@ export default async function HomePage() {
           <div className="max-w-3xl">
             <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-teal-200 sm:text-sm">Mobile spare parts made easy</p>
             <h1 className="mt-3 font-display text-[2.35rem] leading-[1.02] sm:mt-4 sm:text-4xl">
-              Find the right spare part in three quick steps.
+              {appSettings.heroHeading || "Find the right spare part in three quick steps."}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-white/72 sm:mt-4 sm:text-base">
-              Choose the brand, pick the model, then open batteries, displays, charging parts, cameras, and more.
+              {appSettings.heroSubheading || "Choose the brand, pick the model, then open batteries, displays, charging parts, cameras, and more."}
             </p>
             <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80 sm:mt-5 sm:text-xs">
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Brand to model flow</span>
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Repair-shop friendly</span>
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Fast part discovery</span>
             </div>
+            {appSettings.showSupportBanner ? (
+              <div className="mt-4 max-w-2xl rounded-2xl border border-teal-300/15 bg-teal-400/10 px-4 py-3 text-sm text-teal-50/90 sm:mt-5">
+                <p className="font-semibold uppercase tracking-[0.18em] text-teal-100/75">{appSettings.siteName || "PurjiX"} support</p>
+                <p className="mt-1.5 leading-6">{appSettings.supportBannerText || appSettings.announcementText || "WhatsApp support available for urgent part checks and bulk buying."}</p>
+              </div>
+            ) : null}
           </div>
           <div className="mt-6 max-w-5xl sm:mt-8">
             <HeroSearch brands={brands} models={models} categories={categories} />
