@@ -107,14 +107,14 @@ export default async function BrandPage({ params }: BrandPageProps) {
                   className="rounded-[28px] border border-slate-200 bg-white px-6 py-6 shadow-card transition hover:-translate-y-0.5 hover:border-slate-300"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-slate-100">
+                    <div className="relative flex h-[86px] w-[70px] shrink-0 items-center justify-center overflow-hidden rounded-[22px] border border-slate-200/80 bg-[linear-gradient(180deg,#f8fafc,#eef2f7)] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
                       {model.imageUrl ? (
-                        <Image src={model.imageUrl} alt={model.name} fill sizes="64px" className="object-cover" />
+                        <Image src={model.imageUrl} alt={model.name} fill sizes="70px" className="object-contain p-1.5" />
                       ) : (
                         <span className="text-lg font-semibold text-ink">{model.name.slice(0, 1)}</span>
                       )}
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate">Model</p>
                       <h3 className="mt-2 font-display text-2xl text-ink">{model.name}</h3>
                       <p className="mt-2 text-sm text-slate">Open compatible spare parts and accessories for this device.</p>
