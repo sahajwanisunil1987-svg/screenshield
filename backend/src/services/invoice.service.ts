@@ -71,6 +71,7 @@ const loadRemoteImage = async (url?: string | null) => {
 
 export const generateInvoicePdfBuffer = async (orderId: string) => {
   const appSettings = await ensureAppSettings(prisma);
+  const siteBaseUrl = env.SITE_URL || env.FRONTEND_URL;
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
@@ -149,10 +150,10 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
   const itemImageBuffers = await Promise.all(
     order.items.map((item) => loadRemoteImage(item.variant?.imageUrl ?? item.product.images[0]?.url ?? null))
   );
+  const companyLogoBuffer = await loadRemoteImage(siteBaseUrl ? `${siteBaseUrl.replace(/\/+$/, "")}/icon-192.png` : null);
 
   const columns = {
-    image: 52,
-    item: 88,
+    item: 52,
     hsn: 238,
     sku: 288,
     qty: 360,
@@ -164,7 +165,6 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
   const drawTableHeader = (y: number) => {
     doc.roundedRect(40, y - 12, 515, 28, 10).fill("#e9eef5");
     doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(10);
-    doc.text("Image", columns.image, y - 3);
     doc.text("Item", columns.item, y - 3);
     doc.text("HSN", columns.hsn, y - 3);
     doc.text("SKU", columns.sku, y - 3);
@@ -175,9 +175,21 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
   };
 
   doc.roundedRect(40, 34, 515, 86, 18).fill("#08111f");
-  doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(24).text(`${env.COMPANY_NAME} Tax Invoice`, 58, 54);
-  doc.font("Helvetica").fontSize(10).fillColor("#dbe7f3").text(env.COMPANY_LEGAL_NAME, 58, 86);
-  doc.text(`${env.COMPANY_ADDRESS_LINE1}, ${env.COMPANY_ADDRESS_LINE2}`, 58, 100, { width: 280 });
+  if (companyLogoBuffer) {
+    try {
+      doc.roundedRect(58, 52, 42, 42, 12).fill("#ffffff");
+      doc.image(companyLogoBuffer, 62, 56, {
+        fit: [34, 34],
+        align: "center",
+        valign: "center"
+      });
+    } catch {
+      // Ignore logo render failures and continue with text branding only.
+    }
+  }
+  doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(24).text(`${env.COMPANY_NAME} Tax Invoice`, companyLogoBuffer ? 112 : 58, 54);
+  doc.font("Helvetica").fontSize(10).fillColor("#dbe7f3").text(env.COMPANY_LEGAL_NAME, companyLogoBuffer ? 112 : 58, 86);
+  doc.text(`${env.COMPANY_ADDRESS_LINE1}, ${env.COMPANY_ADDRESS_LINE2}`, companyLogoBuffer ? 112 : 58, 100, { width: 240 });
 
   doc.font("Helvetica-Bold").fontSize(10).fillColor("#c9f3ee").text("GSTIN", 390, 54);
   doc.font("Helvetica").fontSize(10).fillColor("#ffffff").text(env.COMPANY_GSTIN, 390, 68);
@@ -219,7 +231,7 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
 
   let y = tableTop + 24;
   order.items.forEach((item, index) => {
-    const rowHeight = 36;
+    const rowHeight = item.variantLabel ? 42 : 36;
     if (y + rowHeight > PAGE_BOTTOM) {
       doc.addPage();
       drawTableHeader(60);
@@ -234,21 +246,26 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
     const itemImage = itemImageBuffers[index];
 
     doc.roundedRect(40, y - 8, 515, rowHeight, 8).fill(index % 2 === 0 ? "#ffffff" : "#f9fbfd");
-    doc.roundedRect(columns.image, y - 2, INVOICE_IMAGE_SIZE, INVOICE_IMAGE_SIZE, 6).fillAndStroke("#f5f8fb", "#d6dee8");
+    const imageX = columns.item;
+    const textX = imageX + INVOICE_IMAGE_SIZE + 8;
+    doc.roundedRect(imageX, y - 2, INVOICE_IMAGE_SIZE, INVOICE_IMAGE_SIZE, 6).fillAndStroke("#f5f8fb", "#d6dee8");
     if (itemImage) {
       try {
-        doc.image(itemImage, columns.image + 2, y, {
+        doc.image(itemImage, imageX + 2, y, {
           fit: [INVOICE_IMAGE_SIZE - 4, INVOICE_IMAGE_SIZE - 4],
           align: "center",
           valign: "center"
         });
       } catch {
-        doc.font("Helvetica-Bold").fontSize(8).fillColor("#5b6474").text("N/A", columns.image + 6, y + 10, { width: 18 });
+        doc.font("Helvetica-Bold").fontSize(8).fillColor("#5b6474").text("N/A", imageX + 6, y + 10, { width: 18 });
       }
     } else {
-      doc.font("Helvetica-Bold").fontSize(8).fillColor("#5b6474").text("N/A", columns.image + 6, y + 10, { width: 18 });
+      doc.font("Helvetica-Bold").fontSize(8).fillColor("#5b6474").text("N/A", imageX + 6, y + 10, { width: 18 });
     }
-    doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(10).text(item.productName, columns.item, y, { width: 142 });
+    doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(10).text(item.productName, textX, y, { width: 142 });
+    if (item.variantLabel) {
+      doc.font("Helvetica").fontSize(8).fillColor("#5b6474").text(`Variant: ${item.variantLabel}`, textX, y + 14, { width: 142 });
+    }
     doc.font("Helvetica").fontSize(9).fillColor("#5b6474").text(itemHsnCode, columns.hsn, y + 1, { width: 48 });
     doc.text(item.productSku, columns.sku, y + 1, { width: 64 });
     doc.fillColor("#08111f").fontSize(10).text(String(item.quantity), columns.qty, y + 1, { width: 24 });
