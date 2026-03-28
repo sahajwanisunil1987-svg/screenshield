@@ -340,7 +340,7 @@ export const createOrder = async (
         },
         invoice: {
           create: {
-            invoiceNumber: createInvoiceNumber(),
+            invoiceNumber: createInvoiceNumber(appSettings.invoicePrefix ?? "INV"),
             gstin: payload.address.gstNumber,
             billingName: payload.address.fullName as string,
             billingEmail: payload.address.email as string | undefined,

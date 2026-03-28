@@ -68,6 +68,9 @@ const defaultSettings = {
   supportBannerText: "WhatsApp support available for urgent part checks and bulk buying.",
   maintenanceMessage: "We are updating the storefront and will be back shortly.",
   orderPrefix: "PJX",
+  invoicePrefix: "INV",
+  invoiceFooterNote: "This is a computer-generated GST invoice.",
+  invoiceDeclaration: "We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.",
   shippingFee: 79,
   freeShippingThreshold: 999,
   codMaxOrderValue: 5000,
@@ -384,6 +387,48 @@ export function AdminSettingsPage() {
           </SectionCard>
 
           <SectionCard
+            eyebrow="Billing"
+            title="Invoice settings"
+            description="Control invoice numbering and the legal/support copy used inside the generated invoice PDF."
+            icon={ShoppingBag}
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <LabeledInput
+                label="Invoice prefix"
+                hint="Used in generated invoice numbers."
+                value={settings.invoicePrefix}
+                onChange={(value) => updateField("invoicePrefix", value.toUpperCase().replace(/\s+/g, ""))}
+                disabled={isLoading}
+              />
+              <LabeledInput
+                label="Return window label"
+                hint="Already used above in shipping rules; keep this in sync with invoice/support policy."
+                value={`${settings.returnWindowDays} day(s)`}
+                onChange={() => {}}
+                disabled
+              />
+            </div>
+            <div className="mt-4 grid gap-4">
+              <LabeledTextarea
+                label="Invoice footer note"
+                hint="Shown in the footer of every generated invoice PDF."
+                value={settings.invoiceFooterNote}
+                onChange={(value) => updateField("invoiceFooterNote", value)}
+                rows={3}
+                disabled={isLoading}
+              />
+              <LabeledTextarea
+                label="Invoice declaration"
+                hint="Shown in the declaration block before the authorised signatory area."
+                value={settings.invoiceDeclaration}
+                onChange={(value) => updateField("invoiceDeclaration", value)}
+                rows={4}
+                disabled={isLoading}
+              />
+            </div>
+          </SectionCard>
+
+          <SectionCard
             eyebrow="Visibility"
             title="Feature toggles"
             description="These switches control what buyers can see and do across the storefront."
@@ -498,6 +543,7 @@ export function AdminSettingsPage() {
                 <p>Free shipping threshold: Rs. {settings.freeShippingThreshold}</p>
                 <p>COD limit: Rs. {settings.codMaxOrderValue}</p>
                 <p>Return window: {settings.returnWindowDays} day(s)</p>
+                <p>Invoice prefix: {settings.invoicePrefix}</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
                 <p className="font-semibold text-white">Maintenance preview</p>

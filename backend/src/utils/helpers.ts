@@ -14,7 +14,10 @@ export const createOrderNumber = (prefix = "PJX") => {
   return `${cleanedPrefix}${Date.now().toString().slice(-8)}`;
 };
 
-export const createInvoiceNumber = () => `INV-${new Date().getFullYear()}-${crypto.randomInt(1000, 9999)}`;
+export const createInvoiceNumber = (prefix = "INV") => {
+  const cleanedPrefix = prefix.trim().toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 8) || "INV";
+  return `${cleanedPrefix}-${new Date().getFullYear()}-${crypto.randomInt(1000, 9999)}`;
+};
 
 export const calculateAverage = (ratings: number[]) =>
   ratings.length ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : 0;
