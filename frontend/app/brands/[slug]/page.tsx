@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
+import { BrandLogo } from "@/components/catalog/brand-logo";
 import { PageShell } from "@/components/layout/page-shell";
 import { fetchApi } from "@/lib/server-api";
 import { buildMetadata } from "@/lib/seo";
@@ -63,14 +64,7 @@ export default async function BrandPage({ params }: BrandPageProps) {
           <div className="mt-6 grid gap-6 lg:grid-cols-[112px_minmax(0,1fr)] lg:items-center">
             <div className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50">
               {brand.logoUrl ? (
-                <Image
-                  src={brand.logoUrl}
-                  alt={`${brand.name} logo`}
-                  fill
-                  sizes="112px"
-                  unoptimized
-                  className="object-contain p-4"
-                />
+                <BrandLogo name={brand.name} logoUrl={brand.logoUrl} alt={`${brand.name} logo`} wrapperClassName="h-full w-full" imageClassName="p-4" />
               ) : (
                 <span className="text-4xl font-semibold text-ink">{brand.name.slice(0, 1)}</span>
               )}

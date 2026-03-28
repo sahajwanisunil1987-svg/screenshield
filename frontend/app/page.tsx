@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { HeroSearch } from "@/components/home/hero-search";
+import { BrandLogo } from "@/components/catalog/brand-logo";
 import { PageShell } from "@/components/layout/page-shell";
 import { SponsorBanner } from "@/components/marketing/sponsor-banner";
 import { fetchApi, fetchApiOrFallback } from "@/lib/server-api";
@@ -135,15 +135,14 @@ export default async function HomePage() {
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.65),transparent_52%)] opacity-70 transition duration-200 group-hover:opacity-100" />
                   {brand.logoUrl ? (
                     <div className={`relative flex h-full max-h-[84px] w-full max-w-[138px] items-center justify-center rounded-[20px] transition duration-200 group-hover:scale-[1.03] sm:max-h-[92px] sm:max-w-[150px] ${logoStyle.wrapper}`}>
-                      <div className={`relative h-full w-full ${logoStyle.image}`}>
-                        <Image
-                          src={brand.logoUrl}
-                          alt={`${brand.name} logo`}
-                          fill
-                          className="object-contain"
-                          sizes="(max-width: 640px) 138px, 150px"
-                        />
-                      </div>
+                      <BrandLogo
+                        name={brand.name}
+                        logoUrl={brand.logoUrl}
+                        alt={`${brand.name} logo`}
+                        wrapperClassName="h-full w-full"
+                        imageClassName={logoStyle.image}
+                        fallbackClassName="px-3"
+                      />
                     </div>
                   ) : (
                     <h3 className="relative font-display text-lg text-ink transition duration-200 group-hover:scale-[1.03] sm:text-xl">
