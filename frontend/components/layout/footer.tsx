@@ -36,6 +36,9 @@ type FooterSettings = {
   supportHours?: string;
   addressLine1?: string;
   addressLine2?: string;
+  showDeveloperCredit?: boolean;
+  developerName?: string;
+  developerUrl?: string;
 };
 
 const footerFallbackSettings: Required<FooterSettings> = {
@@ -44,7 +47,10 @@ const footerFallbackSettings: Required<FooterSettings> = {
   supportPhone: "+91 99999 99999",
   supportHours: "Mon-Sat, 10 AM to 7 PM",
   addressLine1: "Repair Market, Main Unit",
-  addressLine2: "Mumbai, Maharashtra"
+  addressLine2: "Mumbai, Maharashtra",
+  showDeveloperCredit: false,
+  developerName: "",
+  developerUrl: ""
 };
 
 export function Footer() {
@@ -153,7 +159,26 @@ export function Footer() {
           ) : null}
 
           <div className="mt-5 flex flex-col gap-2.5 border-t border-white/10 pt-4 text-sm text-white/50 sm:flex-row sm:items-center sm:justify-between">
-            <p>© 2026 PurjiX. Mobile spare parts for repair shops and retail buyers.</p>
+            <div className="space-y-1">
+              <p>© 2026 PurjiX. Mobile spare parts for repair shops and retail buyers.</p>
+              {settings.showDeveloperCredit && settings.developerName ? (
+                <p className="text-xs text-white/40">
+                  Built by{" "}
+                  {settings.developerUrl ? (
+                    <a
+                      href={settings.developerUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-white/55 transition hover:text-white"
+                    >
+                      {settings.developerName}
+                    </a>
+                  ) : (
+                    <span className="text-white/55">{settings.developerName}</span>
+                  )}
+                </p>
+              ) : null}
+            </div>
             <div className="flex flex-wrap gap-4 text-white/60">
               <Link href="/privacy-policy" className="transition hover:text-white">Privacy</Link>
               <Link href="/terms" className="transition hover:text-white">Terms</Link>

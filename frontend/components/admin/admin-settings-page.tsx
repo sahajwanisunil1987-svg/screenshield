@@ -67,6 +67,9 @@ const defaultSettings = {
   announcementText: "Free shipping above Rs. 999",
   supportBannerText: "WhatsApp support available for urgent part checks and bulk buying.",
   maintenanceMessage: "We are updating the storefront and will be back shortly.",
+  showDeveloperCredit: false,
+  developerName: "",
+  developerUrl: "",
   orderPrefix: "PJX",
   invoicePrefix: "INV",
   invoiceFooterNote: "This is a computer-generated GST invoice.",
@@ -119,6 +122,9 @@ const normalizeSettings = (value: Partial<Record<keyof SettingsState, unknown>> 
   announcementText: toSafeString(value?.announcementText, defaultSettings.announcementText),
   supportBannerText: toSafeString(value?.supportBannerText, defaultSettings.supportBannerText),
   maintenanceMessage: toSafeString(value?.maintenanceMessage, defaultSettings.maintenanceMessage),
+  showDeveloperCredit: toSafeBoolean(value?.showDeveloperCredit, defaultSettings.showDeveloperCredit),
+  developerName: typeof value?.developerName === "string" ? value.developerName.trim() : defaultSettings.developerName,
+  developerUrl: typeof value?.developerUrl === "string" ? value.developerUrl.trim() : defaultSettings.developerUrl,
   orderPrefix: toSafeString(value?.orderPrefix, defaultSettings.orderPrefix).toUpperCase().replace(/\s+/g, ""),
   invoicePrefix: toSafeString(value?.invoicePrefix, defaultSettings.invoicePrefix).toUpperCase().replace(/\s+/g, ""),
   invoiceFooterNote: toSafeString(value?.invoiceFooterNote, defaultSettings.invoiceFooterNote),
@@ -388,6 +394,31 @@ export function AdminSettingsPage() {
                 disabled={isLoading}
               />
             </div>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <LabeledInput
+                label="Developer name"
+                hint="Shown only when footer credit is enabled."
+                value={settings.developerName}
+                onChange={(value) => updateField("developerName", value)}
+                disabled={isLoading}
+              />
+              <LabeledInput
+                label="Developer URL"
+                hint="Portfolio or contact link for the subtle footer credit."
+                value={settings.developerUrl}
+                onChange={(value) => updateField("developerUrl", value)}
+                disabled={isLoading}
+              />
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <ToggleCard
+                label="Developer footer credit"
+                description="Shows a subtle built-by line in the footer without changing the main storefront branding."
+                enabled={settings.showDeveloperCredit}
+                onToggle={() => updateField("showDeveloperCredit", !settings.showDeveloperCredit)}
+                disabled={isLoading}
+              />
+            </div>
           </SectionCard>
 
           <SectionCard
@@ -562,6 +593,18 @@ export function AdminSettingsPage() {
                 <p>{settings.supportHours}</p>
                 <p>{settings.addressLine1}</p>
                 <p>{settings.addressLine2}</p>
+                {settings.showDeveloperCredit && settings.developerName ? (
+                  <p className="pt-2 text-white/55">
+                    Built by{" "}
+                    {settings.developerUrl ? (
+                      <a href={settings.developerUrl} target="_blank" rel="noreferrer" className="text-white/80 transition hover:text-white">
+                        {settings.developerName}
+                      </a>
+                    ) : (
+                      <span className="text-white/80">{settings.developerName}</span>
+                    )}
+                  </p>
+                ) : null}
               </div>
             </div>
           </SectionCard>
