@@ -7,6 +7,7 @@ const formatCurrency = (value: number) => `INR ${value.toFixed(2)}`;
 const formatDate = (value: Date | string) => new Date(value).toLocaleDateString("en-IN", { dateStyle: "medium" });
 const PAGE_BOTTOM = 700;
 const FOOTER_Y = 760;
+const INVOICE_IMAGE_SIZE = 28;
 
 const drawLabelValue = (doc: PDFKit.PDFDocument, label: string, value: string, x: number, y: number, width = 220) => {
   doc.font("Helvetica-Bold").fontSize(9).fillColor("#5b6474").text(label, x, y);
@@ -50,6 +51,24 @@ const drawFooter = (doc: PDFKit.PDFDocument, footerNote: string) => {
   );
 };
 
+const loadRemoteImage = async (url?: string | null) => {
+  if (!url || !/^https?:\/\//i.test(url)) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      return null;
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  } catch {
+    return null;
+  }
+};
+
 export const generateInvoicePdfBuffer = async (orderId: string) => {
   const appSettings = await ensureAppSettings(prisma);
   const order = await prisma.order.findUnique({
@@ -57,7 +76,15 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
     include: {
       items: {
         include: {
-          product: true
+          product: {
+            include: {
+              images: {
+                orderBy: { sortOrder: "asc" },
+                take: 1
+              }
+            }
+          },
+          variant: true
         }
       },
       user: true,
@@ -119,20 +146,25 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
   const uniqueGstRates = Array.from(new Set(hsnSummary.map((entry) => Number(entry.gstRate.toFixed(2)))));
   const cgstLabel = uniqueGstRates.length > 1 ? "CGST (blended)" : `CGST (${(gstRate / 2).toFixed(1)}%)`;
   const sgstLabel = uniqueGstRates.length > 1 ? "SGST (blended)" : `SGST (${(gstRate / 2).toFixed(1)}%)`;
+  const itemImageBuffers = await Promise.all(
+    order.items.map((item) => loadRemoteImage(item.variant?.imageUrl ?? item.product.images[0]?.url ?? null))
+  );
 
   const columns = {
-    item: 52,
-    hsn: 202,
-    sku: 262,
-    qty: 330,
-    gst: 364,
-    taxable: 414,
-    amount: 492
+    image: 52,
+    item: 88,
+    hsn: 238,
+    sku: 288,
+    qty: 360,
+    gst: 392,
+    taxable: 432,
+    amount: 500
   };
 
   const drawTableHeader = (y: number) => {
     doc.roundedRect(40, y - 12, 515, 28, 10).fill("#e9eef5");
     doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(10);
+    doc.text("Image", columns.image, y - 3);
     doc.text("Item", columns.item, y - 3);
     doc.text("HSN", columns.hsn, y - 3);
     doc.text("SKU", columns.sku, y - 3);
@@ -187,7 +219,7 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
 
   let y = tableTop + 24;
   order.items.forEach((item, index) => {
-    const rowHeight = 28;
+    const rowHeight = 36;
     if (y + rowHeight > PAGE_BOTTOM) {
       doc.addPage();
       drawTableHeader(60);
@@ -199,11 +231,26 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
     const lineTaxableValue = Math.max(grossValue - allocatedDiscount, 0);
     const itemGstRate = Number(item.product.gstRate ?? 18);
     const itemHsnCode = item.product.hsnCode ?? "-";
+    const itemImage = itemImageBuffers[index];
 
     doc.roundedRect(40, y - 8, 515, rowHeight, 8).fill(index % 2 === 0 ? "#ffffff" : "#f9fbfd");
-    doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(10).text(item.productName, columns.item, y, { width: 132 });
+    doc.roundedRect(columns.image, y - 2, INVOICE_IMAGE_SIZE, INVOICE_IMAGE_SIZE, 6).fillAndStroke("#f5f8fb", "#d6dee8");
+    if (itemImage) {
+      try {
+        doc.image(itemImage, columns.image + 2, y, {
+          fit: [INVOICE_IMAGE_SIZE - 4, INVOICE_IMAGE_SIZE - 4],
+          align: "center",
+          valign: "center"
+        });
+      } catch {
+        doc.font("Helvetica-Bold").fontSize(8).fillColor("#5b6474").text("N/A", columns.image + 6, y + 10, { width: 18 });
+      }
+    } else {
+      doc.font("Helvetica-Bold").fontSize(8).fillColor("#5b6474").text("N/A", columns.image + 6, y + 10, { width: 18 });
+    }
+    doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(10).text(item.productName, columns.item, y, { width: 142 });
     doc.font("Helvetica").fontSize(9).fillColor("#5b6474").text(itemHsnCode, columns.hsn, y + 1, { width: 48 });
-    doc.text(item.productSku, columns.sku, y + 1, { width: 58 });
+    doc.text(item.productSku, columns.sku, y + 1, { width: 64 });
     doc.fillColor("#08111f").fontSize(10).text(String(item.quantity), columns.qty, y + 1, { width: 24 });
     doc.text(`${itemGstRate.toFixed(0)}%`, columns.gst, y + 1, { width: 36 });
     doc.text(formatCurrency(lineTaxableValue), columns.taxable, y + 1, { width: 68 });
