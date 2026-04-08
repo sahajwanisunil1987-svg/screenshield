@@ -104,6 +104,9 @@ type AccountingResponse = {
 };
 
 export function AdminAccountingPageClient() {
+  const panelClass = "rounded-[28px] border border-white/10 bg-white/5 p-6";
+  const mutedPanelClass = "rounded-[22px] border border-white/10 bg-black/10 p-4";
+  const emptyStateClass = "rounded-[20px] border border-dashed border-white/10 bg-black/10 px-4 py-6 text-center text-sm text-white/50";
   const token = useAuthStore((state) => state.token);
   const [range, setRange] = useState<"7d" | "30d" | "90d">("30d");
   const [data, setData] = useState<AccountingResponse | null>(null);
@@ -294,7 +297,7 @@ export function AdminAccountingPageClient() {
             </div>
             <div className="mt-4 space-y-3">
               {riskCards.map((card) => (
-                <div key={card.label} className="rounded-[22px] border border-white/10 bg-black/10 p-4">
+                <div key={card.label} className={mutedPanelClass}>
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm text-white/70">{card.label}</p>
                     <p className="text-base font-semibold text-white">{isLoading ? "..." : card.value}</p>
@@ -307,7 +310,7 @@ export function AdminAccountingPageClient() {
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className={panelClass}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="font-semibold text-white">Accounting report</h3>
@@ -383,11 +386,11 @@ export function AdminAccountingPageClient() {
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+            <div className={panelClass}>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">GST summary</p>
               <div className="mt-4 grid gap-3">
                 {gstCards.map((card) => (
-                  <div key={card.label} className="rounded-[22px] border border-white/10 bg-black/10 p-4">
+                  <div key={card.label} className={mutedPanelClass}>
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm text-white/70">{card.label}</p>
                       <p className="text-base font-semibold text-white">{isLoading ? "..." : card.value}</p>
@@ -398,11 +401,11 @@ export function AdminAccountingPageClient() {
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+            <div className={panelClass}>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">Impact summary</p>
               <div className="mt-4 grid gap-3">
                 {impactCards.map((card) => (
-                  <div key={card.label} className="rounded-[22px] border border-white/10 bg-black/10 p-4">
+                  <div key={card.label} className={mutedPanelClass}>
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm text-white/70">{card.label}</p>
                       <p className="text-base font-semibold text-white">{isLoading ? "..." : card.value}</p>
@@ -410,14 +413,14 @@ export function AdminAccountingPageClient() {
                     <p className="mt-1 text-xs text-white/45">{card.detail}</p>
                   </div>
                 ))}
-                <div className="rounded-[22px] border border-white/10 bg-black/10 p-4">
+                <div className={mutedPanelClass}>
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm text-white/70">Cancelled refund</p>
                     <p className="text-base font-semibold text-white">{isLoading ? "..." : formatCurrency(data?.summary?.cancellationRefunds ?? 0)}</p>
                   </div>
                   <p className="mt-1 text-xs text-white/45">Actual refund outflow tied to cancelled prepaid orders.</p>
                 </div>
-                <div className="rounded-[22px] border border-white/10 bg-black/10 p-4">
+                <div className={mutedPanelClass}>
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm text-white/70">Return refund</p>
                     <p className="text-base font-semibold text-white">{isLoading ? "..." : formatCurrency(data?.summary?.returnRefunds ?? 0)}</p>
@@ -427,7 +430,7 @@ export function AdminAccountingPageClient() {
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+            <div className={panelClass}>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">Margin snapshot</p>
               <div className="mt-4 grid gap-3">
                 <div className="rounded-[22px] border border-emerald-400/20 bg-emerald-500/10 p-4">
@@ -465,14 +468,14 @@ export function AdminAccountingPageClient() {
                     </div>
                   ))
                 ) : (
-                  <p className="rounded-[20px] border border-dashed border-white/10 bg-black/10 px-4 py-6 text-center text-sm text-white/50">
+                  <p className={emptyStateClass}>
                     Margin data will appear once purchases and sales overlap.
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+            <div className={panelClass}>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">Low margin watchlist</p>
               <div className="mt-4 space-y-3">
                 {isLoading ? (
@@ -493,14 +496,14 @@ export function AdminAccountingPageClient() {
                     </div>
                   ))
                 ) : (
-                  <p className="rounded-[20px] border border-dashed border-white/10 bg-black/10 px-4 py-6 text-center text-sm text-white/50">
+                  <p className={emptyStateClass}>
                     No low-margin net orders in this range.
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+            <div className={panelClass}>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">Return-prone products</p>
               <div className="mt-4 space-y-3">
                 {isLoading ? (
@@ -521,14 +524,14 @@ export function AdminAccountingPageClient() {
                     </div>
                   ))
                 ) : (
-                  <p className="rounded-[20px] border border-dashed border-white/10 bg-black/10 px-4 py-6 text-center text-sm text-white/50">
+                  <p className={emptyStateClass}>
                     No return-heavy products in this range.
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+            <div className={panelClass}>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">Reason analytics</p>
               <div className="mt-4 grid gap-3">
                 {[
@@ -536,7 +539,7 @@ export function AdminAccountingPageClient() {
                   { label: "Return reasons", items: data?.reasonAnalytics?.return ?? [] },
                   { label: "Refund reasons", items: data?.reasonAnalytics?.refund ?? [] }
                 ].map((section) => (
-                  <div key={section.label} className="rounded-[22px] border border-white/10 bg-black/10 p-4">
+                  <div key={section.label} className={mutedPanelClass}>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">{section.label}</p>
                     <div className="mt-3 space-y-2">
                       {isLoading ? (
@@ -560,7 +563,7 @@ export function AdminAccountingPageClient() {
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+            <div className={panelClass}>
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h3 className="font-semibold text-white">Daily breakdown</h3>
@@ -586,7 +589,7 @@ export function AdminAccountingPageClient() {
                     </div>
                   ))
                 ) : (
-                  <p className="rounded-[20px] border border-dashed border-white/10 bg-black/10 px-4 py-6 text-center text-sm text-white/50">
+                  <p className={emptyStateClass}>
                     No daily data available for this range yet.
                   </p>
                 )}

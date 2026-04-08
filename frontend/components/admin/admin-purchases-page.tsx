@@ -83,6 +83,9 @@ type PurchasesResponse = {
 };
 
 export function AdminPurchasesPageClient() {
+  const panelClass = "rounded-[28px] border border-white/10 bg-white/5 p-6";
+  const mutedPanelClass = "rounded-[22px] border border-white/10 bg-black/10 p-4 text-white/80";
+  const emptyStateClass = "rounded-[22px] border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-white/50";
   const token = useAuthStore((state) => state.token);
   const [range, setRange] = useState<"7d" | "30d" | "90d">("30d");
   const [data, setData] = useState<PurchasesResponse | null>(null);
@@ -170,7 +173,7 @@ export function AdminPurchasesPageClient() {
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className={panelClass}>
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h3 className="font-semibold text-white">Vendor spend insights</h3>
@@ -182,7 +185,7 @@ export function AdminPurchasesPageClient() {
                 Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-[20px] bg-white/5" />)
               ) : data?.topVendors.length ? (
                 data.topVendors.map((vendor) => (
-                  <div key={vendor.vendorId} className="rounded-[22px] border border-white/10 bg-black/10 p-4 text-white/80">
+                  <div key={vendor.vendorId} className={mutedPanelClass}>
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-medium text-white">{vendor.vendorName}</p>
@@ -193,14 +196,14 @@ export function AdminPurchasesPageClient() {
                   </div>
                 ))
               ) : (
-                <p className="rounded-[22px] border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-white/50">
+                <p className={emptyStateClass}>
                   No vendor spend recorded in this range yet.
                 </p>
               )}
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className={panelClass}>
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h3 className="font-semibold text-white">Stock valuation watchlist</h3>
@@ -212,7 +215,7 @@ export function AdminPurchasesPageClient() {
                 Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-20 animate-pulse rounded-[20px] bg-white/5" />)
               ) : data?.stockInsights.length ? (
                 data.stockInsights.map((item) => (
-                  <div key={item.productId} className="rounded-[22px] border border-white/10 bg-black/10 p-4 text-white/80">
+                  <div key={item.productId} className={mutedPanelClass}>
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-medium text-white">{item.productName}</p>
@@ -228,13 +231,13 @@ export function AdminPurchasesPageClient() {
                   </div>
                 ))
               ) : (
-                <p className="rounded-[22px] border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-white/50">
+                <p className={emptyStateClass}>
                   No stock valuation data available yet.
                 </p>
               )}
             </div>
           </div>
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className={panelClass}>
             <h3 className="font-semibold text-white">New vendor</h3>
             <div className="mt-4 grid gap-3">
               <input value={vendorForm.name} onChange={(e) => setVendorForm((s) => ({ ...s, name: e.target.value }))} placeholder="Vendor name" className="rounded-2xl bg-white px-4 py-3 text-sm text-ink" />
@@ -251,7 +254,7 @@ export function AdminPurchasesPageClient() {
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className={panelClass}>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="font-semibold text-white">Stock inward entry</h3>
@@ -286,7 +289,7 @@ export function AdminPurchasesPageClient() {
         </div>
 
         <div className="grid gap-4 xl:grid-cols-2">
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className={panelClass}>
             <h3 className="font-semibold text-white">Dead stock watchlist</h3>
             <p className="mt-1 text-sm text-white/50">Items carrying value but showing no net sales in this range.</p>
             <div className="mt-4 space-y-3">
@@ -294,7 +297,7 @@ export function AdminPurchasesPageClient() {
                 Array.from({ length: 3 }).map((_, index) => <div key={index} className="h-20 animate-pulse rounded-[20px] bg-white/5" />)
               ) : data?.deadStockItems.length ? (
                 data.deadStockItems.map((item) => (
-                  <div key={item.productId} className="rounded-[22px] border border-white/10 bg-black/10 p-4 text-white/80">
+                  <div key={item.productId} className={mutedPanelClass}>
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-medium text-white">{item.productName}</p>
@@ -310,14 +313,14 @@ export function AdminPurchasesPageClient() {
                   </div>
                 ))
               ) : (
-                <p className="rounded-[22px] border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-white/50">
+                <p className={emptyStateClass}>
                   No dead stock detected in this range.
                 </p>
               )}
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className={panelClass}>
             <h3 className="font-semibold text-white">Slow-moving stock</h3>
             <p className="mt-1 text-sm text-white/50">Items with stock on hand but only limited net sales in selected range.</p>
             <div className="mt-4 space-y-3">
@@ -325,7 +328,7 @@ export function AdminPurchasesPageClient() {
                 Array.from({ length: 3 }).map((_, index) => <div key={index} className="h-20 animate-pulse rounded-[20px] bg-white/5" />)
               ) : data?.slowMovingItems.length ? (
                 data.slowMovingItems.map((item) => (
-                  <div key={item.productId} className="rounded-[22px] border border-white/10 bg-black/10 p-4 text-white/80">
+                  <div key={item.productId} className={mutedPanelClass}>
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-medium text-white">{item.productName}</p>
@@ -341,7 +344,7 @@ export function AdminPurchasesPageClient() {
                   </div>
                 ))
               ) : (
-                <p className="rounded-[22px] border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-white/50">
+                <p className={emptyStateClass}>
                   No slow-moving items detected in this range.
                 </p>
               )}
@@ -349,7 +352,7 @@ export function AdminPurchasesPageClient() {
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+        <div className={panelClass}>
           <h3 className="font-semibold text-white">Recent purchases</h3>
           <div className="mt-4 space-y-3">
             {isLoading ? (

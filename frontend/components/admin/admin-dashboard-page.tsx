@@ -10,6 +10,9 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 
 export function AdminDashboardPageClient() {
+  const panelClass = "rounded-[28px] border border-white/10 bg-white/5 p-6";
+  const mutedPanelClass = "rounded-[22px] border border-white/10 bg-black/10 p-4";
+  const emptyStateClass = "rounded-[24px] border border-dashed border-white/10 bg-black/10 px-4 py-8 text-center text-white/50";
   const token = useAuthStore((state) => state.token);
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -134,7 +137,7 @@ export function AdminDashboardPageClient() {
                     {data?.stats?.awaitingPacking ?? 0} awaiting packing, {data?.stats?.awaitingShipment ?? 0} awaiting shipment
                   </p>
                 </div>
-                <div className="rounded-[24px] border border-white/10 bg-black/10 p-4">
+                <div className={mutedPanelClass}>
                   <p className="text-sm text-white/60">Low-stock alerts</p>
                   <p className="mt-2 text-2xl font-semibold text-white">{isLoading ? "..." : data?.stats?.lowStockCount ?? 0}</p>
                   <p className="mt-1 text-xs text-white/45">{lowStockCriticalCount} items are in the critical band</p>
@@ -146,10 +149,7 @@ export function AdminDashboardPageClient() {
                 </div>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <Link
-                  href="/admin/orders"
-                  className="rounded-[22px] border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white transition hover:bg-white/10"
-                >
+                <Link href="/admin/orders" className="rounded-[22px] border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white transition hover:bg-white/10">
                   Review orders
                 </Link>
                 <Link
@@ -176,7 +176,7 @@ export function AdminDashboardPageClient() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className={panelClass}>
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-semibold">Revenue trend</h3>
               <span className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">{range} view</span>
@@ -203,7 +203,7 @@ export function AdminDashboardPageClient() {
                   })}
             </div>
           </div>
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className={panelClass}>
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-semibold">Recent orders</h3>
               <Link href="/admin/orders" className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
@@ -217,7 +217,7 @@ export function AdminDashboardPageClient() {
                 ))
               ) : data?.recentOrders?.length ? (
                 data.recentOrders.map((order: any) => (
-                  <div key={order.id} className="rounded-[24px] border border-white/10 bg-black/10 p-4 text-white/80">
+                  <div key={order.id} className={`${mutedPanelClass} text-white/80`}>
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <p className="font-medium text-white">{order.orderNumber}</p>
@@ -236,13 +236,13 @@ export function AdminDashboardPageClient() {
                   </div>
                 ))
               ) : (
-                <p className="rounded-[24px] border border-dashed border-white/10 bg-black/10 px-4 py-8 text-center text-white/50">
+                <p className={emptyStateClass}>
                   No recent orders yet. As soon as orders start moving, this panel will surface the latest operational activity.
                 </p>
               )}
             </div>
           </div>
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className={panelClass}>
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-semibold">Top sellers</h3>
               <Link href="/admin/products" className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
@@ -260,7 +260,7 @@ export function AdminDashboardPageClient() {
                   const width = Math.max(12, Math.round((quantity / topSellerMax) * 100));
 
                   return (
-                    <div key={product.productId} className="rounded-[22px] border border-white/10 bg-black/10 p-4 text-white/80">
+                    <div key={product.productId} className={`${mutedPanelClass} text-white/80`}>
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
                           <p className="truncate font-medium text-white">
@@ -277,7 +277,7 @@ export function AdminDashboardPageClient() {
                   );
                 })
               ) : (
-                <p className="rounded-[24px] border border-dashed border-white/10 bg-black/10 px-4 py-8 text-center text-white/50">
+                <p className={emptyStateClass}>
                   No net product sales in this range yet. Completed sales will surface here automatically.
                 </p>
               )}
@@ -286,7 +286,7 @@ export function AdminDashboardPageClient() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className={panelClass}>
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-semibold">Sales mix</h3>
               <span className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">Brand / category / model</span>
@@ -297,7 +297,7 @@ export function AdminDashboardPageClient() {
                 { title: "Top categories", items: data?.topCategories ?? [] },
                 { title: "Top models", items: data?.topModels ?? [] }
               ].map((section) => (
-                <div key={section.title} className="rounded-[22px] border border-white/10 bg-black/10 p-4">
+                <div key={section.title} className={mutedPanelClass}>
                   <p className="text-sm font-semibold text-white">{section.title}</p>
                   <div className="mt-3 space-y-3 text-sm text-white/75">
                     {isLoading ? (
@@ -319,7 +319,7 @@ export function AdminDashboardPageClient() {
               ))}
             </div>
           </div>
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className={panelClass}>
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-semibold">Low stock alerts</h3>
               <Link href="/admin/inventory" className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
@@ -333,7 +333,7 @@ export function AdminDashboardPageClient() {
                 ))
               ) : data?.lowStock?.length ? (
                 data.lowStock.map((item: any) => (
-                  <div key={item.id} className="flex items-center justify-between gap-3 rounded-[22px] border border-white/10 bg-black/10 p-4 text-white/80">
+                  <div key={item.id} className={`flex items-center justify-between gap-3 ${mutedPanelClass} text-white/80`}>
                     <div>
                       <p className="font-medium text-white">{item.product.name}</p>
                       <p className="mt-1 text-xs text-white/45">SKU {item.product.sku}</p>
@@ -344,13 +344,13 @@ export function AdminDashboardPageClient() {
                   </div>
                 ))
               ) : (
-                <p className="rounded-[24px] border border-dashed border-white/10 bg-black/10 px-4 py-8 text-center text-white/50">
+                <p className={emptyStateClass}>
                   No low stock alerts right now.
                 </p>
               )}
             </div>
           </div>
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+          <div className={panelClass}>
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-semibold">Recent customers</h3>
               <Link href="/admin/users" className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
@@ -364,7 +364,7 @@ export function AdminDashboardPageClient() {
                 ))
               ) : data?.users?.length ? (
                 data.users.slice(0, 6).map((user: any) => (
-                  <div key={user.id} className="flex items-center justify-between gap-3 rounded-[22px] border border-white/10 bg-black/10 p-4 text-white/80">
+                  <div key={user.id} className={`flex items-center justify-between gap-3 ${mutedPanelClass} text-white/80`}>
                     <div>
                       <p className="font-medium text-white">{user.name}</p>
                       <p className="text-white/50">{user.email}</p>
@@ -375,7 +375,7 @@ export function AdminDashboardPageClient() {
                   </div>
                 ))
               ) : (
-                <p className="rounded-[24px] border border-dashed border-white/10 bg-black/10 px-4 py-8 text-center text-white/50">
+                <p className={emptyStateClass}>
                   No customers registered yet.
                 </p>
               )}
