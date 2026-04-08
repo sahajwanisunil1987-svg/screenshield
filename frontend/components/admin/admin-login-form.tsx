@@ -58,7 +58,7 @@ export function AdminLoginForm() {
   return (
     <div
       data-admin-theme={theme}
-      className={`flex min-h-screen items-center justify-center px-4 transition-colors duration-300 ${
+      className={`admin-theme flex min-h-screen items-center justify-center px-4 transition-colors duration-300 ${
         isDark
           ? "bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_26%),radial-gradient(circle_at_top_right,rgba(249,115,22,0.12),transparent_18%),linear-gradient(180deg,#020617,#08111f)]"
           : "bg-[radial-gradient(circle_at_top_left,rgba(15,118,110,0.12),transparent_22%),radial-gradient(circle_at_top_right,rgba(249,115,22,0.12),transparent_18%),linear-gradient(180deg,#f9fbfd,#edf3f8)]"
