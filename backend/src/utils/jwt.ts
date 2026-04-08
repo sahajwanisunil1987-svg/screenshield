@@ -10,7 +10,7 @@ export type AuthTokenPayload = {
 const refreshSecret = env.JWT_REFRESH_SECRET ?? env.JWT_SECRET;
 
 export const signAccessToken = (payload: AuthTokenPayload) =>
-  jwt.sign(payload, env.JWT_SECRET, { expiresIn: "15m" });
+  jwt.sign(payload, env.JWT_SECRET, { expiresIn: "1h" });
 
 export const signRefreshToken = (payload: AuthTokenPayload) =>
   jwt.sign(payload, refreshSecret, { expiresIn: "7d" });
