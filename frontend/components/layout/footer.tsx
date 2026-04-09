@@ -43,7 +43,7 @@ type FooterSettings = {
 
 const footerFallbackSettings: Required<FooterSettings> = {
   siteName: "PurjiX",
-  supportEmail: "support@purjix.com",
+  supportEmail: "Support@purjix.compurjix.com",
   supportPhone: "+91 99999 99999",
   supportHours: "Mon-Sat, 10 AM to 7 PM",
   addressLine1: "Repair Market, Main Unit",

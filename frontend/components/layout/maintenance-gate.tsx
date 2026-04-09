@@ -18,7 +18,7 @@ type MaintenanceSettings = {
 
 const fallbackSettings: MaintenanceSettings = {
   siteName: "PurjiX",
-  supportEmail: "support@purjix.com",
+  supportEmail: "Support@purjix.compurjix.com",
   supportPhone: "+91 99999 99999",
   supportWhatsapp: "+91 99999 99999",
   supportHours: "Mon-Sat, 10 AM to 7 PM",

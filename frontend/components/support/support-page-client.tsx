@@ -63,7 +63,7 @@ export function SupportPageClient() {
           <div className="space-y-4 text-sm leading-7 text-slate sm:text-base">
             <p>Use the same email you used for your PurjiX order so the team can trace the request faster.</p>
             <p>For returns, payments, or shipment delays, add the order number and describe the issue clearly.</p>
-            <p>You can also reach the team directly at <strong>support@gmail.com.</strong> or <strong>+91 9351543131</strong>.</p>
+            <p>You can also reach the team directly at <strong>Support@purjix.comgmail.com.</strong> or <strong>+91 9351543131</strong>.</p>
           </div>
         </div>
 

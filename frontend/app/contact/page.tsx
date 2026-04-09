@@ -11,14 +11,14 @@ const sections = [
   {
     title: "Customer support",
     body: [
-      "Email us at support@purjix.com or call +91 9351543131 for order tracking, product compatibility clarification, warranty queries, and checkout-related help.",
+      "Email us at Support@purjix.compurjix.com or call +91 9351543131 for order tracking, product compatibility clarification, warranty queries, and checkout-related help.",
       "For faster support, include your order number and a short description of the issue."
     ]
   },
   {
     title: "Business and workshop inquiries",
     body: [
-      "Repair-shop buyers and repeat workshop customers can contact us at support@purjix.com or call +91 9351543131 for larger order coordination, catalog assistance, or stock-related discussions.",
+      "Repair-shop buyers and repeat workshop customers can contact us at Support@purjix.compurjix.com or call +91 9351543131 for larger order coordination, catalog assistance, or stock-related discussions.",
       "For high-intent business inquiries, include the brands, models, and part categories you need."
     ]
   },
@@ -36,7 +36,7 @@ export default function ContactPage() {
     <ContentPage
       eyebrow="Contact"
       title="Talk to the PurjiX team"
-      intro="Reach out at support@purjix.com or call +91 9351543131 for pre-order fitment guidance, order support, returns discussion, or workshop-focused buying help."
+      intro="Reach out at Support@purjix.compurjix.com or call +91 9351543131 for pre-order fitment guidance, order support, returns discussion, or workshop-focused buying help."
       sections={sections}
     />
   );

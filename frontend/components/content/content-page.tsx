@@ -11,7 +11,7 @@ export function ContentPage({
   title,
   intro,
   sections,
-  supportEmail = "support@sparekart.in",
+  supportEmail = "Support@purjix.comsparekart.in",
   supportPhone = "+91 99999 99999"
 }: {
   eyebrow: string;
