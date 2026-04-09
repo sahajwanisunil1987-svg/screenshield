@@ -7,7 +7,7 @@ export const appSettingsDefaults = {
   id: APP_SETTINGS_ID,
   siteName: "PurjiX",
   legalName: "PurjiX Mobile Spare Parts",
-  supportEmail: "Support@purjix.compurjix.com",
+  supportEmail: "support@purjix.com",
   supportPhone: "+91 99999 99999",
   supportWhatsapp: "+91 99999 99999",
   supportHours: "Mon-Sat, 10 AM to 7 PM",

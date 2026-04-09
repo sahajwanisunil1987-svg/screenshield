@@ -223,7 +223,7 @@ model AppSetting {
   id                 String   @id @default("default")
   siteName           String   @default("PurjiX")
   legalName          String   @default("PurjiX Mobile Spare Parts")
-  supportEmail       String   @default("Support@purjix.compurjix.com")
+  supportEmail       String   @default("support@purjix.com")
   supportPhone       String   @default("+91 99999 99999")
   supportWhatsapp    String   @default("+91 99999 99999")
   supportHours       String   @default("Mon-Sat, 10 AM to 7 PM")
