@@ -2,6 +2,7 @@ import nodemailer from "nodemailer";
 import { prisma } from "../lib/prisma.js";
 import { env } from "../config/env.js";
 
+// ✅ SMTP Transporter
 const transporter = nodemailer.createTransport({
   host: env.SMTP_HOST,
   port: Number(env.SMTP_PORT) || 465,
@@ -12,6 +13,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// ✅ Check if SMTP is properly configured
 const hasConfiguredSmtp = () => {
   const placeholderHosts = new Set(["smtp.example.com", "example.com", "localhost"]);
   const placeholderUsers = new Set(["noreply@example.com", "example@example.com"]);
@@ -24,7 +26,8 @@ const hasConfiguredSmtp = () => {
   );
 };
 
-const sendMailOrLog = async (payload: { to: string; subject: string; html: string; debugUrl?: string }) => {
+// ✅ Safe email sender (with error handling)
+const sendMailOrLog = async (payload) => {
   if (!hasConfiguredSmtp() && env.NODE_ENV !== "production") {
     console.info(JSON.stringify({
       ts: new Date().toISOString(),
@@ -37,21 +40,24 @@ const sendMailOrLog = async (payload: { to: string; subject: string; html: strin
     return;
   }
 
-  await transporter.sendMail({
-    from: env.SMTP_USER,
-    to: payload.to,
-    subject: payload.subject,
-    html: payload.html
-  });
+  try {
+    await transporter.sendMail({
+      from: `"PurjiX" <${env.SMTP_USER}>`,
+      to: payload.to,
+      subject: payload.subject,
+      html: payload.html
+    });
+
+    console.log(`📧 Email sent to ${payload.to}`);
+
+  } catch (error) {
+    console.error("❌ Email send failed:", error);
+  }
 };
 
-export const createNotification = async (payload: {
-  userId: string;
-  title: string;
-  message: string;
-  href?: string;
-  kind?: string;
-}) =>
+// ✅ Notifications (DB)
+
+export const createNotification = async (payload) =>
   prisma.notification.create({
     data: {
       userId: payload.userId,
@@ -62,7 +68,7 @@ export const createNotification = async (payload: {
     }
   });
 
-export const listNotifications = async (userId: string) => {
+export const listNotifications = async (userId) => {
   const [items, unreadCount] = await Promise.all([
     prisma.notification.findMany({
       where: { userId },
@@ -77,7 +83,7 @@ export const listNotifications = async (userId: string) => {
   return { items, unreadCount };
 };
 
-export const markNotificationRead = async (userId: string, notificationId: string) =>
+export const markNotificationRead = async (userId, notificationId) =>
   prisma.notification.updateMany({
     where: { id: notificationId, userId },
     data: {
@@ -86,7 +92,7 @@ export const markNotificationRead = async (userId: string, notificationId: strin
     }
   });
 
-export const markAllNotificationsRead = async (userId: string) =>
+export const markAllNotificationsRead = async (userId) =>
   prisma.notification.updateMany({
     where: { userId, isRead: false },
     data: {
@@ -95,52 +101,75 @@ export const markAllNotificationsRead = async (userId: string) =>
     }
   });
 
-export const sendOrderConfirmation = async (email: string, orderNumber: string) => {
+// ✅ Email Functions
+
+export const sendOrderConfirmation = async (email, orderNumber) => {
   await sendMailOrLog({
     to: email,
     subject: `PurjiX Order ${orderNumber}`,
-    html: `<p>Your order <strong>${orderNumber}</strong> has been placed successfully.</p>`
+    html: `
+      <div style="font-family:sans-serif">
+        <h2>✅ Order Confirmed</h2>
+        <p>Your order <strong>${orderNumber}</strong> has been placed successfully.</p>
+      </div>
+    `
   });
 };
 
-export const sendWhatsappNotification = async (payload: unknown) => {
-  if (!env.WHATSAPP_WEBHOOK_URL) {
-    return { skipped: true };
-  }
-
-  const response = await fetch(env.WHATSAPP_WEBHOOK_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-
-  return { ok: response.ok };
-};
-
-
-export const sendVerificationEmail = async (email: string, verifyUrl: string) => {
+export const sendVerificationEmail = async (email, verifyUrl) => {
   await sendMailOrLog({
     to: email,
     subject: "Verify your PurjiX account",
-    html: `<p>Verify your account by clicking <a href="${verifyUrl}">this link</a>.</p>`,
+    html: `
+      <p>Verify your account by clicking 
+      <a href="${verifyUrl}">this link</a>.</p>
+    `,
     debugUrl: verifyUrl
   });
 };
 
-export const sendPasswordResetEmail = async (email: string, resetUrl: string) => {
+export const sendPasswordResetEmail = async (email, resetUrl) => {
   await sendMailOrLog({
     to: email,
     subject: "Reset your PurjiX password",
-    html: `<p>Reset your password by clicking <a href="${resetUrl}">this link</a>.</p>`,
+    html: `
+      <p>Reset your password by clicking 
+      <a href="${resetUrl}">this link</a>.</p>
+    `,
     debugUrl: resetUrl
   });
 };
 
-
-export const sendSupportTicketAcknowledgement = async (email: string, ticketId: string) => {
+export const sendSupportTicketAcknowledgement = async (email, ticketId) => {
   await sendMailOrLog({
     to: email,
     subject: `PurjiX support request ${ticketId}`,
-    html: `<p>We have received your support request.</p><p>Reference ID: <strong>${ticketId}</strong></p><p>Our team will review it shortly.</p>`
+    html: `
+      <p>We have received your support request.</p>
+      <p>Reference ID: <strong>${ticketId}</strong></p>
+      <p>Our team will review it shortly.</p>
+    `
   });
+};
+
+// ✅ WhatsApp Notification
+
+export const sendWhatsappNotification = async (payload) => {
+  if (!env.WHATSAPP_WEBHOOK_URL) {
+    return { skipped: true };
+  }
+
+  try {
+    const response = await fetch(env.WHATSAPP_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    return { ok: response.ok };
+
+  } catch (err) {
+    console.error("❌ WhatsApp error:", err);
+    return { ok: false };
+  }
 };
