@@ -72,6 +72,11 @@ const defaultSettings = {
   developerUrl: "",
   orderPrefix: "PJX",
   invoicePrefix: "INV",
+  invoiceGstin: "27ABCDE1234F1Z5",
+  invoiceSupportEmail: "support@purjix.com",
+  invoiceSupportPhone: "+91 99999 99999",
+  invoiceSupplyLabel: "Domestic taxable supply",
+  invoiceAuthorizedSignatory: "Authorised Signatory",
   invoiceFooterNote: "This is a computer-generated GST invoice.",
   invoiceDeclaration: "We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.",
   shippingFee: 79,
@@ -127,6 +132,11 @@ const normalizeSettings = (value: Partial<Record<keyof SettingsState, unknown>> 
   developerUrl: typeof value?.developerUrl === "string" ? value.developerUrl.trim() : defaultSettings.developerUrl,
   orderPrefix: toSafeString(value?.orderPrefix, defaultSettings.orderPrefix).toUpperCase().replace(/\s+/g, ""),
   invoicePrefix: toSafeString(value?.invoicePrefix, defaultSettings.invoicePrefix).toUpperCase().replace(/\s+/g, ""),
+  invoiceGstin: toSafeString(value?.invoiceGstin, defaultSettings.invoiceGstin).toUpperCase().replace(/\s+/g, ""),
+  invoiceSupportEmail: toSafeString(value?.invoiceSupportEmail, defaultSettings.invoiceSupportEmail),
+  invoiceSupportPhone: toSafeString(value?.invoiceSupportPhone, defaultSettings.invoiceSupportPhone),
+  invoiceSupplyLabel: toSafeString(value?.invoiceSupplyLabel, defaultSettings.invoiceSupplyLabel),
+  invoiceAuthorizedSignatory: toSafeString(value?.invoiceAuthorizedSignatory, defaultSettings.invoiceAuthorizedSignatory),
   invoiceFooterNote: toSafeString(value?.invoiceFooterNote, defaultSettings.invoiceFooterNote),
   invoiceDeclaration: toSafeString(value?.invoiceDeclaration, defaultSettings.invoiceDeclaration),
   shippingFee: toSafeNumber(value?.shippingFee, defaultSettings.shippingFee),
@@ -294,7 +304,7 @@ export function AdminSettingsPage() {
               <SummaryCard label="State" value={isDirty ? "Unsaved changes" : "All changes saved"} tone={isDirty ? "amber" : "emerald"} />
               <SummaryCard label="Shipping" value={`Rs. ${settings.shippingFee}`} hint={`Free above Rs. ${settings.freeShippingThreshold}`} tone="cyan" />
               <SummaryCard label="COD" value={`Rs. ${settings.codMaxOrderValue}`} hint={`${settings.returnWindowDays} day return window`} tone="white" />
-              <SummaryCard label="Mode" value={settings.maintenanceMode ? "Maintenance ON" : "Store live"} hint={`Prefix ${settings.orderPrefix}`} tone={settings.maintenanceMode ? "amber" : "white"} />
+              <SummaryCard label="Mode" value={settings.maintenanceMode ? "Maintenance ON" : "Store live"} hint={`Order ${settings.orderPrefix} · Invoice ${settings.invoicePrefix}`} tone={settings.maintenanceMode ? "amber" : "white"} />
             </div>
           </div>
 
@@ -471,42 +481,114 @@ export function AdminSettingsPage() {
           <SectionCard
             eyebrow="Billing"
             title="Invoice settings"
-            description="Control invoice numbering and the legal/support copy used inside the generated invoice PDF."
+            description="Control invoice numbering, GST identity, support contact, and the declaration/footer copy used in the generated PDF."
             icon={ShoppingBag}
           >
-            <div className="grid gap-4 md:grid-cols-2">
-              <LabeledInput
-                label="Invoice prefix"
-                hint="Used in generated invoice numbers."
-                value={settings.invoicePrefix}
-                onChange={(value) => updateField("invoicePrefix", value.toUpperCase().replace(/\s+/g, ""))}
-                disabled={isLoading}
-              />
-              <LabeledInput
-                label="Return window label"
-                hint="Already used above in shipping rules; keep this in sync with invoice/support policy."
-                value={`${settings.returnWindowDays} day(s)`}
-                onChange={() => {}}
-                disabled
-              />
-            </div>
-            <div className="mt-4 grid gap-4">
-              <LabeledTextarea
-                label="Invoice footer note"
-                hint="Shown in the footer of every generated invoice PDF."
-                value={settings.invoiceFooterNote}
-                onChange={(value) => updateField("invoiceFooterNote", value)}
-                rows={3}
-                disabled={isLoading}
-              />
-              <LabeledTextarea
-                label="Invoice declaration"
-                hint="Shown in the declaration block before the authorised signatory area."
-                value={settings.invoiceDeclaration}
-                onChange={(value) => updateField("invoiceDeclaration", value)}
-                rows={4}
-                disabled={isLoading}
-              />
+            <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+              <div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <LabeledInput
+                    label="Invoice prefix"
+                    hint="Used in generated invoice numbers."
+                    value={settings.invoicePrefix}
+                    onChange={(value) => updateField("invoicePrefix", value.toUpperCase().replace(/\s+/g, ""))}
+                    disabled={isLoading}
+                  />
+                  <LabeledInput
+                    label="Invoice GSTIN"
+                    hint="Printed in the invoice header."
+                    value={settings.invoiceGstin}
+                    onChange={(value) => updateField("invoiceGstin", value.toUpperCase().replace(/\s+/g, ""))}
+                    disabled={isLoading}
+                  />
+                  <LabeledInput
+                    label="Invoice support email"
+                    hint="Shown in the invoice header and footer."
+                    value={settings.invoiceSupportEmail}
+                    onChange={(value) => updateField("invoiceSupportEmail", value)}
+                    disabled={isLoading}
+                  />
+                  <LabeledInput
+                    label="Invoice support phone"
+                    hint="Shown for billing support on the PDF."
+                    value={settings.invoiceSupportPhone}
+                    onChange={(value) => updateField("invoiceSupportPhone", value)}
+                    disabled={isLoading}
+                  />
+                  <LabeledInput
+                    label="Supply type label"
+                    hint="Example: Domestic taxable supply."
+                    value={settings.invoiceSupplyLabel}
+                    onChange={(value) => updateField("invoiceSupplyLabel", value)}
+                    disabled={isLoading}
+                  />
+                  <LabeledInput
+                    label="Signatory label"
+                    hint="Shown below the company name in the declaration block."
+                    value={settings.invoiceAuthorizedSignatory}
+                    onChange={(value) => updateField("invoiceAuthorizedSignatory", value)}
+                    disabled={isLoading}
+                  />
+                  <LabeledInput
+                    label="Return window label"
+                    hint="Pulled from fulfilment settings for quick reference."
+                    value={`${settings.returnWindowDays} day(s)`}
+                    onChange={() => {}}
+                    disabled
+                  />
+                </div>
+                <div className="mt-4 grid gap-4">
+                  <LabeledTextarea
+                    label="Invoice footer note"
+                    hint="Shown in the footer of every generated invoice PDF."
+                    value={settings.invoiceFooterNote}
+                    onChange={(value) => updateField("invoiceFooterNote", value)}
+                    rows={3}
+                    disabled={isLoading}
+                  />
+                  <LabeledTextarea
+                    label="Invoice declaration"
+                    hint="Shown in the declaration block before the signatory area."
+                    value={settings.invoiceDeclaration}
+                    onChange={(value) => updateField("invoiceDeclaration", value)}
+                    rows={4}
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+              <div className="rounded-[24px] border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-200/80">Invoice preview</p>
+                <div className="mt-4 rounded-[20px] border border-white/10 bg-[#07111f] p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-lg font-semibold text-white">{settings.siteName} Tax Invoice</p>
+                      <p className="mt-1 text-sm text-white/70">{settings.legalName}</p>
+                      <p className="mt-1 text-sm text-white/60">{settings.addressLine1}</p>
+                      <p className="text-sm text-white/60">{settings.addressLine2}</p>
+                    </div>
+                    <div className="text-right text-sm">
+                      <p className="font-semibold text-teal-100">GSTIN</p>
+                      <p className="mt-1 text-white">{settings.invoiceGstin}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                      <p className="text-xs uppercase tracking-[0.18em] text-white/45">Invoice no</p>
+                      <p className="mt-2 font-semibold text-white">{settings.invoicePrefix}-2026-0001</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                      <p className="text-xs uppercase tracking-[0.18em] text-white/45">Support</p>
+                      <p className="mt-2 font-semibold text-white">{settings.invoiceSupportPhone}</p>
+                      <p className="mt-1 text-sm text-white/65">{settings.invoiceSupportEmail}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-white/70">
+                    <p><span className="font-semibold text-white">Supply type:</span> {settings.invoiceSupplyLabel}</p>
+                    <p className="mt-2"><span className="font-semibold text-white">Signatory:</span> {settings.invoiceAuthorizedSignatory}</p>
+                    <p className="mt-2"><span className="font-semibold text-white">Footer:</span> {settings.invoiceFooterNote}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </SectionCard>
 
@@ -638,6 +720,8 @@ export function AdminSettingsPage() {
                 <p>COD limit: Rs. {settings.codMaxOrderValue}</p>
                 <p>Return window: {settings.returnWindowDays} day(s)</p>
                 <p>Invoice prefix: {settings.invoicePrefix}</p>
+                <p>Invoice GSTIN: {settings.invoiceGstin}</p>
+                <p>Invoice support: {settings.invoiceSupportPhone}</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
                 <p className="font-semibold text-white">Maintenance preview</p>

@@ -41,7 +41,7 @@ const drawStatusBadge = (
 const drawFooter = (doc: PDFKit.PDFDocument, footerNote: string) => {
   doc.fillColor("#5b6474").font("Helvetica").fontSize(9);
   doc.text(
-    `${footerNote} Issued by ${env.COMPANY_LEGAL_NAME}. For billing support contact ${env.COMPANY_EMAIL} or ${env.COMPANY_PHONE}.`,
+    footerNote,
     40,
     FOOTER_Y,
     {
@@ -70,7 +70,22 @@ const loadRemoteImage = async (url?: string | null) => {
 };
 
 export const generateInvoicePdfBuffer = async (orderId: string) => {
-  const appSettings = await ensureAppSettings(prisma);
+  const appSettings = await ensureAppSettings(prisma) as Awaited<ReturnType<typeof ensureAppSettings>> & {
+    invoiceGstin?: string | null;
+    invoiceSupportEmail?: string | null;
+    invoiceSupportPhone?: string | null;
+    invoiceSupplyLabel?: string | null;
+    invoiceAuthorizedSignatory?: string | null;
+  };
+  const companyName = appSettings.siteName || env.COMPANY_NAME;
+  const companyLegalName = appSettings.legalName || env.COMPANY_LEGAL_NAME;
+  const companyAddress = [appSettings.addressLine1, appSettings.addressLine2].filter(Boolean).join(", ")
+    || [env.COMPANY_ADDRESS_LINE1, env.COMPANY_ADDRESS_LINE2].filter(Boolean).join(", ");
+  const invoiceGstin = appSettings.invoiceGstin || env.COMPANY_GSTIN;
+  const invoiceSupportEmail = appSettings.invoiceSupportEmail || appSettings.supportEmail || env.COMPANY_EMAIL;
+  const invoiceSupportPhone = appSettings.invoiceSupportPhone || appSettings.supportPhone || env.COMPANY_PHONE;
+  const invoiceSupplyLabel = appSettings.invoiceSupplyLabel || "Domestic taxable supply";
+  const invoiceAuthorizedSignatory = appSettings.invoiceAuthorizedSignatory || "Authorised Signatory";
   const siteBaseUrl = env.SITE_URL || env.FRONTEND_URL;
   const order = await prisma.order.findUnique({
     where: { id: orderId },
@@ -187,14 +202,14 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
       // Ignore logo render failures and continue with text branding only.
     }
   }
-  doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(24).text(`${env.COMPANY_NAME} Tax Invoice`, companyLogoBuffer ? 112 : 58, 54);
-  doc.font("Helvetica").fontSize(10).fillColor("#dbe7f3").text(env.COMPANY_LEGAL_NAME, companyLogoBuffer ? 112 : 58, 86);
-  doc.text(`${env.COMPANY_ADDRESS_LINE1}, ${env.COMPANY_ADDRESS_LINE2}`, companyLogoBuffer ? 112 : 58, 100, { width: 240 });
+  doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(24).text(`${companyName} Tax Invoice`, companyLogoBuffer ? 112 : 58, 54);
+  doc.font("Helvetica").fontSize(10).fillColor("#dbe7f3").text(companyLegalName, companyLogoBuffer ? 112 : 58, 86);
+  doc.text(companyAddress, companyLogoBuffer ? 112 : 58, 100, { width: 240 });
 
   doc.font("Helvetica-Bold").fontSize(10).fillColor("#c9f3ee").text("GSTIN", 390, 54);
-  doc.font("Helvetica").fontSize(10).fillColor("#ffffff").text(env.COMPANY_GSTIN, 390, 68);
+  doc.font("Helvetica").fontSize(10).fillColor("#ffffff").text(invoiceGstin, 390, 68);
   doc.font("Helvetica-Bold").fontSize(10).fillColor("#c9f3ee").text("Support", 390, 88);
-  doc.font("Helvetica").fontSize(10).fillColor("#ffffff").text(`${env.COMPANY_PHONE} · ${env.COMPANY_EMAIL}`, 390, 102, {
+  doc.font("Helvetica").fontSize(10).fillColor("#ffffff").text(`${invoiceSupportPhone} · ${invoiceSupportEmail}`, 390, 102, {
     width: 140
   });
   drawStatusBadge(
@@ -223,7 +238,7 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
   drawLabelValue(doc, "Invoice Date", formatDate(order.invoice.createdAt), 54, 252, 135);
   drawAddressLines(doc, billingContactLines, 229, 194, 137);
   drawAddressLines(doc, orderAddressLines, 404, 194, 137);
-  drawLabelValue(doc, "Supply Type", "Domestic taxable supply", 229, 246, 137);
+  drawLabelValue(doc, "Supply Type", invoiceSupplyLabel, 229, 246, 137);
   drawLabelValue(doc, "Currency", "INR", 404, 246, 137);
 
   const tableTop = 294;
@@ -313,7 +328,7 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
   doc.roundedRect(40, summaryTop, 250, 138, 12).fillAndStroke("#f5f8fb", "#d6dee8");
   doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(11).text("Invoice Notes", 54, summaryTop + 14);
   doc.font("Helvetica").fontSize(9).fillColor("#5b6474");
-  doc.text("Supply type: Domestic taxable supply", 54, summaryTop + 34);
+  doc.text(`Supply type: ${invoiceSupplyLabel}`, 54, summaryTop + 34);
   doc.text("Currency: INR", 54, summaryTop + 50);
   doc.text(`Payment mode: ${order.payment?.provider ?? order.paymentStatus}`, 54, summaryTop + 66);
   doc.text(`Payment status: ${order.paymentStatus}`, 54, summaryTop + 82);
@@ -330,16 +345,16 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
     doc.roundedRect(40, newDeclarationTop, 515, 56, 12).fillAndStroke("#ffffff", "#d6dee8");
     doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(11).text("Declaration", 54, newDeclarationTop + 12);
     doc.font("Helvetica").fontSize(8).fillColor("#5b6474").text(
-      `${appSettings.invoiceDeclaration} This invoice is generated by ${env.COMPANY_LEGAL_NAME}.`,
+      `${appSettings.invoiceDeclaration} This invoice is generated by ${companyLegalName}.`,
       54,
       newDeclarationTop + 26,
       { width: 340, lineGap: 1 }
     );
-    doc.font("Helvetica-Bold").fontSize(9).fillColor("#08111f").text(`For ${env.COMPANY_LEGAL_NAME}`, 412, newDeclarationTop + 16, {
+    doc.font("Helvetica-Bold").fontSize(9).fillColor("#08111f").text(`For ${companyLegalName}`, 412, newDeclarationTop + 16, {
       width: 120,
       align: "right"
     });
-    doc.font("Helvetica").fontSize(8).fillColor("#5b6474").text("Authorised Signatory", 412, newDeclarationTop + 36, {
+    doc.font("Helvetica").fontSize(8).fillColor("#5b6474").text(invoiceAuthorizedSignatory, 412, newDeclarationTop + 36, {
       width: 120,
       align: "right"
     });
@@ -347,22 +362,25 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
     doc.roundedRect(40, declarationTop, 515, 56, 12).fillAndStroke("#ffffff", "#d6dee8");
     doc.fillColor("#08111f").font("Helvetica-Bold").fontSize(11).text("Declaration", 54, declarationTop + 12);
     doc.font("Helvetica").fontSize(8).fillColor("#5b6474").text(
-      `${appSettings.invoiceDeclaration} This invoice is generated by ${env.COMPANY_LEGAL_NAME}.`,
+      `${appSettings.invoiceDeclaration} This invoice is generated by ${companyLegalName}.`,
       54,
       declarationTop + 26,
       { width: 340, lineGap: 1 }
     );
-    doc.font("Helvetica-Bold").fontSize(9).fillColor("#08111f").text(`For ${env.COMPANY_LEGAL_NAME}`, 412, declarationTop + 16, {
+    doc.font("Helvetica-Bold").fontSize(9).fillColor("#08111f").text(`For ${companyLegalName}`, 412, declarationTop + 16, {
       width: 120,
       align: "right"
     });
-    doc.font("Helvetica").fontSize(8).fillColor("#5b6474").text("Authorised Signatory", 412, declarationTop + 36, {
+    doc.font("Helvetica").fontSize(8).fillColor("#5b6474").text(invoiceAuthorizedSignatory, 412, declarationTop + 36, {
       width: 120,
       align: "right"
     });
   }
 
-  drawFooter(doc, appSettings.invoiceFooterNote ?? "This is a computer-generated GST invoice.");
+  drawFooter(
+    doc,
+    `${appSettings.invoiceFooterNote} Issued by ${companyLegalName}. For billing support contact ${invoiceSupportEmail} or ${invoiceSupportPhone}.`
+  );
   doc.end();
 
   const buffer = await new Promise<Buffer>((resolve) => {
