@@ -3,15 +3,50 @@ import { fetchApiOrFallback } from "@/lib/server-api";
 import type { Brand, Category, MobileModel, ProductListResponse } from "@/types";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "http://localhost:3000";
+const SITEMAP_PAGE_SIZE = 200;
 
 const toAbsolute = (path: string) => `${siteUrl}${path}`;
+
+const emptyProductResponse = {
+  items: [],
+  pagination: {
+    page: 1,
+    limit: SITEMAP_PAGE_SIZE,
+    total: 0,
+    pages: 0
+  }
+};
+
+const getAllProducts = async () => {
+  const firstPage = await fetchApiOrFallback<ProductListResponse>(
+    `/products?limit=${SITEMAP_PAGE_SIZE}`,
+    emptyProductResponse,
+    { next: { revalidate: 300 } }
+  );
+
+  if (firstPage.pagination.pages <= 1) {
+    return firstPage.items;
+  }
+
+  const remainingPages = await Promise.all(
+    Array.from({ length: firstPage.pagination.pages - 1 }, (_, index) =>
+      fetchApiOrFallback<ProductListResponse>(
+        `/products?limit=${SITEMAP_PAGE_SIZE}&page=${index + 2}`,
+        emptyProductResponse,
+        { next: { revalidate: 300 } }
+      )
+    )
+  );
+
+  return [firstPage, ...remainingPages].flatMap((page) => page.items);
+};
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [brands, categories, models, products] = await Promise.all([
     fetchApiOrFallback<Brand[]>("/brands", [], { next: { revalidate: 1800 } }),
     fetchApiOrFallback<Category[]>("/categories", [], { next: { revalidate: 1800 } }),
     fetchApiOrFallback<MobileModel[]>("/models", [], { next: { revalidate: 1800 } }),
-    fetchApiOrFallback<ProductListResponse>("/products?limit=40", { items: [], pagination: { page: 1, limit: 40, total: 0, pages: 0 } }, { next: { revalidate: 300 } })
+    getAllProducts()
   ]);
 
   const now = new Date();
@@ -43,6 +78,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7
   }));
 
+  const brandModelRoutes = models
+    .filter((model) => model.brand?.slug)
+    .map((model) => ({
+      url: toAbsolute(`/brands/${model.brand!.slug}/models/${model.slug}`),
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.7
+    }));
+
   const categoryRoutes = categories.map((category) => ({
     url: toAbsolute(`/category/${category.slug}`),
     lastModified: now,
@@ -50,12 +94,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7
   }));
 
-  const productRoutes = products.items.map((product) => ({
+  const productRoutes = products.map((product) => ({
     url: toAbsolute(`/products/${product.slug}`),
     lastModified: now,
     changeFrequency: "daily" as const,
     priority: 0.8
   }));
 
-  return [...staticRoutes, ...brandRoutes, ...modelRoutes, ...categoryRoutes, ...productRoutes];
+  return [...staticRoutes, ...brandRoutes, ...modelRoutes, ...brandModelRoutes, ...categoryRoutes, ...productRoutes];
 }

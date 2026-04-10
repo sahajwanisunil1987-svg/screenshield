@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "PurjiX",
     short_name: "PurjiX",
-    description: "Mobile spare parts store with smart search, cart, checkout, and admin tools.",
+    description: "Mobile spare parts store : PurjiX",
     start_url: "/",
     display: "standalone",
     background_color: "#f4f7fb",

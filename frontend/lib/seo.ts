@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Product } from "@/types";
 
-const siteName = "PurjiX";
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "http://localhost:3000";
+export const siteName = "PurjiX";
+export const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "http://localhost:3000";
+export const defaultOgImage = `${siteUrl}/icon-512.png`;
+export const isProductionSite = !siteUrl.includes("localhost");
 
 export const buildMetadata = ({
   title,
@@ -21,12 +23,41 @@ export const buildMetadata = ({
     description,
     siteName,
     type: "website",
-    url: path ? `${siteUrl}${path}` : siteUrl
+    url: path ? `${siteUrl}${path}` : siteUrl,
+    images: [
+      {
+        url: defaultOgImage,
+        width: 512,
+        height: 512,
+        alt: `${siteName} mobile spare parts store`
+      }
+    ]
   },
   twitter: {
     card: "summary_large_image",
     title: `${title} | ${siteName}`,
-    description
+    description,
+    images: [defaultOgImage]
+  }
+});
+
+export const buildOrganizationStructuredData = () => ({
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: siteName,
+  url: siteUrl,
+  logo: defaultOgImage
+});
+
+export const buildWebsiteStructuredData = () => ({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: siteName,
+  url: siteUrl,
+  potentialAction: {
+    "@type": "SearchAction",
+    target: `${siteUrl}/products?search={search_term_string}`,
+    "query-input": "required name=search_term_string"
   }
 });
 
