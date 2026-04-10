@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Moon, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { KeyboardEvent, useEffect, useState } from "react";
@@ -20,8 +21,10 @@ export function AdminLoginForm({ nextPath = "/admin/dashboard", initialEmail = "
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [resending, setResending] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showResendVerification, setShowResendVerification] = useState(false);
 
   const validate = () => {
     const nextErrors: { email?: string; password?: string } = {};
@@ -52,11 +55,14 @@ export function AdminLoginForm({ nextPath = "/admin/dashboard", initialEmail = "
         expectedRole: "ADMIN"
       });
 
+      setShowResendVerification(false);
       setAuth(response.data.token, response.data.user);
       toast.success("Admin access granted");
       router.push(sanitizeNextPath(nextPath, { fallback: "/admin/dashboard", adminOnly: true }));
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Unable to sign in"));
+      const message = getApiErrorMessage(error, "Unable to sign in");
+      setShowResendVerification(message === "Please verify your email before logging in");
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -147,6 +153,9 @@ export function AdminLoginForm({ nextPath = "/admin/dashboard", initialEmail = "
               value={email}
               onChange={(event) => {
                 setEmail(event.target.value);
+                if (showResendVerification) {
+                  setShowResendVerification(false);
+                }
                 if (errors.email) {
                   setErrors((current) => ({ ...current, email: undefined }));
                 }
@@ -199,7 +208,47 @@ export function AdminLoginForm({ nextPath = "/admin/dashboard", initialEmail = "
           >
             {isSubmitting ? "Signing in..." : "Sign in"}
           </Button>
+          <div className={`flex items-center justify-end text-sm ${isDark ? "text-white/60" : "text-slate"}`}>
+            <Link
+              href={`/forgot-password${email.trim() ? `?email=${encodeURIComponent(email.trim())}` : ""}`}
+              className={`font-semibold ${isDark ? "text-cyan-200" : "text-accent"}`}
+            >
+              Forgot password?
+            </Link>
+          </div>
         </div>
+        {showResendVerification ? (
+          <div
+            className={`mt-6 rounded-3xl border p-4 text-sm ${
+              isDark
+                ? "border-white/10 bg-white/10 text-white/70"
+                : "border-slate-200 bg-slate-50 text-slate"
+            }`}
+          >
+            <p className={`font-semibold ${isDark ? "text-white" : "text-ink"}`}>Need a new verification email?</p>
+            <p className="mt-1">This admin account is not verified yet. Resend the verification link for this email.</p>
+            <button
+              type="button"
+              disabled={!email.trim() || resending}
+              onClick={async () => {
+                setResending(true);
+                try {
+                  await api.post("/auth/resend-verification", { email: email.trim() });
+                  toast.success("If the account exists, a verification email has been sent.");
+                } catch (error) {
+                  toast.error(getApiErrorMessage(error, "Unable to resend verification email"));
+                } finally {
+                  setResending(false);
+                }
+              }}
+              className={`mt-3 font-semibold underline disabled:cursor-not-allowed disabled:opacity-60 ${
+                isDark ? "text-cyan-200" : "text-accent"
+              }`}
+            >
+              {resending ? "Sending..." : "Resend verification email"}
+            </button>
+          </div>
+        ) : null}
       </form>
     </div>
   );
