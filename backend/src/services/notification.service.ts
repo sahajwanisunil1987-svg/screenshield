@@ -3,13 +3,13 @@ import { prisma } from "../lib/prisma.js";
 import { env } from "../config/env.js";
 
 const transporter = nodemailer.createTransport({
-  host: env.SMTP_HOST,
-  port: env.SMTP_PORT,
-  secure: true,
+  host: process.env.SMTP_HOST,
+  port: 465,
+  secure: true, // ⚠️ MUST TRUE
   auth: {
-    user: env.SMTP_USER,
-    pass: env.SMTP_PASS
-  }
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
 });
 
 const hasConfiguredSmtp = () => {
