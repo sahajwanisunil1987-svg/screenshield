@@ -2,7 +2,6 @@ import nodemailer from "nodemailer";
 import { prisma } from "../lib/prisma.js";
 import { env } from "../config/env.js";
 
-// ✅ SMTP Transporter
 const transporter = nodemailer.createTransport({
   host: env.SMTP_HOST,
   port: Number(env.SMTP_PORT) || 465,
@@ -13,7 +12,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// ✅ Check if SMTP is properly configured
 const hasConfiguredSmtp = () => {
   const placeholderHosts = new Set(["smtp.example.com", "example.com", "localhost"]);
   const placeholderUsers = new Set(["noreply@example.com", "example@example.com"]);
@@ -26,8 +24,7 @@ const hasConfiguredSmtp = () => {
   );
 };
 
-// ✅ Safe email sender (with error handling)
-const sendMailOrLog = async (payload) => {
+const sendMailOrLog = async (payload: { to: string; subject: string; html: string; debugUrl?: string }) => {
   if (!hasConfiguredSmtp() && env.NODE_ENV !== "production") {
     console.info(JSON.stringify({
       ts: new Date().toISOString(),
@@ -40,24 +37,21 @@ const sendMailOrLog = async (payload) => {
     return;
   }
 
-  try {
-    await transporter.sendMail({
-      from: `"PurjiX" <${env.SMTP_USER}>`,
-      to: payload.to,
-      subject: payload.subject,
-      html: payload.html
-    });
-
-    console.log(`📧 Email sent to ${payload.to}`);
-
-  } catch (error) {
-    console.error("❌ Email send failed:", error);
-  }
+  await transporter.sendMail({
+    from: env.SMTP_USER,
+    to: payload.to,
+    subject: payload.subject,
+    html: payload.html
+  });
 };
 
-// ✅ Notifications (DB)
-
-export const createNotification = async (payload) =>
+export const createNotification = async (payload: {
+  userId: string;
+  title: string;
+  message: string;
+  href?: string;
+  kind?: string;
+}) =>
   prisma.notification.create({
     data: {
       userId: payload.userId,
@@ -68,7 +62,7 @@ export const createNotification = async (payload) =>
     }
   });
 
-export const listNotifications = async (userId) => {
+export const listNotifications = async (userId: string) => {
   const [items, unreadCount] = await Promise.all([
     prisma.notification.findMany({
       where: { userId },
@@ -83,7 +77,7 @@ export const listNotifications = async (userId) => {
   return { items, unreadCount };
 };
 
-export const markNotificationRead = async (userId, notificationId) =>
+export const markNotificationRead = async (userId: string, notificationId: string) =>
   prisma.notification.updateMany({
     where: { id: notificationId, userId },
     data: {
@@ -92,7 +86,7 @@ export const markNotificationRead = async (userId, notificationId) =>
     }
   });
 
-export const markAllNotificationsRead = async (userId) =>
+export const markAllNotificationsRead = async (userId: string) =>
   prisma.notification.updateMany({
     where: { userId, isRead: false },
     data: {
@@ -101,75 +95,52 @@ export const markAllNotificationsRead = async (userId) =>
     }
   });
 
-// ✅ Email Functions
-
-export const sendOrderConfirmation = async (email, orderNumber) => {
+export const sendOrderConfirmation = async (email: string, orderNumber: string) => {
   await sendMailOrLog({
     to: email,
     subject: `PurjiX Order ${orderNumber}`,
-    html: `
-      <div style="font-family:sans-serif">
-        <h2>✅ Order Confirmed</h2>
-        <p>Your order <strong>${orderNumber}</strong> has been placed successfully.</p>
-      </div>
-    `
+    html: `<p>Your order <strong>${orderNumber}</strong> has been placed successfully.</p>`
   });
 };
 
-export const sendVerificationEmail = async (email, verifyUrl) => {
-  await sendMailOrLog({
-    to: email,
-    subject: "Verify your PurjiX account",
-    html: `
-      <p>Verify your account by clicking 
-      <a href="${verifyUrl}">this link</a>.</p>
-    `,
-    debugUrl: verifyUrl
-  });
-};
-
-export const sendPasswordResetEmail = async (email, resetUrl) => {
-  await sendMailOrLog({
-    to: email,
-    subject: "Reset your PurjiX password",
-    html: `
-      <p>Reset your password by clicking 
-      <a href="${resetUrl}">this link</a>.</p>
-    `,
-    debugUrl: resetUrl
-  });
-};
-
-export const sendSupportTicketAcknowledgement = async (email, ticketId) => {
-  await sendMailOrLog({
-    to: email,
-    subject: `PurjiX support request ${ticketId}`,
-    html: `
-      <p>We have received your support request.</p>
-      <p>Reference ID: <strong>${ticketId}</strong></p>
-      <p>Our team will review it shortly.</p>
-    `
-  });
-};
-
-// ✅ WhatsApp Notification
-
-export const sendWhatsappNotification = async (payload) => {
+export const sendWhatsappNotification = async (payload: unknown) => {
   if (!env.WHATSAPP_WEBHOOK_URL) {
     return { skipped: true };
   }
 
-  try {
-    const response = await fetch(env.WHATSAPP_WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+  const response = await fetch(env.WHATSAPP_WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
 
-    return { ok: response.ok };
+  return { ok: response.ok };
+};
 
-  } catch (err) {
-    console.error("❌ WhatsApp error:", err);
-    return { ok: false };
-  }
+
+export const sendVerificationEmail = async (email: string, verifyUrl: string) => {
+  await sendMailOrLog({
+    to: email,
+    subject: "Verify your PurjiX account",
+    html: `<p>Verify your account by clicking <a href="${verifyUrl}">this link</a>.</p>`,
+    debugUrl: verifyUrl
+  });
+};
+
+export const sendPasswordResetEmail = async (email: string, resetUrl: string) => {
+  await sendMailOrLog({
+    to: email,
+    subject: "Reset your PurjiX password",
+    html: `<p>Reset your password by clicking <a href="${resetUrl}">this link</a>.</p>`,
+    debugUrl: resetUrl
+  });
+};
+
+
+export const sendSupportTicketAcknowledgement = async (email: string, ticketId: string) => {
+  await sendMailOrLog({
+    to: email,
+    subject: `PurjiX support request ${ticketId}`,
+    html: `<p>We have received your support request.</p><p>Reference ID: <strong>${ticketId}</strong></p><p>Our team will review it shortly.</p>`
+  });
 };
