@@ -21,6 +21,7 @@ export function LoginForm({ nextPath = "/", initialEmail = "" }: { nextPath?: st
   const [password, setPassword] = useState("");
   const [resending, setResending] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showResendVerification, setShowResendVerification] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const validate = () => {
@@ -46,6 +47,7 @@ export function LoginForm({ nextPath = "/", initialEmail = "" }: { nextPath?: st
     setIsSubmitting(true);
     try {
       const response = await api.post("/auth/login", { email: email.trim(), password });
+      setShowResendVerification(false);
       setAuth(response.data.token, response.data.user);
       toast.success("Logged in");
       router.push(
@@ -54,7 +56,9 @@ export function LoginForm({ nextPath = "/", initialEmail = "" }: { nextPath?: st
           : sanitizeNextPath(nextPath, { fallback: "/" })
       );
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Unable to sign in"));
+      const message = getApiErrorMessage(error, "Unable to sign in");
+      setShowResendVerification(message === "Please verify your email before logging in");
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -101,6 +105,9 @@ export function LoginForm({ nextPath = "/", initialEmail = "" }: { nextPath?: st
           value={email}
           onChange={(event) => {
             setEmail(event.target.value);
+            if (showResendVerification) {
+              setShowResendVerification(false);
+            }
             if (errors.email) {
               setErrors((current) => ({ ...current, email: undefined }));
             }
@@ -148,28 +155,30 @@ export function LoginForm({ nextPath = "/", initialEmail = "" }: { nextPath?: st
           Forgot password?
         </Link>
       </div>
-      <div className="mt-4 rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate">
-        <p className="font-semibold text-ink">Need a new verification email?</p>
-        <p className="mt-1">Enter your email above, then resend the verification link.</p>
-        <button
-          type="button"
-          disabled={!email.trim() || resending}
-          onClick={async () => {
-            setResending(true);
-            try {
-              await api.post("/auth/resend-verification", { email: email.trim() });
-              toast.success("If the account exists, a verification email has been sent.");
-            } catch (error) {
-              toast.error(getApiErrorMessage(error, "Unable to resend verification email"));
-            } finally {
-              setResending(false);
-            }
-          }}
-          className="mt-3 font-semibold text-accent underline disabled:cursor-not-allowed disabled:text-slate"
-        >
-          {resending ? "Sending..." : "Resend verification email"}
-        </button>
-      </div>
+      {showResendVerification ? (
+        <div className="mt-4 rounded-2xl bg-[#f5f8fb] p-4 text-sm text-slate">
+          <p className="font-semibold text-ink">Need a new verification email?</p>
+          <p className="mt-1">Your account is not verified yet. Resend the verification link for this email.</p>
+          <button
+            type="button"
+            disabled={!email.trim() || resending}
+            onClick={async () => {
+              setResending(true);
+              try {
+                await api.post("/auth/resend-verification", { email: email.trim() });
+                toast.success("If the account exists, a verification email has been sent.");
+              } catch (error) {
+                toast.error(getApiErrorMessage(error, "Unable to resend verification email"));
+              } finally {
+                setResending(false);
+              }
+            }}
+            className="mt-3 font-semibold text-accent underline disabled:cursor-not-allowed disabled:text-slate"
+          >
+            {resending ? "Sending..." : "Resend verification email"}
+          </button>
+        </div>
+      ) : null}
     </AuthShell>
   );
 }
