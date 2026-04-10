@@ -49,7 +49,6 @@ export function ProductCardServer({ product }: { product: Product }) {
               {compatibilityCount > 1 ? ` + ${compatibilityCount - 1} more models` : ""}
             </p>
           </div>
-          <ProductCardActions product={product} stock={stock} />
         </div>
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate">
           <span
@@ -99,6 +98,7 @@ export function ProductCardServer({ product }: { product: Product }) {
             </div>
           </div>
         </div>
+        <ProductCardActions product={product} stock={stock} />
       </div>
     </div>
   );
