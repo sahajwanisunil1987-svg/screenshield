@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Wrench } from "lucide-react";
+import { buildCatalogHref } from "@/lib/catalog-url";
 import { Brand, Category, MobileModel } from "@/types";
 import { Button } from "../ui/button";
 import { SearchCombobox } from "../ui/search-combobox";
@@ -49,11 +50,13 @@ export function HeroSearch({ brands, models, categories }: HeroSearchProps) {
       return;
     }
 
-    const params = new URLSearchParams();
-    params.set("brand", brandSlug);
-    params.set("model", modelSlug);
-    if (categorySlug) params.set("category", categorySlug);
-    router.push(`/products?${params.toString()}`);
+    router.push(
+      buildCatalogHref({
+        categorySlug,
+        brand: brandSlug,
+        model: modelSlug
+      })
+    );
   };
 
   return (

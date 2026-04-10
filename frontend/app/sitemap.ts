@@ -44,10 +44,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const categoryRoutes = categories.map((category) => ({
-    url: toAbsolute(`/products?category=${category.slug}`),
+    url: toAbsolute(`/category/${category.slug}`),
     lastModified: now,
     changeFrequency: "weekly" as const,
-    priority: 0.6
+    priority: 0.7
   }));
 
   const productRoutes = products.items.map((product) => ({

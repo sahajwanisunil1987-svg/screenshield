@@ -6,19 +6,22 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "http://
 
 export const buildMetadata = ({
   title,
-  description
+  description,
+  path
 }: {
   title: string;
   description: string;
+  path?: string;
 }): Metadata => ({
   title: `${title} | ${siteName}`,
   description,
+  alternates: path ? { canonical: `${siteUrl}${path}` } : undefined,
   openGraph: {
     title: `${title} | ${siteName}`,
     description,
     siteName,
     type: "website",
-    url: siteUrl
+    url: path ? `${siteUrl}${path}` : siteUrl
   },
   twitter: {
     card: "summary_large_image",

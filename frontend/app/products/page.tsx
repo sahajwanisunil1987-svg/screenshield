@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { permanentRedirect } from "next/navigation";
 import { ProductsResults } from "@/components/catalog/products-results";
 import { PageShell } from "@/components/layout/page-shell";
 import { CatalogFiltersForm } from "@/components/products/catalog-filters-form";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { buildCatalogHref } from "@/lib/catalog-url";
 import { buildMetadata } from "@/lib/seo";
 import { fetchApi } from "@/lib/server-api";
 import { Brand, Category, MobileModel, ProductListResponse } from "@/types";
@@ -37,18 +39,37 @@ export async function generateMetadata({
   const description = segments.length
     ? `Browse PurjiX results for ${segments.join(", ")} with SSR-friendly filters, compatible spare parts, and SKU-aware product discovery.`
     : "Browse the PurjiX mobile spare parts catalog with brand, model, category, and keyword filters.";
+  const params = new URLSearchParams();
+  if (resolvedSearchParams.brand) params.set("brand", resolvedSearchParams.brand);
+  if (resolvedSearchParams.model) params.set("model", resolvedSearchParams.model);
+  if (resolvedSearchParams.category) params.set("category", resolvedSearchParams.category);
+  if (resolvedSearchParams.search) params.set("search", resolvedSearchParams.search);
+  if (resolvedSearchParams.sort) params.set("sort", resolvedSearchParams.sort);
+  if (resolvedSearchParams.page) params.set("page", resolvedSearchParams.page);
+  const query = params.toString();
 
-  return buildMetadata({ title, description });
+  return buildMetadata({ title, description, path: `/products${query ? `?${query}` : ""}` });
 }
 
 export default async function ProductsPage({
   searchParams
 }: ProductsPageProps) {
   const resolvedSearchParams = await searchParams;
+  if (resolvedSearchParams.category) {
+    permanentRedirect(
+      buildCatalogHref({
+        categorySlug: resolvedSearchParams.category,
+        brand: resolvedSearchParams.brand,
+        model: resolvedSearchParams.model,
+        search: resolvedSearchParams.search,
+        sort: resolvedSearchParams.sort,
+        page: resolvedSearchParams.page
+      })
+    );
+  }
   const params = new URLSearchParams();
   if (resolvedSearchParams.brand) params.set("brand", resolvedSearchParams.brand);
   if (resolvedSearchParams.model) params.set("model", resolvedSearchParams.model);
-  if (resolvedSearchParams.category) params.set("category", resolvedSearchParams.category);
   if (resolvedSearchParams.search) params.set("search", resolvedSearchParams.search);
   if (resolvedSearchParams.sort) params.set("sort", resolvedSearchParams.sort);
   if (resolvedSearchParams.page) params.set("page", resolvedSearchParams.page);

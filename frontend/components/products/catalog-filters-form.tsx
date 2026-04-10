@@ -1,4 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { buildCatalogHref } from "@/lib/catalog-url";
 import { Brand, Category, MobileModel } from "@/types";
 
 type CatalogFiltersFormProps = {
@@ -30,14 +35,44 @@ export function CatalogFiltersForm({
   search,
   sort
 }: CatalogFiltersFormProps) {
-  const filteredModels = selectedBrand
-    ? models.filter((model) => model.brand?.slug === selectedBrand)
-    : models;
-  const activeCount = [selectedBrand, selectedModel, selectedCategory, search].filter(Boolean).length;
-  const defaultSort = search ? "relevance" : "newest";
+  const router = useRouter();
+  const [brandValue, setBrandValue] = useState(selectedBrand ?? "");
+  const [modelValue, setModelValue] = useState(selectedModel ?? "");
+  const [categoryValue, setCategoryValue] = useState(selectedCategory ?? "");
+  const [searchValue, setSearchValue] = useState(search ?? "");
+  const [sortValue, setSortValue] = useState(sort ?? (search ? "relevance" : "newest"));
+
+  useEffect(() => {
+    setBrandValue(selectedBrand ?? "");
+    setModelValue(selectedModel ?? "");
+    setCategoryValue(selectedCategory ?? "");
+    setSearchValue(search ?? "");
+    setSortValue(sort ?? (search ? "relevance" : "newest"));
+  }, [search, selectedBrand, selectedCategory, selectedModel, sort]);
+
+  const filteredModels = useMemo(
+    () => (brandValue ? models.filter((model) => model.brand?.slug === brandValue) : models),
+    [brandValue, models]
+  );
+  const activeCount = [brandValue, modelValue, categoryValue, searchValue].filter(Boolean).length;
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const defaultSort = searchValue ? "relevance" : "newest";
+
+    router.push(
+      buildCatalogHref({
+        categorySlug: categoryValue || undefined,
+        brand: brandValue,
+        model: modelValue,
+        search: searchValue,
+        sort: sortValue === defaultSort ? undefined : sortValue
+      })
+    );
+  };
 
   return (
-    <form action="/products" className="rounded-[32px] border border-slate-200/80 bg-panel p-5 shadow-card">
+    <form onSubmit={handleSubmit} className="rounded-[32px] border border-slate-200/80 bg-panel p-5 shadow-card">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate">Catalog filters</p>
@@ -59,7 +94,11 @@ export function CatalogFiltersForm({
           <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate">Brand</span>
           <select
             name="brand"
-            defaultValue={selectedBrand ?? ""}
+            value={brandValue}
+            onChange={(event) => {
+              setBrandValue(event.target.value);
+              setModelValue("");
+            }}
             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
           >
             <option value="">All brands</option>
@@ -74,7 +113,8 @@ export function CatalogFiltersForm({
           <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate">Model</span>
           <select
             name="model"
-            defaultValue={selectedModel ?? ""}
+            value={modelValue}
+            onChange={(event) => setModelValue(event.target.value)}
             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
           >
             <option value="">All models</option>
@@ -89,7 +129,8 @@ export function CatalogFiltersForm({
           <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate">Part type</span>
           <select
             name="category"
-            defaultValue={selectedCategory ?? ""}
+            value={categoryValue}
+            onChange={(event) => setCategoryValue(event.target.value)}
             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
           >
             <option value="">All parts</option>
@@ -105,7 +146,8 @@ export function CatalogFiltersForm({
           <input
             type="search"
             name="search"
-            defaultValue={search ?? ""}
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.target.value)}
             placeholder="Display, battery, SKU..."
             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
           />
@@ -114,7 +156,8 @@ export function CatalogFiltersForm({
           <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate">Sort</span>
           <select
             name="sort"
-            defaultValue={sort ?? defaultSort}
+            value={sortValue}
+            onChange={(event) => setSortValue(event.target.value)}
             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-accent"
           >
             {sortOptions.map((option) => (
