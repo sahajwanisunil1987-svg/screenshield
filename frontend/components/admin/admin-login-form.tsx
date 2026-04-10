@@ -2,27 +2,31 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { KeyboardEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAdminTheme } from "@/hooks/use-admin-theme";
 import { api, getApiErrorMessage } from "@/lib/api";
+import { EMAIL_REGEX, sanitizeNextPath } from "@/lib/auth-redirect";
 import { useAuthStore } from "@/store/auth-store";
 
-export function AdminLoginForm() {
+export function AdminLoginForm({ nextPath = "/admin/dashboard", initialEmail = "" }: { nextPath?: string; initialEmail?: string }) {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const user = useAuthStore((state) => state.user);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const { theme, isDark, toggleTheme } = useAdminTheme();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validate = () => {
     const nextErrors: { email?: string; password?: string } = {};
 
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    if (!email.trim() || !EMAIL_REGEX.test(email.trim())) {
       nextErrors.email = "Enter a valid admin email";
     }
 
@@ -44,16 +48,45 @@ export function AdminLoginForm() {
     try {
       const response = await api.post("/auth/login", {
         email: email.trim(),
-        password
+        password,
+        expectedRole: "ADMIN"
       });
+
       setAuth(response.data.token, response.data.user);
-      router.push("/admin/dashboard");
+      toast.success("Admin access granted");
+      router.push(sanitizeNextPath(nextPath, { fallback: "/admin/dashboard", adminOnly: true }));
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Unable to sign in"));
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const onPasswordKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+
+    event.preventDefault();
+    const form = event.currentTarget.form;
+    form?.requestSubmit();
+  };
+
+  useEffect(() => {
+    if (!hasHydrated || !user) {
+      return;
+    }
+
+    router.replace(
+      user.role === "ADMIN"
+        ? sanitizeNextPath(nextPath, { fallback: "/admin/dashboard", adminOnly: true })
+        : "/"
+    );
+  }, [hasHydrated, nextPath, router, user]);
+
+  if (hasHydrated && user) {
+    return null;
+  }
 
   return (
     <div
@@ -126,9 +159,9 @@ export function AdminLoginForm() {
             />
             {errors.email ? <p className="mt-2 text-sm text-rose-400">{errors.email}</p> : null}
           </div>
-          <div>
+          <div className="relative">
             <Input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
               autoComplete="current-password"
               value={password}
@@ -138,12 +171,22 @@ export function AdminLoginForm() {
                   setErrors((current) => ({ ...current, password: undefined }));
                 }
               }}
+              onKeyDown={onPasswordKeyDown}
               className={
                 isDark
-                  ? "border-white/10 bg-white/10 text-white placeholder:text-white/35 focus:border-cyan-300 focus:ring-cyan-300/10"
-                  : "border-slate-200 bg-slate-50 text-ink placeholder:text-slate focus:border-accent focus:ring-accent/10"
+                  ? "border-white/10 bg-white/10 pr-20 text-white placeholder:text-white/35 focus:border-cyan-300 focus:ring-cyan-300/10"
+                  : "border-slate-200 bg-slate-50 pr-20 text-ink placeholder:text-slate focus:border-accent focus:ring-accent/10"
               }
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((value) => !value)}
+              className={`absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold ${
+                isDark ? "text-cyan-200" : "text-accent"
+              }`}
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
             {errors.password ? <p className="mt-2 text-sm text-rose-400">{errors.password}</p> : null}
           </div>
           <Button

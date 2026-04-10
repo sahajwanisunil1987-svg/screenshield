@@ -2,19 +2,20 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, KeyboardEvent, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api, getApiErrorMessage } from "@/lib/api";
+import { EMAIL_REGEX, sanitizeNextPath } from "@/lib/auth-redirect";
 import { useAuthStore } from "@/store/auth-store";
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function LoginForm({ nextPath = "/", initialEmail = "" }: { nextPath?: string; initialEmail?: string }) {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const user = useAuthStore((state) => state.user);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
@@ -47,7 +48,11 @@ export function LoginForm({ nextPath = "/", initialEmail = "" }: { nextPath?: st
       const response = await api.post("/auth/login", { email: email.trim(), password });
       setAuth(response.data.token, response.data.user);
       toast.success("Logged in");
-      router.push(response.data.user.role === "ADMIN" ? "/admin/dashboard" : nextPath);
+      router.push(
+        response.data.user.role === "ADMIN"
+          ? sanitizeNextPath(nextPath, { fallback: "/admin/dashboard", adminOnly: true })
+          : sanitizeNextPath(nextPath, { fallback: "/" })
+      );
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Unable to sign in"));
     } finally {
@@ -68,6 +73,22 @@ export function LoginForm({ nextPath = "/", initialEmail = "" }: { nextPath?: st
     event.preventDefault();
     void submitLogin();
   };
+
+  useEffect(() => {
+    if (!hasHydrated || !user) {
+      return;
+    }
+
+    router.replace(
+      user.role === "ADMIN"
+        ? sanitizeNextPath(nextPath, { fallback: "/admin/dashboard", adminOnly: true })
+        : sanitizeNextPath(nextPath, { fallback: "/" })
+    );
+  }, [hasHydrated, nextPath, router, user]);
+
+  if (hasHydrated && user) {
+    return null;
+  }
 
   return (
     <AuthShell>

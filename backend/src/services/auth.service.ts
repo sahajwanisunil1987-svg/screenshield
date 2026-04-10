@@ -78,7 +78,7 @@ export const registerUser = async (payload: {
   return issueAuthPayload({ ...user, emailVerified: profile.emailVerified });
 };
 
-export const loginUser = async (payload: { email: string; password: string }) => {
+export const loginUser = async (payload: { email: string; password: string; expectedRole?: "CUSTOMER" | "ADMIN" }) => {
   const user = await prisma.user.findUnique({ where: { email: payload.email } });
 
   if (!user) {
@@ -92,6 +92,13 @@ export const loginUser = async (payload: { email: string; password: string }) =>
 
   if (!user.emailVerified) {
     throw new ApiError(StatusCodes.FORBIDDEN, "Please verify your email before logging in");
+  }
+
+  if (payload.expectedRole && user.role !== payload.expectedRole) {
+    throw new ApiError(
+      StatusCodes.FORBIDDEN,
+      payload.expectedRole === "ADMIN" ? "This login is only for admin accounts" : "Please use your customer account here"
+    );
   }
 
   return issueAuthPayload(user);

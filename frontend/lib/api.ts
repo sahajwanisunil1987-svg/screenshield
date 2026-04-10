@@ -1,4 +1,5 @@
 import axios from "axios";
+import { buildRedirectWithNext } from "@/lib/auth-redirect";
 import { useAuthStore } from "@/store/auth-store";
 
 const normalizeBaseUrl = (value?: string) => value?.replace(/\/+$/, "");
@@ -102,8 +103,9 @@ api.interceptors.response.use(
       if (authHeader?.startsWith("Bearer ") && typeof window !== "undefined") {
         useAuthStore.getState().clearAuth();
 
-        const nextPath = window.location.pathname.startsWith("/admin") ? "/admin/login" : "/login";
-        if (window.location.pathname !== nextPath) {
+        const loginPath = window.location.pathname.startsWith("/admin") ? "/admin/login" : "/login";
+        const nextPath = buildRedirectWithNext(loginPath, window.location.pathname, window.location.search);
+        if (window.location.pathname !== loginPath) {
           window.location.assign(nextPath);
         }
       }

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { buildRedirectWithNext } from "@/lib/auth-redirect";
 import { useAuthStore } from "@/store/auth-store";
 
 export function useAuthGuard(role?: "ADMIN" | "CUSTOMER") {
@@ -15,7 +16,11 @@ export function useAuthGuard(role?: "ADMIN" | "CUSTOMER") {
     }
 
     if (!user) {
-      router.replace(role === "ADMIN" ? "/admin/login" : "/login");
+      const pathname = window.location.pathname;
+      const search = window.location.search;
+      router.replace(
+        buildRedirectWithNext(role === "ADMIN" ? "/admin/login" : "/login", pathname, search)
+      );
       return;
     }
 
