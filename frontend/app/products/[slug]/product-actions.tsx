@@ -34,10 +34,10 @@ export function ProductActions({
   }, []);
 
   return (
-    <div className="space-y-2.5 rounded-[22px] border border-slate-200 bg-[#f7fafb] p-3.5 sm:p-4">
+    <div className="space-y-2.5 rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(12,20,35,0.96),rgba(9,17,31,0.98))] p-3.5 shadow-[0_24px_60px_rgba(3,8,20,0.26)] sm:p-4">
       <div className="grid gap-2.5">
         <Button
-          className="justify-center gap-2 py-2.5"
+          className="justify-center gap-2 bg-[linear-gradient(135deg,#16867d,#0f766e)] py-2.5 text-white shadow-[0_18px_40px_rgba(15,118,110,0.28)] hover:bg-[linear-gradient(135deg,#11776f,#0d625c)]"
           onClick={() => {
             addItem(product, selectedVariant);
             toast.success("Added to cart");
@@ -48,7 +48,7 @@ export function ProductActions({
         </Button>
         <Button
           variant="secondary"
-          className="justify-center gap-2 py-2.5"
+          className="justify-center gap-2 border border-white/12 bg-[#0c1526] py-2.5 text-white shadow-none hover:bg-[#121e34]"
           onClick={() => {
             addItem(product, selectedVariant);
             router.push("/checkout");
@@ -67,9 +67,9 @@ export function ProductActions({
             toast.error(error instanceof Error ? error.message : "Unable to update wishlist");
           }
         }}
-        className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-accent/30 hover:bg-accentSoft"
+        className="flex w-full items-center justify-center gap-2 rounded-full border border-white/12 bg-white/4 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-accent/35 hover:bg-white/8"
       >
-        <Heart className={`h-4 w-4 ${isWishlisted ? "fill-rose-500 text-rose-500" : "text-slate"}`} />
+        <Heart className={`h-4 w-4 ${isWishlisted ? "fill-rose-400 text-rose-400" : "text-white/70"}`} />
         {isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
       </button>
       <button
@@ -83,15 +83,15 @@ export function ProductActions({
 
           toast.success(result.active ? "Added to compare" : "Removed from compare");
         }}
-        className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-accent/30 hover:bg-accentSoft"
+        className="flex w-full items-center justify-center gap-2 rounded-full border border-white/12 bg-white/4 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-accent/35 hover:bg-white/8"
       >
-        <GitCompareArrows className={`h-4 w-4 ${isCompared ? "text-accent" : "text-slate"}`} />
+        <GitCompareArrows className={`h-4 w-4 ${isCompared ? "text-teal-300" : "text-white/70"}`} />
         {isCompared ? "Remove from Compare" : "Add to Compare"}
       </button>
-      <div className="flex flex-wrap gap-2 text-[11px] text-slate">
-        <div className="rounded-full bg-white px-3 py-1.5">Secure payment</div>
-        <div className="rounded-full bg-white px-3 py-1.5">Fitment help</div>
-        <div className="rounded-full bg-white px-3 py-1.5">Warranty support</div>
+      <div className="flex flex-wrap gap-2 text-[11px] text-white/65">
+        <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Secure payment</div>
+        <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Fitment help</div>
+        <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Warranty support</div>
       </div>
     </div>
   );

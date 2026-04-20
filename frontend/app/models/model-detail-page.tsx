@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, Smartphone } from "lucide-react";
+import { ModelImage } from "@/components/catalog/model-image";
 import { PageShell } from "@/components/layout/page-shell";
 import { fetchApi } from "@/lib/server-api";
 import { buildMetadata } from "@/lib/seo";
@@ -221,20 +222,18 @@ export async function ModelDetailPageContent(params: ModelPageParams) {
           <div className="mt-6 grid gap-5 lg:grid-cols-[170px_minmax(0,1fr)] lg:items-start">
             <div className="flex justify-center lg:justify-start">
               <div className="relative aspect-[4/5] w-[150px] overflow-hidden rounded-[24px] border border-slate-200 bg-slate-950/5 shadow-sm sm:w-[165px]">
-                {heroImage ? (
-                  <Image
-                    src={heroImage}
-                    alt={`${model.name} reference`}
-                    fill
-                    className="object-contain p-1"
-                    sizes="(min-width: 1024px) 165px, 150px"
-                  />
-                ) : (
-                  <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-slate">
+                <ModelImage
+                  name={modelDisplayName}
+                  imageUrl={heroImage}
+                  alt={`${model.name} reference`}
+                  imageClassName="p-1"
+                  fallback={
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-slate">
                     <Smartphone className="h-12 w-12" />
                     <span className="text-sm font-medium">{modelDisplayName}</span>
-                  </div>
-                )}
+                    </div>
+                  }
+                />
               </div>
             </div>
 

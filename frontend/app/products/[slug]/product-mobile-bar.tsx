@@ -38,7 +38,7 @@ export function ProductMobileBar({
           <div className="flex shrink-0 items-center gap-2">
             <Button
               variant="secondary"
-              className="h-11 gap-1.5 px-3.5 text-sm"
+              className="h-11 gap-1.5 border border-white/12 bg-[#0c1526] px-3.5 text-sm text-white shadow-none hover:bg-[#121e34]"
               onClick={() => {
                 addItem(product, selectedVariant);
                 toast.success("Added to cart");
@@ -48,7 +48,7 @@ export function ProductMobileBar({
               Cart
             </Button>
             <Button
-              className="h-11 gap-1.5 px-3.5 text-sm"
+              className="h-11 gap-1.5 bg-[linear-gradient(135deg,#16867d,#0f766e)] px-3.5 text-sm text-white shadow-[0_18px_40px_rgba(15,118,110,0.2)] hover:bg-[linear-gradient(135deg,#11776f,#0d625c)]"
               onClick={() => {
                 addItem(product, selectedVariant);
                 router.push("/checkout");

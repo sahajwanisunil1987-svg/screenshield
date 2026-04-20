@@ -1,10 +1,10 @@
 import { cache } from "react";
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { BrandLogo } from "@/components/catalog/brand-logo";
+import { ModelImage } from "@/components/catalog/model-image";
 import { PageShell } from "@/components/layout/page-shell";
 import { fetchApi } from "@/lib/server-api";
 import { buildMetadata } from "@/lib/seo";
@@ -108,11 +108,7 @@ export default async function BrandPage({ params }: BrandPageProps) {
                 >
                   <div className="flex items-center gap-4">
                     <div className="relative flex h-[86px] w-[70px] shrink-0 items-center justify-center overflow-hidden rounded-[22px] border border-slate-200/80 bg-[linear-gradient(180deg,#f8fafc,#eef2f7)] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-                      {model.imageUrl ? (
-                        <Image src={model.imageUrl} alt={model.name} fill sizes="70px" className="object-contain p-1.5" />
-                      ) : (
-                        <span className="text-lg font-semibold text-ink">{model.name.slice(0, 1)}</span>
-                      )}
+                      <ModelImage name={model.name} imageUrl={model.imageUrl} alt={model.name} imageClassName="p-1.5" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate">Model</p>

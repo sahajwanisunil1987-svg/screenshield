@@ -183,6 +183,14 @@ export function SearchAutocomplete({
   );
 
   const actions = value.trim() ? suggestionActions : quickActions;
+  const dropdownItemClassName =
+    "hover:bg-accent/12 hover:text-current";
+  const dropdownItemActiveClassName =
+    "bg-accent/18 text-white ring-1 ring-inset ring-accent/30";
+  const activeTextClassName = "text-white";
+  const activeMutedTextClassName = "text-white/70";
+  const activeRecentIconClassName = "text-white/75";
+  const activeTrendingIconClassName = "text-accentSoft";
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -282,12 +290,25 @@ export function SearchAutocomplete({
                         setOpen(false);
                       }}
                       className={cn(
-                        "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-accentSoft",
-                        activeIndex === quickActions.findIndex((item) => item.key === `recent-${entry}`) && "bg-accentSoft"
+                        "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-ink transition",
+                        dropdownItemClassName,
+                        activeIndex === quickActions.findIndex((item) => item.key === `recent-${entry}`) && dropdownItemActiveClassName
                       )}
                     >
-                      <Clock3 className="h-4 w-4 text-slate" />
-                      <span className="text-sm font-medium text-ink">{entry}</span>
+                      <Clock3
+                        className={cn(
+                          "h-4 w-4 text-slate",
+                          activeIndex === quickActions.findIndex((item) => item.key === `recent-${entry}`) && activeRecentIconClassName
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          "text-sm font-medium text-ink",
+                          activeIndex === quickActions.findIndex((item) => item.key === `recent-${entry}`) && activeTextClassName
+                        )}
+                      >
+                        {entry}
+                      </span>
                     </button>
                   ))}
                 </>
@@ -304,12 +325,25 @@ export function SearchAutocomplete({
                     setOpen(false);
                   }}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-accentSoft",
-                    activeIndex === quickActions.findIndex((item) => item.key === `trending-${entry}`) && "bg-accentSoft"
+                    "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-ink transition",
+                    dropdownItemClassName,
+                    activeIndex === quickActions.findIndex((item) => item.key === `trending-${entry}`) && dropdownItemActiveClassName
                   )}
                 >
-                  <TrendingUp className="h-4 w-4 text-accent" />
-                  <span className="text-sm font-medium text-ink">{entry}</span>
+                  <TrendingUp
+                    className={cn(
+                      "h-4 w-4 text-accent",
+                      activeIndex === quickActions.findIndex((item) => item.key === `trending-${entry}`) && activeTrendingIconClassName
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      "text-sm font-medium text-ink",
+                      activeIndex === quickActions.findIndex((item) => item.key === `trending-${entry}`) && activeTextClassName
+                    )}
+                  >
+                    {entry}
+                  </span>
                 </button>
               ))}
             </div>
@@ -327,12 +361,27 @@ export function SearchAutocomplete({
                     setOpen(false);
                   }}
                   className={cn(
-                    "block w-full rounded-xl px-3 py-3 text-left transition hover:bg-accentSoft",
-                    activeIndex === suggestionActions.findIndex((item) => item.key === suggestion.id) && "bg-accentSoft"
+                    "block w-full rounded-xl px-3 py-3 text-left transition",
+                    dropdownItemClassName,
+                    activeIndex === suggestionActions.findIndex((item) => item.key === suggestion.id) && dropdownItemActiveClassName
                   )}
                 >
-                  <p className="text-sm font-semibold text-ink">{suggestion.label}</p>
-                  <p className="mt-1 text-xs text-slate">{suggestion.hint}</p>
+                  <p
+                    className={cn(
+                      "text-sm font-semibold text-ink",
+                      activeIndex === suggestionActions.findIndex((item) => item.key === suggestion.id) && activeTextClassName
+                    )}
+                  >
+                    {suggestion.label}
+                  </p>
+                  <p
+                    className={cn(
+                      "mt-1 text-xs text-slate",
+                      activeIndex === suggestionActions.findIndex((item) => item.key === suggestion.id) && activeMutedTextClassName
+                    )}
+                  >
+                    {suggestion.hint}
+                  </p>
                 </button>
               ))
             : null}
@@ -340,7 +389,7 @@ export function SearchAutocomplete({
             <button
               type="button"
               onClick={() => submit()}
-              className="block w-full rounded-xl px-3 py-4 text-left text-sm text-slate transition hover:bg-accentSoft"
+              className={cn("block w-full rounded-xl px-3 py-4 text-left text-sm text-slate transition", dropdownItemClassName)}
             >
               Search for "{value.trim()}"
             </button>
