@@ -136,6 +136,14 @@ export const sendPasswordResetEmail = async (email: string, resetUrl: string) =>
   });
 };
 
+export const sendAdminLoginOtpEmail = async (email: string, otp: string, expiresInMinutes: number) => {
+  await sendMailOrLog({
+    to: email,
+    subject: "Your PurjiX admin login code",
+    html: `<p>Use this one-time code to complete your PurjiX admin login:</p><p style="font-size:28px;font-weight:700;letter-spacing:0.24em">${otp}</p><p>This code expires in ${expiresInMinutes} minutes.</p>`
+  });
+};
+
 
 export const sendSupportTicketAcknowledgement = async (email: string, ticketId: string) => {
   await sendMailOrLog({

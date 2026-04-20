@@ -13,6 +13,17 @@ export const loginSchema = z.object({
   expectedRole: z.enum(["CUSTOMER", "ADMIN"]).optional()
 });
 
+export const adminLoginOtpRequestSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8)
+});
+
+export const adminLoginOtpVerifySchema = z.object({
+  email: z.string().email(),
+  challengeToken: z.string().min(20),
+  otp: z.string().regex(/^\d{6}$/, "OTP must be a 6-digit code")
+});
+
 
 export const forgotPasswordSchema = z.object({
   email: z.string().email()

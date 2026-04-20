@@ -56,6 +56,7 @@ const envSchema = z.object({
   SMTP_PORT: z.coerce.number().default(587),
   SMTP_USER: z.string().min(1),
   SMTP_PASS: z.string().min(1),
+  ADMIN_LOGIN_OTP_EXPIRY_MINUTES: z.coerce.number().int().min(1).max(30).default(10),
   WHATSAPP_WEBHOOK_URL: z.string().optional(),
   COD_DISABLED_PINCODES: z.string().optional(),
   COD_MAX_ORDER_VALUE: z.coerce.number().default(5000)

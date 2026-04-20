@@ -207,6 +207,11 @@ model User {
   verifyTokenExpiresAt DateTime?
   resetToken    String?        @unique
   resetTokenExpiresAt DateTime?
+  adminOtpCodeHash String?
+  adminOtpExpiresAt DateTime?
+  adminOtpChallengeToken String? @unique
+  adminOtpChallengeExpiresAt DateTime?
+  adminOtpLastSentAt DateTime?
   addresses     Address[]
   orders        Order[]
   reviews       Review[]

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { env } from "../config/env.js";
-import { getAuthUserById, loginUser, refreshAuthSession, registerUser, requestPasswordReset, resendVerificationEmail, resetPassword, verifyEmail } from "../services/auth.service.js";
+import { getAuthUserById, loginUser, refreshAuthSession, registerUser, requestAdminLoginOtp, requestPasswordReset, resendVerificationEmail, resetPassword, verifyAdminLoginOtp, verifyEmail } from "../services/auth.service.js";
 import { ApiError } from "../utils/api-error.js";
 
 const refreshCookieName = "sparekart_refresh";
@@ -34,6 +34,20 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   const result = await loginUser(req.body);
+  res.cookie(refreshCookieName, result.refreshToken, getRefreshCookieOptions());
+  res.status(StatusCodes.OK).json({
+    token: result.token,
+    user: result.user
+  });
+};
+
+export const requestAdminOtp = async (req: Request, res: Response) => {
+  const result = await requestAdminLoginOtp(req.body);
+  res.status(StatusCodes.OK).json(result);
+};
+
+export const verifyAdminOtp = async (req: Request, res: Response) => {
+  const result = await verifyAdminLoginOtp(req.body);
   res.cookie(refreshCookieName, result.refreshToken, getRefreshCookieOptions());
   res.status(StatusCodes.OK).json({
     token: result.token,

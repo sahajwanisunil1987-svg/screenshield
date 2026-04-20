@@ -282,6 +282,7 @@ export type User = {
   name: string;
   email: string;
   role: "CUSTOMER" | "ADMIN";
+  emailVerified?: boolean;
   phone?: string | null;
   addresses?: Address[];
   orders?: UserOrderSummary[];

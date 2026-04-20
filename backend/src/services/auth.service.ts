@@ -4,13 +4,21 @@ import { StatusCodes } from "http-status-codes";
 import { prisma } from "../lib/prisma.js";
 import { env } from "../config/env.js";
 import { ApiError } from "../utils/api-error.js";
-import { sendPasswordResetEmail, sendVerificationEmail } from "./notification.service.js";
+import { sendAdminLoginOtpEmail, sendPasswordResetEmail, sendVerificationEmail } from "./notification.service.js";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/jwt.js";
 
 const sanitizeUser = <T extends { passwordHash: string }>(user: T) => {
   const { passwordHash: _passwordHash, ...safeUser } = user;
   return safeUser;
 };
+
+const ADMIN_OTP_LENGTH = 6;
+const ADMIN_OTP_RESEND_INTERVAL_MS = 30 * 1000;
+
+const generateAdminOtp = () =>
+  crypto.randomInt(0, 10 ** ADMIN_OTP_LENGTH).toString().padStart(ADMIN_OTP_LENGTH, "0");
+
+const hashValue = (value: string) => crypto.createHash("sha256").update(value).digest("hex");
 
 const profileSelect = {
   id: true,
@@ -100,6 +108,105 @@ export const loginUser = async (payload: { email: string; password: string; expe
       payload.expectedRole === "ADMIN" ? "This login is only for admin accounts" : "Please use your customer account here"
     );
   }
+
+  return issueAuthPayload(user);
+};
+
+const assertActiveVerifiedAdminCredentials = async (payload: { email: string; password: string }) => {
+  const user = await prisma.user.findUnique({ where: { email: payload.email } });
+
+  if (!user) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid credentials");
+  }
+
+  const isValid = await bcrypt.compare(payload.password, user.passwordHash);
+  if (!isValid) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid credentials");
+  }
+
+  if (!user.emailVerified) {
+    throw new ApiError(StatusCodes.FORBIDDEN, "Please verify your email before logging in");
+  }
+
+  if (user.role !== "ADMIN") {
+    throw new ApiError(StatusCodes.FORBIDDEN, "This login is only for admin accounts");
+  }
+
+  if (!user.isActive) {
+    throw new ApiError(StatusCodes.FORBIDDEN, "This admin account is inactive");
+  }
+
+  return user;
+};
+
+export const requestAdminLoginOtp = async (payload: { email: string; password: string }) => {
+  const user = await assertActiveVerifiedAdminCredentials(payload);
+
+  if (
+    user.adminOtpLastSentAt &&
+    Date.now() - user.adminOtpLastSentAt.getTime() < ADMIN_OTP_RESEND_INTERVAL_MS
+  ) {
+    throw new ApiError(StatusCodes.TOO_MANY_REQUESTS, "Please wait a few seconds before requesting another OTP");
+  }
+
+  const otp = generateAdminOtp();
+  const challengeToken = crypto.randomBytes(24).toString("hex");
+  const expiresAt = new Date(Date.now() + env.ADMIN_LOGIN_OTP_EXPIRY_MINUTES * 60 * 1000);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      adminOtpCodeHash: hashValue(otp),
+      adminOtpExpiresAt: expiresAt,
+      adminOtpChallengeToken: challengeToken,
+      adminOtpChallengeExpiresAt: expiresAt,
+      adminOtpLastSentAt: new Date()
+    }
+  });
+
+  await sendAdminLoginOtpEmail(user.email, otp, env.ADMIN_LOGIN_OTP_EXPIRY_MINUTES);
+
+  return {
+    challengeToken,
+    expiresInSeconds: env.ADMIN_LOGIN_OTP_EXPIRY_MINUTES * 60
+  };
+};
+
+export const verifyAdminLoginOtp = async (payload: { email: string; challengeToken: string; otp: string }) => {
+  const user = await prisma.user.findUnique({ where: { email: payload.email } });
+
+  if (!user || user.role !== "ADMIN") {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid OTP session");
+  }
+
+  const now = new Date();
+  const expectedOtpHash = hashValue(payload.otp);
+
+  if (
+    !user.adminOtpChallengeToken ||
+    !user.adminOtpChallengeExpiresAt ||
+    !user.adminOtpCodeHash ||
+    !user.adminOtpExpiresAt ||
+    user.adminOtpChallengeToken !== payload.challengeToken ||
+    user.adminOtpChallengeExpiresAt < now ||
+    user.adminOtpExpiresAt < now
+  ) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, "OTP session expired. Please request a new code");
+  }
+
+  if (user.adminOtpCodeHash !== expectedOtpHash) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid OTP code");
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      adminOtpCodeHash: null,
+      adminOtpExpiresAt: null,
+      adminOtpChallengeToken: null,
+      adminOtpChallengeExpiresAt: null
+    }
+  });
 
   return issueAuthPayload(user);
 };
