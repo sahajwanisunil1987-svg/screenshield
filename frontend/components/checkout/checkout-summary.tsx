@@ -48,7 +48,7 @@ export function CheckoutSummary({
         <div className="flex justify-between"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
         {couponDiscount > 0 ? <div className="mt-2 flex justify-between text-emerald-600"><span>Coupon ({couponCode})</span><span>-{formatCurrency(couponDiscount)}</span></div> : null}
         <div className="mt-2 flex justify-between"><span>Shipping</span><span>{shipping === 0 ? "Free" : formatCurrency(shipping)}</span></div>
-        <div className="mt-2 flex justify-between"><span>GST</span><span>{formatCurrency(tax)}</span></div>
+        <div className="mt-2 flex justify-between"><span>GST included</span><span>{formatCurrency(tax)}</span></div>
         <div className="mt-4 flex justify-between font-semibold text-ink"><span>Total</span><span>{formatCurrency(total)}</span></div>
       </div>
     </div>

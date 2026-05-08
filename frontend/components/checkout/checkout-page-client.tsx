@@ -60,7 +60,11 @@ export function CheckoutPageClient() {
   const [isPaymentInProgress, setIsPaymentInProgress] = useState(false);
   const effectivePricingSettings = pricingSettings ?? defaultPricingSettings;
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount, effectivePricingSettings);
+  const taxLines = items.map((item) => ({
+    lineTotal: item.unitPrice * item.quantity,
+    gstRate: item.product.gstRate
+  }));
+  const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount, effectivePricingSettings, taxLines);
   const blockedCodPincodes = useMemo(
     () =>
       String(effectivePricingSettings.codDisabledPincodes ?? "")

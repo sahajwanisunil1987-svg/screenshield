@@ -20,7 +20,11 @@ export function CartPageClient() {
   const [pricingSettings, setPricingSettings] = useState<PricingSettings>(defaultPricingSettings);
   const effectivePricingSettings = pricingSettings ?? defaultPricingSettings;
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount, effectivePricingSettings);
+  const taxLines = items.map((item) => ({
+    lineTotal: item.unitPrice * item.quantity,
+    gstRate: item.product.gstRate
+  }));
+  const { shipping, tax, total } = calculateOrderPricing(subtotal, couponDiscount, effectivePricingSettings, taxLines);
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {

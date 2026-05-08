@@ -10,6 +10,10 @@ const decimal = (value: number) => new Prisma.Decimal(value.toFixed(2));
 const PAYMENT_RETRY_LIMIT = 3;
 const PAYMENT_WINDOW_MINUTES = 15;
 
+const calculateIncludedTax = (grossAmount: number, gstRate: number) => {
+  if (grossAmount <= 0 || gstRate <= 0) return 0;
+  return grossAmount - grossAmount / (1 + gstRate / 100);
+};
 
 const parseDisabledCodPincodes = (value: string | undefined) =>
   new Set(
@@ -206,8 +210,8 @@ export const createOrder = async (
 
     const orderItems = rawOrderItems.map((item) => {
       const allocatedDiscount = subtotal > 0 ? (item.lineTotal / subtotal) * discountAmount : 0;
-      const taxableLineTotal = Math.max(item.lineTotal - allocatedDiscount, 0);
-      const lineTax = taxableLineTotal * (item.gstRate / 100);
+      const discountedLineTotal = Math.max(item.lineTotal - allocatedDiscount, 0);
+      const lineTax = calculateIncludedTax(discountedLineTotal, item.gstRate);
 
       return {
         productId: item.productId,
@@ -224,7 +228,7 @@ export const createOrder = async (
 
     const shippingAmount = subtotal > freeShippingThreshold ? 0 : shippingFee;
     const taxAmount = orderItems.reduce((sum, item) => sum + item.lineTax, 0);
-    const totalAmount = subtotal - discountAmount + shippingAmount + taxAmount;
+    const totalAmount = subtotal - discountAmount + shippingAmount;
 
     if (payload.paymentMethod === "COD") {
       assertCodAllowed(

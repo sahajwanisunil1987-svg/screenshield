@@ -73,7 +73,7 @@ export function CartSummary({
           <span>{hasHydrated ? (shipping === 0 ? "Free" : formatCurrency(shipping)) : "..."}</span>
         </div>
         <div className="flex justify-between">
-          <span>GST (18%)</span>
+          <span>GST included</span>
           <span>{hasHydrated ? formatCurrency(tax) : "..."}</span>
         </div>
         {couponDiscount > 0 ? (

@@ -27,10 +27,12 @@ describe("order service", () => {
             name: "Vivo Y21 Battery",
             sku: "BAT-Y21",
             price: new Prisma.Decimal(499),
+            gstRate: new Prisma.Decimal(18),
             stock: 10,
             inventory: {
               stock: 10
-            }
+            },
+            variants: []
           }
         ])
       },
@@ -47,6 +49,16 @@ describe("order service", () => {
       address: {
         findFirst: vi.fn().mockResolvedValue(null),
         create: vi.fn().mockResolvedValue({})
+      },
+      appSetting: {
+        upsert: vi.fn().mockResolvedValue({
+          orderPrefix: "SK",
+          invoicePrefix: "INV",
+          shippingFee: new Prisma.Decimal(79),
+          freeShippingThreshold: new Prisma.Decimal(999),
+          codMaxOrderValue: new Prisma.Decimal(5000),
+          codDisabledPincodes: ""
+        })
       }
     };
 
@@ -83,6 +95,10 @@ describe("order service", () => {
 
     const orderCreateArgs = tx.order.create.mock.calls[0][0];
     expect(orderCreateArgs.data.paymentStatus).toBe(PaymentStatus.COD);
+    expect(Number(orderCreateArgs.data.subtotal)).toBe(998);
+    expect(Number(orderCreateArgs.data.taxAmount)).toBe(152.24);
+    expect(Number(orderCreateArgs.data.totalAmount)).toBe(1077);
+    expect(Number(orderCreateArgs.data.payment.create.amount)).toBe(1077);
     expect(orderCreateArgs.data.payment.create.provider).toBe("COD");
     expect(orderCreateArgs.data.payment.create.status).toBe(PaymentStatus.COD);
     expect(orderCreateArgs.data.invoice.create.invoiceNumber).toBe("INV-2026-1234");
@@ -104,9 +120,20 @@ describe("order service", () => {
             stock: 1,
             inventory: {
               stock: 1
-            }
+            },
+            variants: []
           }
         ])
+      },
+      appSetting: {
+        upsert: vi.fn().mockResolvedValue({
+          orderPrefix: "SK",
+          invoicePrefix: "INV",
+          shippingFee: new Prisma.Decimal(79),
+          freeShippingThreshold: new Prisma.Decimal(999),
+          codMaxOrderValue: new Prisma.Decimal(5000),
+          codDisabledPincodes: ""
+        })
       }
     };
 

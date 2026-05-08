@@ -9,6 +9,11 @@ const PAGE_BOTTOM = 730;
 const FOOTER_Y = 780;
 const INVOICE_IMAGE_SIZE = 28;
 
+const calculateIncludedTax = (grossAmount: number, gstRate: number) => {
+  if (grossAmount <= 0 || gstRate <= 0) return 0;
+  return grossAmount - grossAmount / (1 + gstRate / 100);
+};
+
 const drawLabelValue = (doc: PDFKit.PDFDocument, label: string, value: string, x: number, y: number, width = 220) => {
   doc.font("Helvetica-Bold").fontSize(9).fillColor("#5b6474").text(label, x, y);
   doc.font("Helvetica").fontSize(10).fillColor("#08111f").text(value, x, y + 12, { width });
@@ -140,7 +145,7 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
   const shipping = Number(order.shippingAmount);
   const tax = Number(order.taxAmount);
   const total = Number(order.totalAmount);
-  const taxableValue = subtotal - discount;
+  const taxableValue = Math.max(subtotal - discount - tax, 0);
   const gstRate = tax > 0 && taxableValue > 0 ? (tax / taxableValue) * 100 : 0;
   const cgst = tax / 2;
   const sgst = tax / 2;
@@ -148,9 +153,10 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
   order.items.forEach((item) => {
     const grossValue = Number(item.totalPrice);
     const allocatedDiscount = subtotal > 0 ? (grossValue / subtotal) * discount : 0;
-    const lineTaxableValue = Math.max(grossValue - allocatedDiscount, 0);
+    const discountedLineTotal = Math.max(grossValue - allocatedDiscount, 0);
     const itemGstRate = Number(item.product.gstRate ?? 18);
-    const lineTax = lineTaxableValue * (itemGstRate / 100);
+    const lineTax = calculateIncludedTax(discountedLineTotal, itemGstRate);
+    const lineTaxableValue = Math.max(discountedLineTotal - lineTax, 0);
     const key = item.product.hsnCode ?? "Unspecified";
     const current = hsnSummaryMap.get(key) ?? { taxable: 0, tax: 0, gstRate: itemGstRate };
     current.taxable += lineTaxableValue;
@@ -255,8 +261,10 @@ export const generateInvoicePdfBuffer = async (orderId: string) => {
 
     const grossValue = Number(item.totalPrice);
     const allocatedDiscount = subtotal > 0 ? (grossValue / subtotal) * discount : 0;
-    const lineTaxableValue = Math.max(grossValue - allocatedDiscount, 0);
+    const discountedLineTotal = Math.max(grossValue - allocatedDiscount, 0);
     const itemGstRate = Number(item.product.gstRate ?? 18);
+    const lineTax = calculateIncludedTax(discountedLineTotal, itemGstRate);
+    const lineTaxableValue = Math.max(discountedLineTotal - lineTax, 0);
     const itemHsnCode = item.product.hsnCode ?? "-";
     const itemImage = itemImageBuffers[index];
 
