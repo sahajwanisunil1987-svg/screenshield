@@ -6,6 +6,7 @@ import { GitCompareArrows, Trash2 } from "lucide-react";
 import { PageShell } from "@/components/layout/page-shell";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
+import { isLocalUploadImage } from "@/lib/images";
 import { formatCurrency } from "@/lib/utils";
 import { useCompareStore } from "@/store/compare-store";
 
@@ -65,15 +66,17 @@ export default function ComparePage() {
                 {items.map((product) => {
                   const stock = product.inventory?.stock ?? product.stock;
                   const compatibilityCount = product.compatibilityModels?.length ?? 0;
+                  const primaryImage = product.images[0]?.url ?? "https://placehold.co/600x400";
 
                   return (
                     <div key={product.id} className="rounded-[30px] bg-white p-6 shadow-card">
                       <div className="relative aspect-[4/3] overflow-hidden rounded-[24px] bg-slate-100">
                         <Image
-                          src={product.images[0]?.url ?? "https://placehold.co/600x400"}
+                          src={primaryImage}
                           alt={product.name}
                           fill
                           className="object-cover"
+                          unoptimized={isLocalUploadImage(primaryImage)}
                         />
                       </div>
                       <div className="mt-5 flex items-start justify-between gap-4">

@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { ChevronRight, Smartphone } from "lucide-react";
 import { ModelImage } from "@/components/catalog/model-image";
 import { PageShell } from "@/components/layout/page-shell";
+import { isLocalUploadImage } from "@/lib/images";
 import { fetchApi } from "@/lib/server-api";
 import { buildMetadata } from "@/lib/seo";
 import { formatCurrency } from "@/lib/utils";
@@ -101,6 +102,7 @@ function ModelPartTile({ product }: { product: Product }) {
           alt={product.name}
           fill
           className="object-cover transition duration-300 group-hover:scale-105"
+          unoptimized={isLocalUploadImage(primaryImage)}
         />
       </div>
       <div className="mt-2.5 flex flex-1 flex-col">

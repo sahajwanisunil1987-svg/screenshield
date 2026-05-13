@@ -4,6 +4,7 @@ import { type MouseEvent, useMemo, useState } from "react";
 import Image from "next/image";
 import { Expand, X } from "lucide-react";
 import { ProductImage } from "@/types";
+import { isLocalUploadImage } from "@/lib/images";
 
 type GalleryItem =
   | { type: "image"; url: string; alt?: string | null }
@@ -65,6 +66,7 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
                   fill
                   sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 640px"
                   className="object-contain p-4 transition duration-300 ease-out sm:p-5"
+                  unoptimized={isLocalUploadImage(activeItem.url)}
                   style={{
                     transform: isZoomed ? "scale(1.75)" : "scale(1)",
                     transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`
@@ -85,6 +87,7 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
                   fill
                   sizes="100vw"
                   className="object-contain p-3 transition duration-500 group-hover:scale-[1.04]"
+                  unoptimized={isLocalUploadImage(activeItem.url)}
                 />
               </button>
             ) : null}
@@ -124,7 +127,7 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
                 {item.type === "video" ? (
                   <div className="relative z-[1] flex h-full w-full items-center justify-center bg-black text-[10px] font-semibold uppercase tracking-[0.18em] text-white">Video</div>
                 ) : (
-                  <Image src={item.url} alt={item.alt ?? productName} fill sizes="80px" className="object-contain p-1.5" />
+                  <Image src={item.url} alt={item.alt ?? productName} fill sizes="80px" className="object-contain p-1.5" unoptimized={isLocalUploadImage(item.url)} />
                 )}
               </button>
             );
@@ -149,6 +152,7 @@ export function ProductGallery({ images, productName, videoUrl }: { images: Prod
               fill
               className="object-contain p-6 sm:p-10"
               sizes="100vw"
+              unoptimized={isLocalUploadImage(activeItem.url)}
             />
           </div>
         </div>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Heart, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { isLocalUploadImage } from "@/lib/images";
 import { formatCurrency } from "@/lib/utils";
 import { useCartStore } from "@/store/cart-store";
 import { useWishlistStore } from "@/store/wishlist-store";
@@ -14,16 +15,18 @@ export function WishlistProductCard({ product }: { product: Product }) {
   const addItem = useCartStore((state) => state.addItem);
   const toggleWishlist = useWishlistStore((state) => state.toggle);
   const stock = product.inventory?.stock ?? product.stock;
+  const primaryImage = product.images[0]?.url ?? "https://placehold.co/600x400";
 
   return (
     <div className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-panel shadow-card">
       <div className="grid gap-4 p-4 sm:grid-cols-[132px_minmax(0,1fr)] sm:p-5">
         <Link href={`/products/${product.slug}`} className="relative block aspect-[4/3] overflow-hidden rounded-[22px] bg-slate-100">
           <Image
-            src={product.images[0]?.url ?? "https://placehold.co/600x400"}
+            src={primaryImage}
             alt={product.name}
             fill
             className="object-cover"
+            unoptimized={isLocalUploadImage(primaryImage)}
           />
         </Link>
         <div className="min-w-0">

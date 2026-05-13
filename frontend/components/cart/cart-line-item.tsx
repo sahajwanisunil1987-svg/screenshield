@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Minus, Plus } from "lucide-react";
 import { CartItem } from "@/store/cart-store";
+import { isLocalUploadImage } from "@/lib/images";
 import { formatCurrency } from "@/lib/utils";
 
 type CartLineItemProps = {
@@ -13,15 +14,18 @@ type CartLineItemProps = {
 };
 
 export function CartLineItem({ item, onDecrease, onIncrease, onRemove }: CartLineItemProps) {
+  const imageUrl = item.imageUrl ?? item.product.images[0]?.url ?? "https://placehold.co/300x300";
+
   return (
     <div className="theme-surface grid gap-4 rounded-[28px] p-5 sm:grid-cols-[110px_1fr] xl:grid-cols-[110px_1fr_auto]">
       <div className="relative h-28 overflow-hidden rounded-2xl bg-slate-100">
         <Image
-          src={item.imageUrl ?? item.product.images[0]?.url ?? "https://placehold.co/300x300"}
+          src={imageUrl}
           alt={item.product.name}
           fill
           sizes="110px"
           className="object-cover"
+          unoptimized={isLocalUploadImage(imageUrl)}
         />
       </div>
       <div>

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ShieldCheck, Star, Truck } from "lucide-react";
+import { isLocalUploadImage } from "@/lib/images";
 import { formatCurrency } from "@/lib/utils";
 import { Product } from "@/types";
 import { ProductCardActions } from "./product-card-actions";
@@ -12,15 +13,17 @@ export function ProductCardServer({ product }: { product: Product }) {
   const isLowStock = stock > 0 && stock <= (product.inventory?.lowStockLimit ?? 5);
   const compatibilityCount = product.compatibilityModels?.length ?? 0;
   const primaryCompatibility = compatibilityCount ? product.compatibilityModels?.[0]?.model.name : null;
+  const primaryImage = product.images[0]?.url ?? "https://placehold.co/600x400";
 
   return (
     <div className="group overflow-hidden rounded-[30px] border border-slate-200/80 bg-panel shadow-card transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_28px_80px_rgba(8,17,31,0.12)]">
       <Link href={`/products/${product.slug}`} className="relative block aspect-[4/3] overflow-hidden bg-slate-100">
         <Image
-          src={product.images[0]?.url ?? "https://placehold.co/600x400"}
+          src={primaryImage}
           alt={product.name}
           fill
           className="object-cover transition duration-500 group-hover:scale-105"
+          unoptimized={isLocalUploadImage(primaryImage)}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-ink/10" />
         <div className="absolute left-4 top-4 flex flex-wrap gap-2">
