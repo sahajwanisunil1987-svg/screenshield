@@ -84,6 +84,27 @@ npm run prisma:push
 npm run prisma:generate
 ```
 
+## Local Uploads For Migrated Images
+
+Cloudinary remains configured for new uploads, but migrated catalog images can be served from VPS local storage. Nginx should expose `/uploads` from `/var/www/purjix-uploads`:
+
+```nginx
+location /uploads/ {
+    alias /var/www/purjix-uploads/;
+    access_log off;
+    expires 30d;
+    add_header Cache-Control "public, max-age=2592000";
+}
+```
+
+Run the Cloudinary image audit before applying any migration:
+
+```bash
+node backend/scripts/audit-cloudinary-images.js
+node backend/scripts/migrate-cloudinary-images.js --dry-run
+node backend/scripts/migrate-cloudinary-images.js --apply
+```
+
 ## Prisma Schema Rollout
 
 When a change touches `backend/prisma/schema.prisma`, do not stop after local sync. The local command only updates the local PostgreSQL instance.
