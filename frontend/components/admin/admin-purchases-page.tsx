@@ -101,7 +101,15 @@ export function AdminPurchasesPageClient() {
     setIsLoading(true);
     Promise.all([
       api.get<PurchasesResponse>("/admin/purchases", { ...authHeaders(token), params: { range } }),
-      api.get<PaginatedResponse<Product>>("/admin/products", { ...authHeaders(token), params: { limit: 100 } })
+      api.get<PaginatedResponse<Product>>("/admin/products", {
+        ...authHeaders(token),
+        params: {
+          status: "ALL",
+          feature: "ALL",
+          page: 1,
+          limit: 50,
+        },
+      })
     ])
       .then(([purchaseResponse, productResponse]) => {
         setData(purchaseResponse.data);
