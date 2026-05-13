@@ -429,6 +429,7 @@ model Inventory {
   id              String   @id @default(cuid())
   productId       String   @unique
   stock           Int
+  unitCost        Decimal? @db.Decimal(10, 2)
   lowStockLimit   Int      @default(5)
   warehouseCode   String?
   lastRestockedAt DateTime?

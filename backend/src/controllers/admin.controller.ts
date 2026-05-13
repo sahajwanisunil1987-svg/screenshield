@@ -11,6 +11,110 @@ const rangeDaysMap = {
   "90d": 90
 } as const;
 
+const productCostFieldCandidates = ["purchasePrice", "costPrice", "baseCost", "baseUnitCost"] as const;
+
+type ProductCost = {
+  unitCost: number;
+  source: "purchase" | "inventory" | "product" | "missing";
+};
+
+const toNumber = (value: unknown) => Number(value ?? 0);
+
+const getProductCostMap = async (productIds: string[]) => {
+  const uniqueProductIds = Array.from(new Set(productIds)).filter(Boolean);
+  const costByProduct = new Map<string, ProductCost>();
+
+  if (!uniqueProductIds.length) {
+    return costByProduct;
+  }
+
+  const [purchaseEntries, inventoryCosts, productCostColumns] = await Promise.all([
+    prisma.purchaseEntry.findMany({
+      where: { productId: { in: uniqueProductIds } },
+      select: {
+        productId: true,
+        unitCost: true,
+        purchasedAt: true
+      },
+      orderBy: [{ productId: "asc" }, { purchasedAt: "desc" }]
+    }),
+    prisma.inventory.findMany({
+      where: { productId: { in: uniqueProductIds } },
+      select: {
+        productId: true,
+        unitCost: true
+      }
+    }),
+    prisma.$queryRaw<Array<{ column_name: string }>>(
+      Prisma.sql`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'Product'
+          AND column_name IN (${Prisma.join(productCostFieldCandidates)})
+      `
+    )
+  ]);
+
+  for (const entry of purchaseEntries) {
+    if (!costByProduct.has(entry.productId)) {
+      costByProduct.set(entry.productId, { unitCost: Number(entry.unitCost), source: "purchase" });
+    }
+  }
+
+  for (const item of inventoryCosts) {
+    if (!costByProduct.has(item.productId) && item.unitCost !== null) {
+      costByProduct.set(item.productId, { unitCost: Number(item.unitCost), source: "inventory" });
+    }
+  }
+
+  const availableProductCostColumns = productCostFieldCandidates.filter((field) =>
+    productCostColumns.some((column) => column.column_name === field)
+  );
+
+  if (availableProductCostColumns.length) {
+    const productCostRows = await prisma.$queryRaw<Array<Record<string, unknown> & { id: string }>>(
+      Prisma.sql`
+        SELECT "id", ${Prisma.join(availableProductCostColumns.map((field) => Prisma.raw(`"${field}"`)))}
+        FROM "Product"
+        WHERE "id" IN (${Prisma.join(uniqueProductIds)})
+      `
+    );
+
+    for (const row of productCostRows) {
+      if (costByProduct.has(row.id)) {
+        continue;
+      }
+
+      const unitCost = availableProductCostColumns.map((field) => toNumber(row[field])).find((value) => value > 0);
+      if (unitCost) {
+        costByProduct.set(row.id, { unitCost, source: "product" });
+      }
+    }
+  }
+
+  return costByProduct;
+};
+
+const unitCostFor = (costByProduct: Map<string, ProductCost>, productId: string) =>
+  costByProduct.get(productId)?.unitCost ?? 0;
+
+const logMissingProductCosts = (
+  context: string,
+  costByProduct: Map<string, ProductCost>,
+  productIds: string[]
+) => {
+  const missingProductIds = Array.from(new Set(productIds)).filter((productId) => !costByProduct.has(productId));
+  if (!missingProductIds.length) {
+    return;
+  }
+
+  console.warn("[admin-accounting] Missing product cost; falling back to 0", {
+    context,
+    missingProductIds
+  });
+};
+
 export const appSettings = async (_req: Request, res: Response) => {
   res.json(await serializeAppSettings(prisma));
 };
@@ -291,24 +395,8 @@ export const accounting = async (req: Request, res: Response) => {
   });
 
   const productIds = Array.from(new Set(orders.flatMap((order) => order.items.map((item) => item.productId))));
-  const purchaseEntries = productIds.length
-    ? await prisma.purchaseEntry.findMany({
-        where: { productId: { in: productIds } },
-        select: {
-          productId: true,
-          unitCost: true,
-          purchasedAt: true
-        },
-        orderBy: [{ productId: "asc" }, { purchasedAt: "desc" }]
-      })
-    : [];
-
-  const latestUnitCostByProduct = new Map<string, number>();
-  for (const entry of purchaseEntries) {
-    if (!latestUnitCostByProduct.has(entry.productId)) {
-      latestUnitCostByProduct.set(entry.productId, Number(entry.unitCost));
-    }
-  }
+  const costByProduct = await getProductCostMap(productIds);
+  logMissingProductCosts("accounting-summary", costByProduct, productIds);
 
   const marginByProduct = new Map<string, {
     productId: string;
@@ -354,14 +442,14 @@ export const accounting = async (req: Request, res: Response) => {
     const isRefunded = order.paymentStatus === "REFUNDED";
     const isPrepaid = ["PAID", "PENDING", "REFUNDED", "FAILED"].includes(order.paymentStatus);
 
-    const estimatedCost = order.items.reduce((sum, item) => sum + (latestUnitCostByProduct.get(item.productId) ?? 0) * item.quantity, 0);
+    const estimatedCost = order.items.reduce((sum, item) => sum + unitCostFor(costByProduct, item.productId) * item.quantity, 0);
     const grossProfit = isNetOrder ? totalAmount - estimatedCost : 0;
     const marginPercent = isNetOrder && totalAmount > 0 ? (grossProfit / totalAmount) * 100 : 0;
 
     if (isNetOrder) {
       const totalUnits = Math.max(order.items.reduce((qty, current) => qty + current.quantity, 0), 1);
       for (const item of order.items) {
-        const unitCost = latestUnitCostByProduct.get(item.productId) ?? 0;
+        const unitCost = unitCostFor(costByProduct, item.productId);
         const itemCost = unitCost * item.quantity;
         const existing = marginByProduct.get(item.productId) ?? {
           productId: item.productId,
@@ -632,20 +720,8 @@ export const exportAccounting = async (req: Request, res: Response) => {
   });
 
   const productIds = Array.from(new Set(orders.flatMap((order) => order.items.map((item) => item.productId))));
-  const purchaseEntries = productIds.length
-    ? await prisma.purchaseEntry.findMany({
-        where: { productId: { in: productIds } },
-        select: { productId: true, unitCost: true, purchasedAt: true },
-        orderBy: [{ productId: "asc" }, { purchasedAt: "desc" }]
-      })
-    : [];
-
-  const latestUnitCostByProduct = new Map<string, number>();
-  for (const entry of purchaseEntries) {
-    if (!latestUnitCostByProduct.has(entry.productId)) {
-      latestUnitCostByProduct.set(entry.productId, Number(entry.unitCost));
-    }
-  }
+  const costByProduct = await getProductCostMap(productIds);
+  logMissingProductCosts("accounting-export", costByProduct, productIds);
 
   const escape = (value: string | number | null | undefined) => {
     const stringValue = String(value ?? "");
@@ -675,7 +751,7 @@ export const exportAccounting = async (req: Request, res: Response) => {
     ],
     ...orders.map((order) => {
       const isNetOrder = order.status !== 'CANCELLED' && order.returnRequestStatus !== 'APPROVED';
-      const estimatedCost = order.items.reduce((sum, item) => sum + (latestUnitCostByProduct.get(item.productId) ?? 0) * item.quantity, 0);
+      const estimatedCost = order.items.reduce((sum, item) => sum + unitCostFor(costByProduct, item.productId) * item.quantity, 0);
       const totalAmount = Number(order.totalAmount ?? 0);
       const grossProfit = isNetOrder ? totalAmount - estimatedCost : 0;
       const marginPercent = isNetOrder && totalAmount > 0 ? (grossProfit / totalAmount) * 100 : 0;
@@ -784,13 +860,6 @@ export const purchases = async (req: Request, res: Response) => {
     })
   ]);
 
-  const latestUnitCostByProduct = new Map<string, number>();
-  for (const entry of allPurchaseEntries) {
-    if (!latestUnitCostByProduct.has(entry.productId)) {
-      latestUnitCostByProduct.set(entry.productId, Number(entry.unitCost));
-    }
-  }
-
   const vendorSpendMap = new Map<string, { vendorId: string; vendorName: string; spend: number; units: number }>();
   for (const entry of allPurchaseEntries) {
     const current = vendorSpendMap.get(entry.vendorId) ?? {
@@ -809,10 +878,14 @@ export const purchases = async (req: Request, res: Response) => {
     soldUnitsByProduct.set(item.productId, (soldUnitsByProduct.get(item.productId) ?? 0) + item.quantity);
   }
 
+  const inventoryProductIds = inventoryItems.map((item) => item.productId);
+  const costByProduct = await getProductCostMap(inventoryProductIds);
+  logMissingProductCosts("purchase-inventory-valuation", costByProduct, inventoryProductIds);
+
   let inventoryValue = 0;
   const stockInsights = inventoryItems
     .map((item) => {
-      const latestUnitCost = latestUnitCostByProduct.get(item.productId) ?? 0;
+      const latestUnitCost = unitCostFor(costByProduct, item.productId);
       const estimatedValue = latestUnitCost * item.stock;
       inventoryValue += estimatedValue;
       const soldUnits = soldUnitsByProduct.get(item.productId) ?? 0;
@@ -949,6 +1022,7 @@ export const createPurchase = async (req: Request, res: Response) => {
         where: { productId: req.body.productId },
         data: {
           stock: { increment: quantity },
+          unitCost,
           lastRestockedAt: purchasedAt
         }
       });
@@ -957,6 +1031,7 @@ export const createPurchase = async (req: Request, res: Response) => {
         data: {
           productId: req.body.productId,
           stock: quantity,
+          unitCost,
           lowStockLimit: 5,
           lastRestockedAt: purchasedAt
         }
@@ -1083,10 +1158,14 @@ export const inventory = async (_req: Request, res: Response) => {
 
 export const updateInventory = async (req: Request, res: Response) => {
   const id = getSingleParam(req.params.id)!;
+  const unitCost = req.body.unitCost === undefined || req.body.unitCost === null
+    ? undefined
+    : new Prisma.Decimal(req.body.unitCost);
   const item = await prisma.inventory.update({
     where: { id },
     data: {
       stock: req.body.stock,
+      unitCost,
       lowStockLimit: req.body.lowStockLimit,
       warehouseCode: req.body.warehouseCode,
       lastRestockedAt: req.body.lastRestockedAt ? new Date(req.body.lastRestockedAt) : req.body.stock > 0 ? new Date() : undefined

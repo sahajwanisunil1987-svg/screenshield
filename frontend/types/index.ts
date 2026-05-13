@@ -96,6 +96,7 @@ export type Product = {
   variants?: ProductVariant[];
   inventory?: {
     stock: number;
+    unitCost?: number | null;
     lowStockLimit: number;
     warehouseCode?: string | null;
   } | null;
@@ -307,6 +308,7 @@ export type AdminUserDetail = User & {
 export type InventoryItem = {
   id: string;
   stock: number;
+  unitCost?: number | null;
   lowStockLimit: number;
   warehouseCode?: string | null;
   lastRestockedAt?: string | null;

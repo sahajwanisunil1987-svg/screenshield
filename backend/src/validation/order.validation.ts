@@ -67,6 +67,7 @@ export const couponSchema = z.object({
 
 export const inventoryUpdateSchema = z.object({
   stock: z.coerce.number().int().min(0),
+  unitCost: z.coerce.number().min(0).optional().nullable(),
   lowStockLimit: z.coerce.number().int().min(0).max(999),
   warehouseCode: z.string().max(50).optional(),
   lastRestockedAt: z.string().datetime().optional()
