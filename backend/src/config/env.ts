@@ -37,6 +37,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(8),
   JWT_REFRESH_SECRET: z.string().min(8).optional(),
   FRONTEND_URL: z.string().min(1),
+  ADMIN_FRONTEND_URL: z.string().optional(),
   SITE_URL: z.string().optional(),
   COMPANY_NAME: z.string().min(1),
   COMPANY_LEGAL_NAME: z.string().min(1),
