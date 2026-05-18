@@ -91,22 +91,7 @@ export function MaintenanceGate({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  if (!settings) {
-    return (
-      <div className="min-h-[60vh] bg-page-wash">
-        <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-card">
-            <div className="h-4 w-40 animate-pulse rounded-full bg-slate-200" />
-            <div className="mt-6 h-10 w-3/4 animate-pulse rounded-full bg-slate-200" />
-            <div className="mt-4 h-4 w-full animate-pulse rounded-full bg-slate-100" />
-            <div className="mt-2 h-4 w-2/3 animate-pulse rounded-full bg-slate-100" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!settings.maintenanceMode) {
+  if (!settings?.maintenanceMode) {
     return <>{children}</>;
   }
 

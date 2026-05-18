@@ -18,6 +18,34 @@ export const metadata: Metadata = {
   keywords: ["mobile spare parts", "phone parts", "display combo", "battery replacement", "charging port", "PurjiX"],
   category: "shopping",
   manifest: "/manifest.webmanifest",
+  referrer: "strict-origin-when-cross-origin",
+  icons: {
+    icon: [
+      {
+        url: "/icon",
+        sizes: "512x512",
+        type: "image/png"
+      },
+      {
+        url: "/icon-192.png?v=px-20260518",
+        sizes: "192x192",
+        type: "image/png"
+      }
+    ],
+    apple: [
+      {
+        url: "/apple-icon",
+        sizes: "180x180",
+        type: "image/png"
+      }
+    ],
+    other: [
+      {
+        rel: "mask-icon",
+        url: "/maskable-icon.png?v=px-20260518"
+      }
+    ]
+  },
   openGraph: {
     title: `${siteName} | Mobile Spare Parts Store`,
     description: "Find premium mobile spare parts by brand, model, and part type.",
@@ -41,7 +69,14 @@ export const metadata: Metadata = {
   },
   robots: {
     index: isProductionSite,
-    follow: isProductionSite
+    follow: isProductionSite,
+    googleBot: {
+      index: isProductionSite,
+      follow: isProductionSite,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1
+    }
   },
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION

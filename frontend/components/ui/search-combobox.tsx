@@ -30,6 +30,7 @@ export function SearchCombobox({
   name
 }: SearchComboboxProps) {
   const inputId = useId();
+  const listboxId = `${inputId}-listbox`;
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -78,6 +79,10 @@ export function SearchCombobox({
           name={name ?? label.toLowerCase().replace(/\s+/g, "-")}
           value={query}
           disabled={disabled}
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={open && !disabled}
+          aria-controls={listboxId}
           onFocus={() => setOpen(true)}
           onChange={(event) => {
             setQuery(event.target.value);
@@ -95,12 +100,19 @@ export function SearchCombobox({
         <ChevronsUpDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate" />
       </div>
       {open && !disabled ? (
-        <div className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-card">
+        <div
+          id={listboxId}
+          role="listbox"
+          aria-label={`${label} options`}
+          className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-card"
+        >
           {filteredOptions.length ? (
             filteredOptions.map((option) => (
               <button
                 key={option.value}
                 type="button"
+                role="option"
+                aria-selected={value === option.value}
                 onClick={() => {
                   onChange(option.value);
                   setQuery(option.label);

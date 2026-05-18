@@ -42,6 +42,7 @@ export function SearchAutocomplete({
   name
 }: SearchAutocompleteProps) {
   const inputId = useId();
+  const listboxId = `${inputId}-listbox`;
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -205,6 +206,11 @@ export function SearchAutocomplete({
           id={inputId}
           name={name ?? "search"}
           aria-label={label ?? placeholder}
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={open}
+          aria-controls={listboxId}
+          aria-activedescendant={open && activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
           value={value}
           onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
             if (event.key === "ArrowDown") {
@@ -273,7 +279,12 @@ export function SearchAutocomplete({
         ) : null}
       </div>
       {open ? (
-        <div className={cn("absolute z-30 mt-2 w-full rounded-2xl border border-slate-200 bg-white p-2 shadow-card", dropdownClassName)}>
+        <div
+          id={listboxId}
+          role="listbox"
+          aria-label={`${label ?? placeholder} suggestions`}
+          className={cn("absolute z-30 mt-2 w-full rounded-2xl border border-slate-200 bg-white p-2 shadow-card", dropdownClassName)}
+        >
           {!value.trim() && quickSuggestions.length ? (
             <div className="space-y-1">
               {recentSearches.length ? (
@@ -282,7 +293,10 @@ export function SearchAutocomplete({
                   {recentSearches.map((entry) => (
                     <button
                       key={`recent-${entry}`}
+                      id={`${listboxId}-option-${quickActions.findIndex((item) => item.key === `recent-${entry}`)}`}
                       type="button"
+                      role="option"
+                      aria-selected={activeIndex === quickActions.findIndex((item) => item.key === `recent-${entry}`)}
                       onClick={() => {
                         onChange(entry);
                         saveRecentSearch(entry);
@@ -317,7 +331,10 @@ export function SearchAutocomplete({
               {TRENDING_SEARCHES.filter((entry) => !recentSearches.includes(entry)).map((entry) => (
                 <button
                   key={`trending-${entry}`}
+                  id={`${listboxId}-option-${quickActions.findIndex((item) => item.key === `trending-${entry}`)}`}
                   type="button"
+                  role="option"
+                  aria-selected={activeIndex === quickActions.findIndex((item) => item.key === `trending-${entry}`)}
                   onClick={() => {
                     onChange(entry);
                     saveRecentSearch(entry);
@@ -353,7 +370,10 @@ export function SearchAutocomplete({
             ? suggestions.map((suggestion) => (
                 <button
                   key={suggestion.id}
+                  id={`${listboxId}-option-${suggestionActions.findIndex((item) => item.key === suggestion.id)}`}
                   type="button"
+                  role="option"
+                  aria-selected={activeIndex === suggestionActions.findIndex((item) => item.key === suggestion.id)}
                   onClick={() => {
                     onChange(suggestion.searchTerm);
                     saveRecentSearch(suggestion.searchTerm);

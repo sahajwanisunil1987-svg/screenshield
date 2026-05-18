@@ -1,6 +1,5 @@
-"use client";
-
-import { useState } from "react";
+import Image from "next/image";
+import { isLocalUploadImage } from "@/lib/images";
 
 type BrandLogoProps = {
   name: string;
@@ -11,6 +10,8 @@ type BrandLogoProps = {
   fallbackClassName?: string;
 };
 
+const shouldBypassImageOptimizer = (src: string) => isLocalUploadImage(src) || src.toLowerCase().includes(".svg");
+
 export function BrandLogo({
   name,
   logoUrl,
@@ -19,9 +20,7 @@ export function BrandLogo({
   imageClassName = "",
   fallbackClassName = ""
 }: BrandLogoProps) {
-  const [hasError, setHasError] = useState(false);
-
-  if (!logoUrl || hasError) {
+  if (!logoUrl) {
     return (
       <div className={`flex h-full w-full items-center justify-center text-center ${wrapperClassName}`}>
         <span className={`font-display text-lg font-semibold text-ink ${fallbackClassName}`}>{name}</span>
@@ -30,13 +29,14 @@ export function BrandLogo({
   }
 
   return (
-    <div className={`flex h-full w-full items-center justify-center ${wrapperClassName}`}>
-      <img
+    <div className={`relative flex h-full w-full items-center justify-center ${wrapperClassName}`}>
+      <Image
         src={logoUrl}
         alt={alt ?? `${name} logo`}
-        loading="lazy"
-        onError={() => setHasError(true)}
-        className={`max-h-full max-w-full object-contain ${imageClassName}`}
+        fill
+        sizes="(max-width: 639px) 42vw, (max-width: 1023px) 28vw, 150px"
+        className={`object-contain ${imageClassName}`}
+        unoptimized={shouldBypassImageOptimizer(logoUrl)}
       />
     </div>
   );

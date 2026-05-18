@@ -1,18 +1,10 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Mic, Search as SearchIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { SearchAutocomplete } from "@/components/ui/search-autocomplete";
 import { SearchSuggestion } from "@/types";
-
-const SearchAutocomplete = dynamic(
-  () => import("@/components/ui/search-autocomplete").then((module) => module.SearchAutocomplete),
-  {
-    ssr: false,
-    loading: () => <div className="h-[50px] w-full rounded-2xl border border-white/10 bg-white/5" />
-  }
-);
 
 type NavbarSearchProps = {
   placeholder: string;
@@ -35,7 +27,6 @@ export function NavbarSearch({
 }: NavbarSearchProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [voiceSupported, setVoiceSupported] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -43,12 +34,12 @@ export function NavbarSearch({
 
   useEffect(() => {
     if (pathname === "/products") {
-      setSearch(searchParams.get("search") ?? "");
+      setSearch(new URLSearchParams(window.location.search).get("search") ?? "");
       return;
     }
 
     setSearch("");
-  }, [pathname, searchParams]);
+  }, [pathname]);
 
   useEffect(() => {
     const SpeechRecognitionApi = window.SpeechRecognition ?? window.webkitSpeechRecognition;
