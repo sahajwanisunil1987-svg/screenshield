@@ -21,10 +21,10 @@ export default function Icon() {
           color: "#ecfeff",
           fontSize: 160,
           fontWeight: 800,
-          letterSpacing: "-0.06em"
+          letterSpacing: 0
         }}
       >
-        SK
+        PX
       </div>
     ),
     size

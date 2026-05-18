@@ -22,10 +22,10 @@ export default function AppleIcon() {
           borderRadius: 36,
           fontSize: 64,
           fontWeight: 800,
-          letterSpacing: "-0.06em"
+          letterSpacing: 0
         }}
       >
-        SK
+        PX
       </div>
     ),
     size
