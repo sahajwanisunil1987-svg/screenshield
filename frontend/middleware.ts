@@ -23,6 +23,13 @@ const siteHostname = getOriginHostname(siteOrigin);
 
 const isLocalhost = (hostname: string) => hostname === "localhost" || hostname === "127.0.0.1";
 const isAdminPath = (pathname: string) => pathname === "/admin" || pathname.startsWith("/admin/");
+const adminSharedPaths = new Set([
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+  "/manifest.webmanifest"
+]);
+const isAdminSharedPath = (pathname: string) => adminSharedPaths.has(pathname);
 
 export function middleware(request: NextRequest) {
   const hostname = getHostname(request);
@@ -37,7 +44,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/admin/dashboard", adminOrigin));
     }
 
-    if (!isAdminPath(pathname)) {
+    if (!isAdminPath(pathname) && !isAdminSharedPath(pathname)) {
       return NextResponse.redirect(new URL(`${pathname}${search}`, siteOrigin));
     }
   }

@@ -10,8 +10,8 @@ import { api, getApiErrorMessage } from "@/lib/api";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function ForgotPasswordForm() {
-  const [email, setEmail] = useState("");
+export function ForgotPasswordForm({ initialEmail = "" }: { initialEmail?: string }) {
+  const [email, setEmail] = useState(initialEmail);
   const [error, setError] = useState<string>();
   const [isSubmitting, setIsSubmitting] = useState(false);
 

@@ -332,6 +332,7 @@ export function AdminLoginForm({ nextPath = "/admin/dashboard", initialEmail = "
             )}
             <Link
               href={`/forgot-password${email.trim() ? `?email=${encodeURIComponent(email.trim())}` : ""}`}
+              prefetch={false}
               className={`font-semibold ${isDark ? "text-cyan-200" : "text-accent"}`}
             >
               Forgot password?
