@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { PageShell } from "@/components/layout/page-shell";
 import { EmptyState } from "@/components/ui/empty-state";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
+import { downloadInvoicePdf } from "@/lib/download";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useAuthStore } from "@/store/auth-store";
@@ -68,18 +69,11 @@ export default function MyOrdersPage() {
 
     setDownloadingId(orderId);
     try {
-      const response = await api.get(`/orders/${orderId}/invoice`, {
-        ...authHeaders(token),
-        responseType: "blob"
-      });
-      const blobUrl = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = `invoice-${orderNumber}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(blobUrl);
+      await downloadInvoicePdf(
+        `/orders/${orderId}/invoice`,
+        `invoice-${orderNumber}.pdf`,
+        token
+      );
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Unable to download invoice"));
     } finally {

@@ -4,7 +4,7 @@ import { verifyAccessToken } from "../utils/jwt.js";
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   const bearer = req.headers.authorization;
-  const token = bearer?.startsWith("Bearer ") ? bearer.slice(7) : req.cookies?.token;
+  const token = bearer?.startsWith("Bearer ") ? bearer.slice(7) : (req.cookies?.token || (req.query.token as string | undefined));
 
   if (!token) {
     return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Authentication required" });

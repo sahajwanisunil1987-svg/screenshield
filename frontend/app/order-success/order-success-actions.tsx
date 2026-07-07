@@ -6,6 +6,7 @@ import { Copy, Download, LifeBuoy, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
+import { downloadInvoicePdf } from "@/lib/download";
 import { useAuthStore } from "@/store/auth-store";
 import { Order } from "@/types";
 
@@ -54,20 +55,11 @@ export function OrderSuccessActions({ orderNumber }: { orderNumber?: string }) {
 
     setIsDownloading(true);
     try {
-      const response = await api.get(`/orders/${order.id}/invoice`, {
-        ...authHeaders(token),
-        responseType: "blob"
-      });
-      const blobUrl = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = `invoice-${order.orderNumber}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-      toast.error(getApiErrorMessage(error, "Unable to download invoice"));
+      await downloadInvoicePdf(
+        `/orders/${order.id}/invoice`,
+        `invoice-${order.orderNumber}.pdf`,
+        token
+      );
     } finally {
       setIsDownloading(false);
     }

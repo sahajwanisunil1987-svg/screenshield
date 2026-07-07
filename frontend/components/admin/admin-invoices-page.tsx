@@ -6,6 +6,7 @@ import { AdminGuard } from "@/components/admin/admin-guard";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { Input } from "@/components/ui/input";
 import { api, authHeaders, getApiErrorMessage } from "@/lib/api";
+import { downloadInvoicePdf } from "@/lib/download";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 import { InvoiceRecord, PaginatedResponse } from "@/types";
@@ -50,19 +51,11 @@ export function AdminInvoicesPageClient() {
 
     setDownloadingId(orderId);
     try {
-      const response = await api.get(`/admin/orders/${orderId}/invoice`, {
-        ...authHeaders(token),
-        responseType: "blob"
-      });
-
-      const blobUrl = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = `invoice-${orderNumber}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(blobUrl);
+      await downloadInvoicePdf(
+        `/admin/orders/${orderId}/invoice`,
+        `invoice-${orderNumber}.pdf`,
+        token
+      );
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Unable to download invoice"));
     } finally {
